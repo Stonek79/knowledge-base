@@ -1,25 +1,64 @@
 {
-  "name": "knowledge-base",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.4.5"
-  },
-  "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.4.5",
-    "@eslint/eslintrc": "^3"
-  }
+    "name": "knowledge-base",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "next dev --turbo",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint --no-cache",
+        "db:push": "prisma db push",
+        "db:studio": "prisma studio",
+        "seed": "node prisma/seed.js"
+    },
+    "prisma": {
+        "seed": "node prisma/seed.js"
+    },
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@hookform/resolvers": "^5.2.1",
+        "@mui/icons-material": "^7.2.0",
+        "@mui/material": "^7.2.0",
+        "@mui/material-nextjs": "^7.2.0",
+        "@prisma/client": "^6.13.0",
+        "archiver": "^7.0.1",
+        "axios": "^1.11.0",
+        "bcryptjs": "^3.0.2",
+        "dompurify": "^3.2.6",
+        "dotenv": "^17.2.1",
+        "flexsearch": "^0.8.205",
+        "form-data": "^4.0.4",
+        "ioredis": "^5.7.0",
+        "jose": "^6.0.12",
+        "jsonwebtoken": "^9.0.2",
+        "mammoth": "^1.10.0",
+        "minio": "^8.0.5",
+        "next": "15.4.5",
+        "pdfjs-dist": "^5.4.54",
+        "pg": "^8.16.3",
+        "prisma": "^6.13.0",
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+        "react-hook-form": "^7.62.0",
+        "swr": "^2.3.4",
+        "zod": "^4.0.14"
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3.3.1",
+        "@next/eslint-plugin-next": "^15.4.5",
+        "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+        "@types/archiver": "^6.0.3",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/node": "^20",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "eslint": "^9",
+        "eslint-config-next": "15.4.5",
+        "eslint-plugin-simple-import-sort": "^12.1.1",
+        "prettier": "^3.6.2",
+        "typescript": "^5",
+        "typescript-eslint": "^8.38.0"
+    }
 }

@@ -1,0 +1,190 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Пользователи
+model User {
+    id        String   @id @default(cuid())
+    username  String   @unique @db.Citext // Логин
+    password  String // bcrypt-хеш
+    role      Role     @default(USER) // Роль пользователя
+    createdAt DateTime @default(now()) // Дата создания
+
+    documents Document[] // Документы пользователя
+    updatedBy SystemSettings[] // Настройки системы, которые обновил пользователь
+}
+
+// Документы
+model Document {
+    id           String         @id @default(cuid())
+    title        String // Заголовок документа
+    description  String?        @db.Text // Описание документа
+    content      String         @db.Text // Извлеченный текст из DOCX для поиска
+    filePath     String // Путь к файлу
+    fileName     String // Оригинальное имя файла
+    fileSize     Int // Размер файла в байтах (макс 2MB)
+    mimeType     String // Тип файла
+    hash         String         @unique // Хеш файла для проверки дубликатов
+    format       DocumentFormat @default(DOCX) // DOCX, DOC, PDF
+    isPublished  Boolean        @default(true) // Опубликован ли документ
+    documentType DocumentType   @default(MAIN) // MAIN, ATTACHMENT, REFERENCE
+    attachments  Attachment[] // Вложенные документы
+
+    // Метаданные для поиска
+    tags     String[] // Массив тегов
+    keywords String[] // Ключевые слова
+
+    // Статистика
+    viewCount     Int @default(0) // Количество просмотров
+    downloadCount Int @default(0) // Количество скачиваний
+
+    // Временные метки
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Связи
+    authorId String // ID автора
+    author   User   @relation(fields: [authorId], references: [id]) // Автор документа
+
+    // Связь многие-ко-многим с категориями
+    categories        DocumentCategory[] // Категории документа
+    convertedVersions ConvertedDocument[] @relation("DocumentToConverted") // Преобразованные версии документа
+
+    // Основной PDF (с приложениями)
+    mainPdf   ConvertedDocument? @relation("MainPdf", fields: [mainPdfId], references: [id], onDelete: SetNull) // Основной PDF
+    mainPdfId String?            @unique // ID основного PDF
+
+    // Индексы для поиска
+    @@index([title])
+    @@index([createdAt])
+    @@index([authorId])
+    @@index([fileSize])
+    @@index([isPublished])
+    @@index([documentType])
+    @@index([authorId, createdAt])
+}
+
+// Категории
+model Category {
+    id          String   @id @default(cuid())
+    name        String   @unique // Название категории
+    description String? // Описание категории
+    color       String? // HEX цвет для UI
+    isDefault   Boolean  @default(false) // Предопределенная категория
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Связь многие-ко-многим с документами
+    documents DocumentCategory[] // Документы в категории
+}
+
+// Связь между документами и категориями
+model DocumentCategory {
+    id         String   @id @default(cuid())
+    documentId String // ID документа
+    categoryId String // ID категории
+    createdAt  DateTime @default(now()) // Дата создания
+
+    document Document @relation(fields: [documentId], references: [id], onDelete: Cascade) // Документ
+    category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Категория
+
+    @@unique([documentId, categoryId])
+    @@index([documentId])
+    @@index([categoryId])
+}
+
+// Вложения
+model Attachment {
+    id         String   @id @default(cuid())
+    documentId String // ID документа
+    document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade) // Документ
+
+    fileName String // Имя файла
+    fileSize Int // Размер файла в байтах (макс 2MB)
+    mimeType String // Тип файла
+    filePath String // Путь к файлу
+
+    attachmentType AttachmentType @default(ATTACHMENT)
+
+    createdAt DateTime @default(now()) // Дата создания
+
+    order Int @default(1) // Порядок вложения
+
+    @@index([documentId])
+    @@index([attachmentType])
+    @@index([documentId, createdAt])
+    @@index([documentId, order])
+}
+
+// Преобразованные документы
+model ConvertedDocument {
+    id             String         @id @default(cuid())
+    documentId     String // ID документа
+    document       Document       @relation("DocumentToConverted", fields: [documentId], references: [id], onDelete: Cascade) // Документ
+    conversionType ConversionType // Тип преобразования
+    filePath       String // Путь к файлу
+    fileSize       Int // Размер файла в байтах (макс 2MB)
+
+    originalFile  String // Оригинальный файл
+    convertedAt   DateTime @default(now()) // Дата преобразования
+    conversionLog String?  @db.Text // Лог преобразования
+
+    // Связь с основным PDF
+    isMainFor Document? @relation("MainPdf") // Связь с основным PDF
+
+    @@index([documentId])
+    @@index([conversionType])
+}
+
+// Настройки системы
+model SystemSettings {
+    id                String   @id @default("singleton")
+    maxFileSize       Int      @default(2097152) // Максимальный размер файла (2MB)
+    maxFilesPerUpload Int      @default(10) // Максимальное количество файлов на загрузку
+    allowedMimeTypes  String[] // Разрешенные типы файлов
+
+    enableOcr    Boolean  @default(true) // Включен ли OCR
+    ocrLanguages String[] @default(["rus", "eng"]) // Языки OCR
+
+    updatedAt     DateTime @updatedAt // Дата обновления
+    updatedBy     String? // ID пользователя, который обновил настройки
+    updatedByUser User?    @relation(fields: [updatedBy], references: [id]) // Пользователь, который обновил настройки
+}
+
+// Роли пользователей
+enum Role {
+    ADMIN // Администратор
+    USER // Пользователь
+    GUEST // Гость
+}
+
+// Форматы документов
+enum DocumentFormat {
+    DOCX // DOCX
+    DOC // DOC
+    PDF // PDF
+}
+
+// Типы документов
+enum DocumentType {
+    MAIN // Основной документ
+    ATTACHMENT // Вложенный документ
+    REFERENCE // Ссылка на документ
+}
+
+// Типы вложений
+enum AttachmentType {
+    ATTACHMENT // Вложенный документ
+    REFERENCE // Ссылка на документ
+}
+
+// Типы преобразований
+enum ConversionType {
+    PDF // Преобразование в PDF
+    DOCX // Преобразование в DOCX
+}

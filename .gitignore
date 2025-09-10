@@ -5,10 +5,22 @@
 /.pnp
 .pnp.*
 .yarn/*
+.pnpm-store/
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+
+# .prettierignore
+node_modules/
+.next/
+dist/
+build/
+*.min.js
+*.min.css
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
 
 # testing
 /coverage
@@ -39,3 +51,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma
+prisma/migrations
+prisma/seed.ts
+
+# storage
+storage/
+storage/flexsearch.index.json
+storage/flexsearch.docs.json
+storage/search-index.json
+storage/flexsearch.db
+
+# memory-bank
+memory-bank/
+/memory-bank/
+
+.pnpm-store/

@@ -1,0 +1,89 @@
+import jwt from 'jsonwebtoken';
+
+import { NextRequest, NextResponse } from 'next/server';
+
+import { COOKIE_NAME } from '@/constants/app';
+import { ApiError, handleApiError } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
+import { userResponseSchema } from '@/lib/schemas/user';
+
+export async function GET(req: NextRequest) {
+    try {
+        const token = req.cookies.get(COOKIE_NAME)?.value;
+
+        if (!token) {
+            throw new ApiError('Токен аутентификации не предоставлен', 401);
+        }
+
+        const jwtSecret = process.env.JWT_SECRET;
+
+        if (!jwtSecret) {
+            console.error('JWT_SECRET не определен в .env');
+            throw new ApiError('Ошибка конфигурации сервера (JWT)', 500);
+        }
+
+        let decoded: unknown;
+        try {
+            decoded = jwt.verify(token, jwtSecret);
+        } catch (error) {
+            const errResponse = NextResponse.json(
+                {
+                    message: 'Невалидный или истекший токен',
+                    error: 'InvalidTokenError',
+                },
+                { status: 401 }
+            );
+
+            // Удаляем невалидный cookie
+            errResponse.cookies.set(COOKIE_NAME, '', { maxAge: 0 });
+            return errResponse;
+        }
+
+        const validationResult = userResponseSchema.safeParse(decoded);
+
+        if (!validationResult.success) {
+            // Если токен есть, но его содержимое не соответствует схеме, это тоже ошибка авторизации
+            throw new ApiError('Некорректный формат токена', 401);
+        }
+
+        const { id } = validationResult.data;
+
+        // Получаем самые свежие данные пользователя из БД
+        const user = await prisma.user.findUnique({
+            where: {
+                id,
+            },
+            select: {
+                id: true,
+                username: true,
+                role: true,
+            },
+        });
+
+        if (!user) {
+            // Если пользователь с таким ID из токена не найден в БД, это критическая ошибка синхронизации
+            const errResponse = NextResponse.json(
+                { message: 'Пользователь не найден', error: 'UserNotFound' },
+                { status: 401 }
+            );
+
+            return errResponse;
+        }
+
+        return NextResponse.json(user, { status: 200 });
+    } catch (error) {
+        // Обработка ошибок ApiError для корректных HTTP-ответов
+        if (error instanceof ApiError) {
+            const response = NextResponse.json(
+                { message: error.message, error: error.name }, // Используем error.name для кода ошибки
+                { status: error.status }
+            );
+            
+            return response;
+        }
+        // Обработка остальных (непредвиденных) ошибок
+        return handleApiError(error, {
+            message: 'Ошибка при получении данных пользователя',
+        });
+    }
+}

@@ -1,0 +1,129 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Paper,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+
+import { DOCUMENT_VIEWER_PATH } from '@/constants/api';
+import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
+import { DocumentWithAuthor, SearchResult } from '@/lib/types/document';
+
+import { DownloadButtons } from '../download/DownloadButtons';
+
+interface DocumentViewerProps {
+    document: SearchResult | DocumentWithAuthor;
+    open: boolean;
+    onClose: () => void;
+    searchQuery?: string;
+}
+
+/**
+ * Компонент для просмотра документов в модальном окне
+ *
+ * @description Отображает документ в виде PDF
+ * - Поля для скачивания документа (оригинал и PDF)
+ * - Объект для отображения PDF
+ *
+ * @param document - Документ для отображения
+ * @param open - Состояние открытия модального окна
+ * @param onClose - Обработчик закрытия
+ * @param searchQuery - Поисковый запрос для подсветки
+ */
+export function DocumentViewer({
+    document,
+    open,
+    onClose,
+    searchQuery,
+}: DocumentViewerProps) {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const { addRecentDocument } = useRecentDocuments();
+
+    const hasAddedToRecent = useRef(false); // Флаг для предотвращения повторного добавления
+
+    // Добавляем в недавние только при первом открытии
+    useEffect(() => {
+        if (open && document && !hasAddedToRecent.current) {
+            addRecentDocument(document);
+            hasAddedToRecent.current = true;
+        }
+
+        // Сбрасываем флаг при закрытии
+        if (!open) {
+            hasAddedToRecent.current = false;
+        }
+    }, [open, document, addRecentDocument]);
+
+    const documentPath = DOCUMENT_VIEWER_PATH(document.id);
+
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth='lg'
+            fullWidth
+            fullScreen={isMobile}
+            sx={{
+                borderRadius: isMobile ? 0 : 2,
+                maxHeight: '100dvh',
+            }}
+        >
+            <DialogTitle>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Typography variant='h6' component='h2' noWrap>
+                        {document.title}
+                    </Typography>
+
+                    <DownloadButtons documentId={document.id} />
+                </Box>
+            </DialogTitle>
+
+            <DialogContent dividers>
+                <Paper variant='outlined' sx={{ height: '90dvh' }}>
+                    <Box
+                        sx={{
+                            height: '100%',
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            bgcolor: 'background.paper',
+                        }}
+                    >
+                        <object
+                            data={documentPath}
+                            type='application/pdf'
+                            width='100%'
+                            height='100%'
+                        >
+                            <iframe
+                                src={documentPath}
+                                width='100%'
+                                height='100%'
+                                style={{ border: 0 }}
+                            />
+                        </object>
+                    </Box>
+                </Paper>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose}>Закрыть</Button>
+            </DialogActions>
+        </Dialog>
+    );
+}

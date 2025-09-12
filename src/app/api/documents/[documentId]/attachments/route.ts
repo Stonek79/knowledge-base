@@ -90,15 +90,9 @@ export async function POST(
 
         const result = await attachmentService.uploadAttachment(buffer, {
             ...parsedMetadata,
-            size: buffer.byteLength,
+            fileSize: buffer.byteLength,
             mimeType: file.type,
         });
-
-        const { _max } = await prisma.attachment.aggregate({
-            where: { documentId },
-            _max: { order: true },
-        });
-        const nextOrder = (_max.order ?? -1) + 1;
 
         // Создаём запись в БД
         let createdAttachmentId: string | null = null;
@@ -109,14 +103,14 @@ export async function POST(
                 const created = await tx.attachment.create({
                     data: {
                         documentId,
-                        fileName: parsedMetadata.originalName,
-                        fileSize: result.size,
+                        fileName: parsedMetadata.fileName,
+                        fileSize: parsedMetadata.fileSize,
                         mimeType: result.mimeType,
                         filePath: result.key,
                         attachmentType:
                             parsedMetadata.attachmentType ||
                             ATTACHMENT_TYPE.ATTACHMENT,
-                        order: nextOrder,
+                        order: -1,
                     },
                 });
                 createdAttachmentId = created.id;

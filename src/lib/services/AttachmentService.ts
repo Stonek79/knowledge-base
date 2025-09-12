@@ -1,10 +1,7 @@
 // src/lib/services/AttachmentService.ts
 import { STORAGE_BASE_PATHS } from '@/constants/app';
 import { attachmentMetadataSchema } from '@/lib/schemas/attachment';
-import type {
-    AttachmentMetadata,
-    AttachmentUploadResult,
-} from '@/lib/types/attachment';
+import type { AttachmentMetadata } from '@/lib/types/attachment';
 
 import { fileStorageService } from './FileStorageService';
 
@@ -35,9 +32,9 @@ export class AttachmentService {
         const result = await this.storage.uploadDocument(
             fileBuffer,
             {
-                originalName: validatedMetadata.originalName,
+                originalName: validatedMetadata.fileName,
                 mimeType: validatedMetadata.mimeType,
-                size: validatedMetadata.size,
+                size: validatedMetadata.fileSize,
             },
             { basePath: STORAGE_BASE_PATHS.ATTACHMENTS }
         );

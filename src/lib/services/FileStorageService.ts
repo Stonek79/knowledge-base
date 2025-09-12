@@ -17,6 +17,10 @@ import {
     UploadOptions,
 } from '../types/storage';
 
+interface CodedError extends Error {
+    code?: string;
+}
+
 /**
  * Сервис для работы с файловым хранилищем MinIO
  * @description Сервис для работы с файловым хранилищем MinIO
@@ -167,15 +171,24 @@ export class FileStorageService {
                 stream.on('error', reject);
             });
         } catch (error) {
-            const err = error as { code?: string } | Error;
-            // сохраняем семантику NoSuchKey, чтобы верхний слой мог отличить "нет файла"
-            if ((err as any)?.code === 'NoSuchKey') {
-                const notFound = new Error(`Файл не найден: ${key}`);
-                (notFound as any).code = 'NoSuchKey';
+            // Безопасно проверяем, является ли ошибка ошибкой Minio "NoSuchKey"
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'code' in error &&
+                (error as { code: unknown }).code === 'NoSuchKey'
+            ) {
+                const notFound: CodedError = new Error(
+                    `Файл не найден: ${key}`
+                );
+                notFound.code = 'NoSuchKey';
                 throw notFound;
             }
-            // остальные ошибки пробрасываем как есть
-            throw err instanceof Error ? err : new Error(String(err));
+            // Остальные ошибки пробрасываем как есть
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error(String(error));
         }
     }
 

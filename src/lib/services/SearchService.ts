@@ -1,7 +1,12 @@
 import { SearchCache } from '../search/cache/SearchCache';
 import { SearchCoordinator } from '../search/coordinator/SearchCoordinator';
 import { FlexSearchEngine } from '../search/implementations/flexsearch/FlexSearchEngine';
-import { SearchFilters, SearchOptions, SearchResult } from '../types/search';
+import {
+    SearchDocument,
+    SearchFilters,
+    SearchOptions,
+    SearchResult,
+} from '../types/search';
 
 /**
  * Основной сервис поиска, объединяющий все компоненты
@@ -79,7 +84,7 @@ export class SearchService {
      * Индексирует документ для поиска
      * @param document - Документ для индексации
      */
-    async indexDocument(document: any): Promise<void> {
+    async indexDocument(document: SearchDocument): Promise<void> {
         await this.textEngine.indexDocument(document);
         // Инвалидируем кэш при изменении документов
         this.cache.invalidateAll();
@@ -98,7 +103,7 @@ export class SearchService {
      * Переиндексирует все документы
      * @param documents - Массив документов для индексации
      */
-    async reindexAll(documents: any[]): Promise<void> {
+    async reindexAll(documents: SearchDocument[]): Promise<void> {
         await this.textEngine.reindexAll(documents);
         this.cache.invalidateAll();
     }

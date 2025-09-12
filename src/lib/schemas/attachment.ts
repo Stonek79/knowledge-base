@@ -22,7 +22,7 @@ export const attachmentMetadataSchema = z.object({
 });
 
 export const attachmentUploadSchema = z.object({
-    file: z.instanceof(File),
+    file: z.any().optional(),
     attachmentType: z.enum(AttachmentType).default(AttachmentType.ATTACHMENT),
     order: z.number().int().min(0).optional(),
 });

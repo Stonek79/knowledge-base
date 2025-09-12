@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
             ...(sortOrder && { sortOrder }),
         };
 
-        if ((indexer as any).isEmpty()) {
+        if (indexer.isEmpty()) {
             const documents = await prisma.document.findMany({
                 include: {
                     author: {

@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import { MIME } from '@/constants/mime';
-
 import { attachmentMetadataSchema, baseAttachmentSchema } from './attachment';
 
 export const createDocumentSchema = z.object({
@@ -73,30 +71,7 @@ export const searchSchema = z.object({
 });
 
 export const uploadFormSchema = z.object({
-    file: z
-        .custom<File>(v => typeof File !== 'undefined' && v instanceof File, {
-            message: 'Некорректный файл',
-        })
-        .superRefine((file, ctx) => {
-            if (typeof File === 'undefined' || !(file instanceof File)) return;
-            if (
-                ![MIME.DOCX, MIME.DOC, MIME.PDF].includes(
-                    file.type as (typeof MIME)[keyof typeof MIME]
-                )
-            ) {
-                ctx.addIssue({
-                    code: 'custom',
-                    message: 'Поддерживаются только DOCX, DOC, PDF',
-                });
-            }
-            if (file.size > 2 * 1024 * 1024) {
-                ctx.addIssue({
-                    code: 'custom',
-                    message: 'Размер файла не должен превышать 2MB',
-                });
-            }
-        })
-        .optional(),
+    file: z.any().optional(),
     authorId: z.string().optional(),
     title: z.string().min(1, 'Введите название документа'),
     description: z.string().optional(),

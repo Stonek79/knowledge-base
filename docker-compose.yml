@@ -98,9 +98,7 @@ services:
             - kb-network
 
     app:
-        build:
-            context: .
-            dockerfile: Dockerfile
+        image: stonek79/knowledge-base:latest
         container_name: kb-app
         restart: unless-stopped
         environment:

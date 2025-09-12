@@ -5,6 +5,8 @@ import { getCurrentUser } from '@/lib/actions/users';
 import { prisma } from '@/lib/prisma';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 
+export const runtime = 'nodejs';
+
 function safeFileName(name: string): string {
     // минимальная экранизация для заголовка
     return name
@@ -182,13 +184,14 @@ export async function GET(
         const fileBuffer = await fileStorageService.downloadDocument(
             resolved.filePath
         );
-        const blob = new Blob([fileBuffer], { type: resolved.contentType });
 
+        const body = new Uint8Array(fileBuffer);
+        
         const contentDispositionFilename = `filename*=UTF-8''${encodeURIComponent(resolved.fileName)}; filename="${safeFileName(resolved.fileName)}"`;
-        return new NextResponse(blob, {
+        return new NextResponse(body, {
             headers: {
                 'Content-Type': resolved.contentType,
-                'Content-Length': blob.size.toString(),
+                'Content-Length': String(body.byteLength),
                 'Content-Disposition': `${resolved.disposition}; ${contentDispositionFilename}`,
                 'Cache-Control': 'private, max-age=0, must-revalidate',
                 'Accept-Ranges': 'bytes',

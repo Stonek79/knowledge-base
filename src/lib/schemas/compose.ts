@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { isSupportedMime } from '@/utils/mime';
 
-import { MIME } from '@/constants/mime';
+import { isSupportedMime } from '@/utils/mime';
 
 export const attachmentReorderItemSchema = z.object({
     attachmentId: z.string().optional(),
@@ -12,7 +11,6 @@ export const attachmentReorderItemSchema = z.object({
 export const stagedFileSchema = z.object({
     tempKey: z.string().min(1),
     originalName: z.string().min(1),
-    // mimeType: z.enum([MIME.DOCX, MIME.DOC, MIME.PDF]),
     mimeType: z.string().refine(isSupportedMime, {
         message: 'Unsupported MIME type',
     }),

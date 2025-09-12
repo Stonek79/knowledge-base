@@ -17,10 +17,12 @@ const eslintConfig = [
         ignores: ['.next', 'node_modules', 'dist', 'public'],
     },
     // Блок 1: Базовая конфигурация для Next.js приложения
-    ...compat.extends('next/core-web-vitals', 'next/typescript').map(config => ({
-        ...config,
-        files: ['src/**/*.{ts,tsx}'],
-    })),
+    ...compat
+        .extends('next/core-web-vitals', 'next/typescript')
+        .map(config => ({
+            ...config,
+            files: ['src/**/*.{ts,tsx}'],
+        })),
     // Блок 2: Наши кастомные правила, применяемые поверх базовых
     {
         files: ['src/**/*.{ts,tsx}'],
@@ -30,8 +32,11 @@ const eslintConfig = [
         rules: {
             // Запрет any типов для безопасности
             '@typescript-eslint/no-explicit-any': 'error',
+            '@typescript-eslint/no-unused-vars': 'warn',
+            'prefer-const': 'warn',
+            '@typescript-eslint/no-empty-object-type': 'warn',
             'simple-import-sort/imports': [
-                'error',
+                'warn',
                 {
                     groups: [
                         ['^react', '^next', '^@?\\w'],

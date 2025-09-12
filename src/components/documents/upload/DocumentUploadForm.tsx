@@ -16,6 +16,7 @@ import {
     Typography,
 } from '@mui/material';
 
+import { MIME } from '@/constants/mime';
 import { USER_ROLES } from '@/constants/user';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { uploadFormSchema } from '@/lib/schemas/document';
@@ -30,13 +31,23 @@ import { MetadataForm } from './MetadataForm';
 import { UploadProgress } from './UploadProgress';
 
 // Type guard, чтобы TypeScript понимал, с каким объектом мы работаем
-function isBaseAttachment(item: any): item is BaseAttachment {
+function isBaseAttachment(item: unknown): item is BaseAttachment {
     return !!item && typeof item === 'object' && 'id' in item;
 }
 
 // Хелпер для создания уникального "временного" ID для новых файлов
 function getFileId(file: File): string {
     return `new_${file.name}_${file.lastModified}`;
+}
+
+export async function validateDocxFile(
+    file: File
+): Promise<{ valid: boolean; error?: string }> {
+    if (file.type !== MIME.DOCX)
+        return { valid: false, error: 'Поддерживаются только DOCX файлы' };
+    if (file.size > 2 * 1024 * 1024)
+        return { valid: false, error: 'Размер файла не должен превышать 2MB' };
+    return { valid: true };
 }
 
 interface DocumentUploadFormProps {
@@ -75,6 +86,7 @@ export function DocumentUploadForm({
         control,
         handleSubmit,
         setValue,
+        setError,
         formState: { errors, isSubmitting },
         reset,
         clearErrors,
@@ -94,7 +106,14 @@ export function DocumentUploadForm({
     const canUpload = isAdmin || isUser;
     const isUploadingState = isLoading !== undefined ? isLoading : isSubmitting;
 
-    const handleFileSelect = (file: File) => {
+    const handleFileSelect = async (file: File) => {
+        clearErrors('file');
+        const { valid, error } = await validateDocxFile(file);
+        if (!valid) {
+            setError('file', { message: error });
+            return;
+        }
+
         setMainFile(file); // Сохраняем в локальный стейт
         // Автозаполнение названия из имени файла
         const baseName = file.name.replace(/\.[^.]+$/i, '');
@@ -206,7 +225,7 @@ export function DocumentUploadForm({
                 {Object.keys(errors).length > 0 && (
                     <Alert severity='error'>
                         {Object.values(errors).map((error, index) => (
-                            <div key={index}>{error?.message}</div>
+                            <div key={index}>{error?.message as string}</div>
                         ))}
                     </Alert>
                 )}
@@ -238,11 +257,7 @@ export function DocumentUploadForm({
                         if (onRemoveAttachment) {
                             const item = attachments.find(a => a.id === id);
                             // Вызываем колбэк только для существующих, а не для только что добавленных файлов
-                            if (
-                                item &&
-                                isBaseAttachment(item) &&
-                                !(item as any).file
-                            ) {
+                            if (item && isBaseAttachment(item) && !item.file) {
                                 onRemoveAttachment(id);
                             }
                         }

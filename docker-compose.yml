@@ -81,6 +81,11 @@ services:
         image: gotenberg/gotenberg:8
         container_name: kb-gotenberg
         restart: unless-stopped
+        deploy:
+            resources:
+                limits:
+                    memory: 256M # только 256MB вместо 1GB
+                    cpus: '0.3' # 30% CPU
         environment:
             GOTENBERG_API_PORT: 3000
             GOTENBERG_LOG_LEVEL: info
@@ -88,7 +93,6 @@ services:
             - '3001:3000'
         volumes:
             - gotenberg_data:/tmp
-            - /tmp/gotenberg-temp:/tmp/gotenberg:rw
         healthcheck:
             test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
             interval: 30s

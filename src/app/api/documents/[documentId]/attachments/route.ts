@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CreateAttachmentData } from '@/lib/types/attachment';
 
 import { ATTACHMENT_TYPE, DOCUMENT_FORMAT } from '@/constants/document';
 import { USER_ROLES } from '@/constants/user';
@@ -10,6 +9,7 @@ import { attachmentService } from '@/lib/services/AttachmentService';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 import { pdfCombiner } from '@/lib/services/PDFCombiner';
 import { settingsService } from '@/lib/services/SettingsService';
+import { CreateAttachmentData } from '@/lib/types/attachment';
 import type { SupportedMime } from '@/lib/types/mime';
 import { isSupportedMime } from '@/utils/mime';
 
@@ -98,23 +98,29 @@ export async function POST(
 
         let attachment: CreateAttachmentData | null = null;
         try {
-            await prisma.$transaction(async tx => {
-                const created = await tx.attachment.create({
-                    data: {
-                        documentId,
-                        fileName: parsedMetadata.fileName,
-                        fileSize: parsedMetadata.fileSize,
-                        mimeType: result.mimeType,
-                        filePath: result.key,
-                        attachmentType:
-                            parsedMetadata.attachmentType ||
-                            ATTACHMENT_TYPE.ATTACHMENT,
-                        order: -1,
-                    },
-                });
-                createdAttachmentId = created.id;
-                attachment = created;
-            });
+            await prisma.$transaction(
+                async tx => {
+                    const created = await tx.attachment.create({
+                        data: {
+                            documentId,
+                            fileName: parsedMetadata.fileName,
+                            fileSize: parsedMetadata.fileSize,
+                            mimeType: result.mimeType,
+                            filePath: result.key,
+                            attachmentType:
+                                parsedMetadata.attachmentType ||
+                                ATTACHMENT_TYPE.ATTACHMENT,
+                            order: -1,
+                        },
+                    });
+                    createdAttachmentId = created.id;
+                    attachment = created;
+                },
+                {
+                    timeout: 60000,
+                    maxWait: 30000,
+                }
+            );
         } catch (err) {
             // транзакция по БД упала — чистим загруженный файл
             await fileStorageService.deleteDocument(result.key);

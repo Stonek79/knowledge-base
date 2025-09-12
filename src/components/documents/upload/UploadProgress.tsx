@@ -1,16 +1,51 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import { Box, CircularProgress, Paper, Typography } from '@mui/material';
 
 interface UploadProgressProps {
     progress: number;
     message?: string;
+    isProcessing?: boolean;
 }
+
+const FUNNY_MESSAGES = [
+    'Загружаем документ...',
+    'Разбираем файл по буковкам...',
+    'Угощаем Gotenberg чаем с печеньками...',
+    'Превращаем ваш документ в красивый PDF...',
+    'Индексируем содержимое для поиска...',
+    'Время заварить чай ☕',
+    'Почти готово! Последние штрихи...',
+    'Проверяем орфографию (шутка)...',
+    'Договариваемся с файловой системой...',
+];
 
 export function UploadProgress({
     progress,
-    message = 'Загрузка документа...',
+    message,
+    isProcessing = false,
 }: UploadProgressProps) {
+    const [currentMessage, setCurrentMessage] = useState(
+        message || FUNNY_MESSAGES[0]
+    );
+
+    useEffect(() => {
+        if (isProcessing && !message) {
+            let index = 0;
+            const interval = setInterval(() => {
+                setCurrentMessage(
+                    FUNNY_MESSAGES[index % FUNNY_MESSAGES.length]
+                );
+                index++;
+            }, 3000);
+            return () => clearInterval(interval);
+        } else if (message) {
+            setCurrentMessage(message);
+        }
+    }, [isProcessing, message]);
+
     return (
         <Paper variant='outlined' sx={{ p: 2 }}>
             <Box
@@ -22,7 +57,7 @@ export function UploadProgress({
             >
                 <CircularProgress size={20} />
                 <Typography variant='body2'>
-                    {message} {progress}%
+                    {currentMessage} {progress > 0 && `${progress}%`}
                 </Typography>
             </Box>
         </Paper>

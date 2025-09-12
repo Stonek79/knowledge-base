@@ -242,60 +242,66 @@ export async function POST(request: NextRequest) {
 
         // ===== СОХРАНЕНИЕ В БД =====
         // Создаем запись документа с категориями
-        const { document } = await prisma.$transaction(async tx => {
-            const doc = await tx.document.create({
-                data: {
-                    title,
-                    description,
-                    content: processed.extractedText || '',
-                    filePath,
-                    fileName: file.name,
-                    fileSize: file.size,
-                    hash,
-                    mimeType: mime,
-                    format: mimeMapper(mime),
-                    keywords: keywords?.split(',') || [],
-                    isPublished: true,
-                    authorId: authorId,
-                    categories: {
-                        create: categoryIds.map((categoryId: string) => ({
-                            categoryId,
-                        })),
-                    },
-                },
-                include: {
-                    author: {
-                        select: { id: true, username: true, role: true },
-                    },
-                    categories: { include: { category: true } },
-                },
-            });
-
-            // ===== ОБРАБОТКА PDF ВЕРСИИ =====
-            // Если получили конвертированный PDF, фиксируем его как основной
-
-            if (processed.storage?.pdfKey) {
-                const conv = await tx.convertedDocument.create({
+        const { document } = await prisma.$transaction(
+            async tx => {
+                const doc = await tx.document.create({
                     data: {
-                        documentId: doc.id,
-                        conversionType: 'PDF',
-                        filePath: processed.storage.pdfKey,
-                        fileSize: (
-                            await fileStorageService.getFileInfo(
-                                processed.storage.pdfKey
-                            )
-                        ).size,
-                        originalFile: filePath,
+                        title,
+                        description,
+                        content: processed.extractedText || '',
+                        filePath,
+                        fileName: file.name,
+                        fileSize: file.size,
+                        hash,
+                        mimeType: mime,
+                        format: mimeMapper(mime),
+                        keywords: keywords?.split(',') || [],
+                        isPublished: true,
+                        authorId: authorId,
+                        categories: {
+                            create: categoryIds.map((categoryId: string) => ({
+                                categoryId,
+                            })),
+                        },
+                    },
+                    include: {
+                        author: {
+                            select: { id: true, username: true, role: true },
+                        },
+                        categories: { include: { category: true } },
                     },
                 });
-                await tx.document.update({
-                    where: { id: doc.id },
-                    data: { mainPdfId: conv.id },
-                });
-            }
 
-            return { document: doc };
-        });
+                // ===== ОБРАБОТКА PDF ВЕРСИИ =====
+                // Если получили конвертированный PDF, фиксируем его как основной
+
+                if (processed.storage?.pdfKey) {
+                    const conv = await tx.convertedDocument.create({
+                        data: {
+                            documentId: doc.id,
+                            conversionType: 'PDF',
+                            filePath: processed.storage.pdfKey,
+                            fileSize: (
+                                await fileStorageService.getFileInfo(
+                                    processed.storage.pdfKey
+                                )
+                            ).size,
+                            originalFile: filePath,
+                        },
+                    });
+                    await tx.document.update({
+                        where: { id: doc.id },
+                        data: { mainPdfId: conv.id },
+                    });
+                }
+
+                return { document: doc };
+            },
+            {
+                timeout: 60000,
+                maxWait: 30000,
+            }
+        );
 
         if (processed.storage?.pdfKey) {
             const conv = await prisma.convertedDocument.create({

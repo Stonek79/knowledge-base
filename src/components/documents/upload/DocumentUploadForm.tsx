@@ -273,7 +273,7 @@ export function DocumentUploadForm({
                 {isUploadingState && (
                     <UploadProgress
                         progress={uploadProgress}
-                        message='Загрузка документа...'
+                        isProcessing={isUploadingState}
                     />
                 )}
 

@@ -81,6 +81,7 @@ services:
         image: gotenberg/gotenberg:8
         container_name: kb-gotenberg
         restart: unless-stopped
+        user: '0:0'
         environment:
             GOTENBERG_API_PORT: 3000
             GOTENBERG_LOG_LEVEL: info
@@ -88,6 +89,7 @@ services:
             - '3001:3000' # Избегаем конфликта с основным приложением
         volumes:
             - gotenberg_data:/tmp
+            - /tmp:/tmp:rw
         healthcheck:
             test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
             interval: 30s

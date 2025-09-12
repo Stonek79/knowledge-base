@@ -96,5 +96,6 @@ services:
                 condition: service_healthy
 
 networks:
-    default:
+    kb-network:
+        external: true
         name: kb-network

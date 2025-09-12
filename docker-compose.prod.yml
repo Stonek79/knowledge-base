@@ -24,9 +24,17 @@ services:
         platform: linux/amd64
         env_file:
             - .env.prod
+        environment:
+            DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-knowledge_base}
+            NODE_ENV: production
+            POSTGRES_DB: ${POSTGRES_DB:-knowledge_base}
+            POSTGRES_USER: ${POSTGRES_USER:-postgres}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
         depends_on:
             postgres:
                 condition: service_healthy
+        networks:
+            - kb-network
         command: sh -lc "npx --yes prisma@6.13.0 migrate deploy && node prisma/seed.js"
         restart: 'no'
         profiles: ['first-run']

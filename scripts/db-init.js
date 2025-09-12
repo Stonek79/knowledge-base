@@ -1,10 +1,16 @@
 import pkg from '@prisma/client';
 import { execSync } from 'child_process';
-import { config as loadEnv } from 'dotenv';
+// import { config as loadEnv } from 'dotenv';
 import { Client as PgClient } from 'pg';
 
-loadEnv({ path: '.env.local' });
-loadEnv();
+if (process.env.NODE_ENV !== 'production') {
+    try {
+        await import('dotenv/config');
+        loadEnv({ path: '.env.local' });
+        loadEnv();
+    } catch {}
+}
+
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();

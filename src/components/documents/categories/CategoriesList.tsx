@@ -1,6 +1,6 @@
 'use client';
 
-import { Category } from '@prisma/client';
+import { CategoryBase } from '@/lib/types/document';
 
 import {
     Box,
@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 
 interface CategoriesListProps {
-    categories: Category[];
+    categories: CategoryBase[];
     isLoading?: boolean;
     onCategoryClick: (categoryId: string) => void;
 }

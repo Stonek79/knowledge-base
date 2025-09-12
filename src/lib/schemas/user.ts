@@ -1,5 +1,6 @@
-import { Role } from '@prisma/client';
 import { z } from 'zod';
+
+import { USER_ROLES } from '@/constants/user';
 
 export const createUserSchema = z.object({
     username: z
@@ -11,13 +12,13 @@ export const createUserSchema = z.object({
                 'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
         }),
     password: z.string().min(6).max(25),
-    role: z.enum(Role).default(Role.USER),
+    role: z.enum(USER_ROLES).default(USER_ROLES.USER),
 });
 
 export const userResponseSchema = z.object({
     id: z.string(),
     username: z.string(),
-    role: z.enum(Role),
+    role: z.enum(USER_ROLES),
     createdAt: z.union([z.iso.datetime(), z.date()]),
 });
 
@@ -38,36 +39,39 @@ export const updateUserSchema = z.object({
             message:
                 'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
         }),
-    role: z.enum(Role),
-    newpassword: z.string().optional().superRefine((val, ctx) => {
-        // Если поле пустое - не валидируем
-        if (!val || val.trim() === '') {
-            return;
-        }
-        
-        // Если есть значение - валидируем
-        if (val.length < 6) {
-            ctx.addIssue({
-                code: "too_small",
-                minimum: 6,
-                origin: "string",
-                type: "string",
-                inclusive: true,
-                message: "Пароль должен содержать минимум 6 символов",
-                input: val,
-            });
-        }
-        
-        if (val.length > 25) {
-            ctx.addIssue({
-                code: "too_big",
-                maximum: 25,
-                origin: "string",
-                type: "string",
-                inclusive: true,
-                message: "Пароль должен содержать максимум 25 символов",
-                input: val,
-            });
-        }
-    }),
+    role: z.enum(USER_ROLES),
+    newpassword: z
+        .string()
+        .optional()
+        .superRefine((val, ctx) => {
+            // Если поле пустое - не валидируем
+            if (!val || val.trim() === '') {
+                return;
+            }
+
+            // Если есть значение - валидируем
+            if (val.length < 6) {
+                ctx.addIssue({
+                    code: 'too_small',
+                    minimum: 6,
+                    origin: 'string',
+                    type: 'string',
+                    inclusive: true,
+                    message: 'Пароль должен содержать минимум 6 символов',
+                    input: val,
+                });
+            }
+
+            if (val.length > 25) {
+                ctx.addIssue({
+                    code: 'too_big',
+                    maximum: 25,
+                    origin: 'string',
+                    type: 'string',
+                    inclusive: true,
+                    message: 'Пароль должен содержать максимум 25 символов',
+                    input: val,
+                });
+            }
+        }),
 });

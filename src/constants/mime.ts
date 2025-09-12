@@ -1,5 +1,8 @@
-import { DocumentFormat } from '@prisma/client';
-export { DocumentFormat };
+export const DOCUMENT_FORMAT = {
+    DOCX: 'DOCX',
+    DOC: 'DOC',
+    PDF: 'PDF',
+} as const;
 
 export const MIME = {
     DOCX: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

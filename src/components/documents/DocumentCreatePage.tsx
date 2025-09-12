@@ -25,9 +25,9 @@ import {
 import { USER_ROLES } from '@/constants/user';
 import { useDocumentMutation } from '@/lib/hooks/documents/useDocumentMutation';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { BaseAttachment } from '@/lib/types/attachment';
+import type { BaseAttachment } from '@/lib/types/attachment';
 import type { ComposeChangeSet } from '@/lib/types/compose';
-import { UploadFormInput } from '@/lib/types/document';
+import type { UploadFormInput } from '@/lib/types/document';
 
 import { DocumentUploadForm } from './upload/DocumentUploadForm';
 
@@ -119,7 +119,7 @@ export function DocumentCreatePage() {
             );
 
             console.log('[attachmentsToAdd]: ', attachmentsToAdd);
-            
+
             // 2. Commit: отправляем один JSON-пакет на сервер
             const finalPayload: ComposeChangeSet = {
                 operationId: crypto.randomUUID(),

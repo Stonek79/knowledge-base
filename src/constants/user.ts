@@ -1,8 +1,11 @@
-import { Role } from '@prisma/client';
+export const USER_ROLES = {
+    ADMIN: 'ADMIN',
+    USER: 'USER',
+    GUEST: 'GUEST',
+} as const;
 
-export const USER_ROLES = Role;
 export const USER_ROLES_LABELS = {
-    [Role.ADMIN]: 'Администратор',
-    [Role.USER]: 'Пользователь',
-    [Role.GUEST]: 'Гость',
+    [USER_ROLES.ADMIN]: 'Администратор',
+    [USER_ROLES.USER]: 'Пользователь',
+    [USER_ROLES.GUEST]: 'Гость',
 };

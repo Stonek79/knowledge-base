@@ -1,19 +1,6 @@
-import { DocumentType, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
-import { SORT_ORDER } from '@/constants/document';
-
-const {
-    createdAt,
-    updatedAt,
-    title,
-    fileSize,
-    viewCount,
-    downloadCount,
-    mimeType,
-    documentType,
-    authorId,
-} = Prisma.DocumentScalarFieldEnum;
+import { DOCUMENT_TYPE, SORT_ORDER } from '@/constants/document';
 
 /**
  * Схема валидации фильтров документов
@@ -27,7 +14,7 @@ export const documentFiltersSchema = z.object({
             to: z.date().optional(),
         })
         .optional(),
-    documentType: z.enum(DocumentType).optional(),
+    documentType: z.enum(DOCUMENT_TYPE).optional(),
     isPublished: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
     fileSize: z
@@ -45,12 +32,12 @@ export const documentFiltersSchema = z.object({
  */
 export const sortOptionsSchema = z.object({
     field: z.enum([
-        createdAt,
-        updatedAt,
-        title,
-        fileSize,
-        viewCount,
-        downloadCount,
+        'createdAt',
+        'updatedAt',
+        'title',
+        'fileSize',
+        'viewCount',
+        'downloadCount',
     ]),
     order: z.enum([SORT_ORDER.ASC, SORT_ORDER.DESC]).default(SORT_ORDER.DESC),
 });
@@ -67,7 +54,9 @@ export const paginationOptionsSchema = z.object({
  * Схема валидации агрегации
  */
 export const aggregationOptionsSchema = z.object({
-    groupBy: z.enum([authorId, documentType, mimeType, createdAt]).optional(),
+    groupBy: z
+        .enum(['authorId', 'documentType', 'mimeType', 'createdAt'])
+        .optional(),
     count: z.boolean().default(true),
-    sum: z.array(z.enum([fileSize, viewCount, downloadCount])).optional(),
+    sum: z.array(z.enum(['fileSize', 'viewCount', 'downloadCount'])).optional(),
 });

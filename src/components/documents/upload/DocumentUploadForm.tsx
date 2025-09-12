@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AttachmentType } from '@prisma/client';
 import { useForm } from 'react-hook-form';
 
 import { useState } from 'react';
@@ -16,6 +15,7 @@ import {
     Typography,
 } from '@mui/material';
 
+import { ATTACHMENT_TYPE } from '@/constants/document';
 import { MIME } from '@/constants/mime';
 import { USER_ROLES } from '@/constants/user';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -246,7 +246,7 @@ export function DocumentUploadForm({
                             fileName: file.name,
                             fileSize: file.size,
                             mimeType: file.type as SupportedMime,
-                            attachmentType: AttachmentType.ATTACHMENT,
+                            attachmentType: ATTACHMENT_TYPE.ATTACHMENT,
                             createdAt: new Date(),
                             file: file,
                         };

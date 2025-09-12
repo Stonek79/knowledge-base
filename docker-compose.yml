@@ -1,4 +1,4 @@
-version: '3.8'
+name: knowledge-base
 
 services:
     postgres:
@@ -98,7 +98,8 @@ services:
             - kb-network
 
     app:
-        image: stonek79/knowledge-base:latest
+        image: stonek79/knowledge-base:${APP_VERSION:-latest}
+        platform: linux/amd64
         container_name: kb-app
         restart: unless-stopped
         environment:

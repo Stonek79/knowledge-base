@@ -1,6 +1,5 @@
-import { Attachment } from '@prisma/client';
-
 import { NextRequest, NextResponse } from 'next/server';
+import { CreateAttachmentData } from '@/lib/types/attachment';
 
 import { ATTACHMENT_TYPE, DOCUMENT_FORMAT } from '@/constants/document';
 import { USER_ROLES } from '@/constants/user';
@@ -97,7 +96,7 @@ export async function POST(
         // Создаём запись в БД
         let createdAttachmentId: string | null = null;
 
-        let attachment: Attachment | null = null;
+        let attachment: CreateAttachmentData | null = null;
         try {
             await prisma.$transaction(async tx => {
                 const created = await tx.attachment.create({

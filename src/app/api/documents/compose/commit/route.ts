@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { STORAGE_BASE_PATHS } from '@/constants/app';
-import { SearchEngine } from '@/constants/document';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
+import { indexingQueue } from '@/lib/queues/indexing';
 import { composeChangeSetSchema } from '@/lib/schemas/compose';
-import { SearchFactory } from '@/lib/search/factory';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 import { pdfCombiner } from '@/lib/services/PDFCombiner';
 import type { SupportedMime } from '@/lib/types/mime';
@@ -66,7 +65,7 @@ export async function POST(request: NextRequest) {
                             parsed.metadata?.title ??
                             parsed.replaceMain.originalName,
                         description: parsed.metadata?.description ?? null,
-                        content: '', // будет заполнено конвертером, если нужно
+                        content: '', // будет заполнено воркером
                         filePath: main.key,
                         fileName: parsed.replaceMain.originalName,
                         fileSize: main.size,
@@ -211,26 +210,14 @@ export async function POST(request: NextRequest) {
                     data: { mainPdfId: conv.id },
                 });
 
-                // 5) индексация
-                const fullDoc = await tx.document.findUnique({
-                    where: { id: doc.id },
-                    include: {
-                        author: true,
-                        categories: { include: { category: true } },
-                    },
-                });
-
-                const engine =
-                    (process.env
-                        .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-                    SearchEngine.FLEXSEARCH;
-                const indexer = SearchFactory.createIndexer(engine);
-
-                if (!fullDoc) {
-                    throw new Error('Document disappeared during transaction');
+                // 5) ИНДЕКСАЦИЯ (в фоне)
+                // Ставим задачу на полную пересборку контента и последующую индексацию
+                if (doc.id) {
+                    console.log(`[API] Enqueuing job: 'update-content-and-reindex' for documentId: ${doc.id}`);
+                    await indexingQueue.add('update-content-and-reindex', {
+                        documentId: doc.id,
+                    });
                 }
-
-                await indexer.indexDocument(fullDoc);
 
                 return { docId: doc.id };
             },

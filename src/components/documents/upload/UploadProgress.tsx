@@ -44,6 +44,8 @@ export function UploadProgress({
         } else if (message) {
             setCurrentMessage(message);
         }
+        // Добавляем return для всех остальных случаев
+        return undefined;
     }, [isProcessing, message]);
 
     return (

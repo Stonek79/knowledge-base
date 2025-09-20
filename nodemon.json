@@ -1,0 +1,5 @@
+{
+  "watch": ["dist/worker.cjs"],
+  "ext": "cjs,json",
+  "exec": "node dist/worker.cjs"
+}

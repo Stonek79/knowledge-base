@@ -186,13 +186,14 @@ export async function GET(
         );
 
         const body = new Uint8Array(fileBuffer);
-        
+
         const contentDispositionFilename = `filename*=UTF-8''${encodeURIComponent(resolved.fileName)}; filename="${safeFileName(resolved.fileName)}"`;
         return new NextResponse(body, {
             headers: {
                 'Content-Type': resolved.contentType,
                 'Content-Length': String(body.byteLength),
-                'Content-Disposition': `${resolved.disposition}; ${contentDispositionFilename}`,
+                // 'Content-Disposition': `${resolved.disposition}; ${contentDispositionFilename}`, // Если не будет работать, то пофиксить для других браузеров
+                'Content-Disposition': 'inline',
                 'Cache-Control': 'private, max-age=0, must-revalidate',
                 'Accept-Ranges': 'bytes',
                 'Access-Control-Allow-Origin': '*',

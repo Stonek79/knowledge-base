@@ -3,13 +3,12 @@ import { isAbsolute } from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { SearchEngine } from '@/constants/document';
 import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
+import { indexingQueue } from '@/lib/queues/indexing';
 import { updateDocumentSchema } from '@/lib/schemas/document';
-import { SearchFactory } from '@/lib/search/factory';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 
 /**
@@ -206,12 +205,19 @@ export async function PUT(
             },
         });
 
-        const engine =
-            (process.env
-                .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-            SearchEngine.FLEXSEARCH;
-        const indexer = SearchFactory.createIndexer(engine);
-        await indexer.indexDocument(updatedDocument);
+        // const engine =
+        //     (process.env
+        //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
+        //     SearchEngine.FLEXSEARCH;
+        // const indexer = SearchFactory.createIndexer(engine);
+        // await indexer.indexDocument(updatedDocument);
+
+        // ===== ИНДЕКСАЦИЯ (в фоне) =====
+        // Ставим задачу в очередь для фоновой переиндексации
+        console.log(`[API] Enqueuing job: 'index-document' for documentId: ${updatedDocument.id}`);
+        await indexingQueue.add('index-document', {
+            documentId: updatedDocument.id,
+        });
 
         return NextResponse.json({
             message: 'Документ успешно обновлен',
@@ -323,12 +329,17 @@ export async function DELETE(
         }
 
         // 3) Удаление из поискового индекса
-        const engine =
-            (process.env
-                .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-            SearchEngine.FLEXSEARCH;
-        const indexer = SearchFactory.createIndexer(engine);
-        await indexer.removeFromIndex(documentId);
+        // const engine =
+        //     (process.env
+        //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
+        //     SearchEngine.FLEXSEARCH;
+        // const indexer = SearchFactory.createIndexer(engine);
+        // await indexer.removeFromIndex(documentId);
+
+        // ===== ИНДЕКСАЦИЯ (в фоне) =====
+        // Ставим задачу в очередь для фонового удаления из индекса
+        console.log(`[API] Enqueuing job: 'remove-from-index' for documentId: ${documentId}`);
+        await indexingQueue.add('remove-from-index', { documentId });
 
         return NextResponse.json({ message: 'Документ успешно удален' });
     } catch (error) {

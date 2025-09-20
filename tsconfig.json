@@ -1,34 +1,52 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "lib": ["dom", "dom.iterable", "esnext"],
-        "allowJs": true,
-        "noEmit": true,
-        "module": "esnext",
-        "moduleResolution": "bundler",
-        "incremental": true,
-        "baseUrl": ".",
-        "strict": true,
-        "noImplicitAny": true,
-        "noUncheckedIndexedAccess": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "skipLibCheck": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "jsx": "preserve",
-        "plugins": [
-            {
-                "name": "next"
-            }
-        ],
-        "paths": {
-            "@/*": ["./src/*"]
-        }
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "outDir": "./dist",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "incremental": true,
+    "baseUrl": ".",
+    "strict": true,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
     },
-    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "prisma/seed.js", "scripts/db-init.js"],
-    "exclude": ["node_modules", ".next"]
+    "noEmit": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "prisma/seed.js",
+    "scripts/db-init.js"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist"
+  ]
 }

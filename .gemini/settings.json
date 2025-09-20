@@ -1,0 +1,8 @@
+{
+    "mcpServers": {
+        "playwrite": {
+            "command": "npx",
+            "args": ["@playwrite/mcp@latest"]
+        }
+    }
+}

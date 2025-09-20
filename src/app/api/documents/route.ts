@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { GOTENBERG_URL } from '@/constants/app';
-import { SearchEngine } from '@/constants/document';
 import { USER_ROLES } from '@/constants/user';
 import { DocumentProcessor } from '@/core/documents/DocumentProcessor';
 import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
+import { indexingQueue } from '@/lib/queues/indexing';
 import { documentListSchema } from '@/lib/schemas/document';
-import { SearchFactory } from '@/lib/search/factory';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 import { settingsService } from '@/lib/services/SettingsService';
 import type { WhereDocumentInput } from '@/lib/types/document';
@@ -54,6 +53,8 @@ export async function GET(request: NextRequest) {
             sortOrder: searchParams.get('sortOrder') || 'desc',
             search: searchParams.get('search') || '',
         });
+
+        console.log('[API DOCUMENTS] validation', validation);
 
         if (!validation.success) {
             return handleApiError(validation.error);
@@ -104,6 +105,9 @@ export async function GET(request: NextRequest) {
             }),
             prisma.document.count({ where }),
         ]);
+
+        console.log('[API DOCUMENTS] documents', documents);
+        console.log('[API DOCUMENTS] total', total);
 
         const totalPages = Math.ceil(total / limit);
 
@@ -326,12 +330,17 @@ export async function POST(request: NextRequest) {
 
         // ===== ИНДЕКСАЦИЯ =====
         // Добавляем документ в поисковый индекс
-        const engine =
-            (process.env
-                .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-            SearchEngine.FLEXSEARCH;
-        const indexer = SearchFactory.createIndexer(engine);
-        await indexer.indexDocument(document);
+        // const engine =
+        //     (process.env
+        //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
+        //     SearchEngine.FLEXSEARCH;
+        // const indexer = SearchFactory.createIndexer(engine);
+        // await indexer.indexDocument(document);
+
+        // ===== ИНДЕКСАЦИЯ (в фоне) =====
+        // Ставим задачу в очередь для фоновой индексации
+        console.log(`[API] Enqueuing job: 'index-document' for documentId: ${document.id}`);
+        await indexingQueue.add('index-document', { documentId: document.id });
 
         return NextResponse.json({
             message: 'Документ успешно создан',

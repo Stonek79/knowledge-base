@@ -6,6 +6,7 @@ import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
+import { indexingQueue } from '@/lib/queues/indexing';
 import { composeChangeSetSchema } from '@/lib/schemas/compose';
 import { SearchFactory } from '@/lib/search/factory';
 import { fileStorageService } from '@/lib/services/FileStorageService';
@@ -301,26 +302,48 @@ export async function POST(
                 }
 
                 // 7) индексация
-                const fullDoc = await tx.document.findUnique({
-                    where: { id: doc.id },
-                    include: {
-                        author: true,
-                        categories: { include: { category: true } },
-                    },
-                });
+                // const fullDoc = await tx.document.findUnique({
+                //     where: { id: doc.id },
+                //     include: {
+                //         author: true,
+                //         categories: { include: { category: true } },
+                //     },
+                // });
 
-                const engine =
-                    (process.env
-                        .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-                    SearchEngine.FLEXSEARCH;
-                const indexer = SearchFactory.createIndexer(engine);
+                // const engine =
+                //     (process.env
+                //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
+                //     SearchEngine.FLEXSEARCH;
+                // const indexer = SearchFactory.createIndexer(engine);
 
-                if (!fullDoc) {
-                    throw new Error('Document disappeared during transaction');
+                // if (!fullDoc) {
+                //     throw new Error('Document disappeared during transaction');
+                // }
+
+                // await indexer.indexDocument(fullDoc);
+
+                // ===== ИНДЕКСАЦИЯ (в фоне) =====
+                const hasFileChanges =
+                    !!parsed.replaceMain ||
+                    !!parsed.addAttachments?.length ||
+                    !!parsed.deleteAttachmentIds?.length;
+
+                // Ставим задачу в очередь для фоновой переиндексации
+                if (doc.id) {
+                    if (hasFileChanges) {
+                        // Если менялся состав файлов, запускаем полную пересборку контента
+                        console.log(`[API] Enqueuing job: 'update-content-and-reindex' for documentId: ${doc.id}`);
+                        await indexingQueue.add('update-content-and-reindex', {
+                            documentId: doc.id,
+                        });
+                    } else {
+                        // Если менялись только метаданные, достаточно простой переиндексации
+                        console.log(`[API] Enqueuing job: 'index-document' for documentId: ${doc.id}`);
+                        await indexingQueue.add('index-document', {
+                            documentId: doc.id,
+                        });
+                    }
                 }
-
-                await indexer.indexDocument(fullDoc);
-
                 return { docId: doc.id };
             },
             {

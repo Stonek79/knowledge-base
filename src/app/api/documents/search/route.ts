@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
             sortOrder: searchParams.get('sortOrder'),
         });
 
+        console.log('[API] validation', validation);
+
         if (!validation.success) {
             return handleApiError(validation.error);
         }
@@ -84,6 +86,8 @@ export async function GET(request: NextRequest) {
             // Поиск по тексту + фильтры
             results = await indexer.search(q, filters);
         }
+
+        console.log('[API] results', results);
 
         return Response.json({ results });
     } catch (error) {

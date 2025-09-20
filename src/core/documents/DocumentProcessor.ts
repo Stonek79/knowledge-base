@@ -2,12 +2,11 @@ import { STORAGE_BASE_PATHS } from '@/constants/app';
 import { MIME } from '@/constants/mime';
 import { FileStorageService } from '@/lib/services/FileStorageService';
 import type { SupportedMime } from '@/lib/types/mime';
-import { DocxProcessor } from '@/utils/docx';
 import { FileUtils } from '@/utils/files';
 import { isSupportedMime } from '@/utils/mime';
-import { PdfProcessor } from '@/utils/pdf';
 
 import { ConversionService } from './ConversionService';
+import { textExtractorService } from './TextExtractorService';
 
 export interface ProcessResult {
     original: { path: string; mimeType: SupportedMime; fileName: string };
@@ -51,7 +50,6 @@ export class DocumentProcessor {
     ): Promise<ProcessResult> {
         // 1) Сохраняем оригинал
         const safeName = FileUtils.generateSafeFileName(originalName);
-        // const originalPath = await FileUtils.saveFile(input, safeName);
 
         let originalKey: string | undefined;
         if (this.storage) {
@@ -94,15 +92,8 @@ export class DocumentProcessor {
         }
 
         let pdfKey: string | undefined;
-        // let derivativePdfPath: string | undefined;
         if (pdfBuffer && mimeType !== MIME.PDF) {
             const pdfName = safeName.replace(/\.[^.]+$/, '.pdf');
-            // derivativePdfPath = await FileUtils.saveFile(
-            //     pdfBuffer,
-            //     pdfName,
-            //     'pdf'
-            // );
-            // if (this.storage) {
             try {
                 const res = await this.storage.uploadDocument(
                     pdfBuffer,
@@ -120,48 +111,13 @@ export class DocumentProcessor {
                     e instanceof Error ? e.message : e
                 );
             }
-            // }
         }
 
-        // 3) Извлекаем текст
-        let extractedText: string | undefined;
-        try {
-            if (mimeType === MIME.DOCX) {
-                extractedText =
-                    (await DocxProcessor.extractText(input))?.trim() || '';
-            } else if (mimeType === MIME.PDF && pdfBuffer) {
-                extractedText =
-                    (await PdfProcessor.extractText(pdfBuffer))?.trim() || '';
-            } else if (mimeType === MIME.DOC) {
-                // Пытаемся сначала конвертировать в DOCX и извлечь Mammoth
-                try {
-                    const docxRes = await this.conversion.convertToDocx?.(
-                        input,
-                        mimeType
-                    );
-                    if (docxRes)
-                        extractedText =
-                            (
-                                await DocxProcessor.extractText(docxRes.buffer)
-                            )?.trim() || '';
-                } catch {
-                    // если не удалось — пробуем извлечь текст из PDF
-                    if (pdfBuffer)
-                        extractedText =
-                            (
-                                await PdfProcessor.extractText(pdfBuffer)
-                            )?.trim() || '';
-                }
-            } else if (pdfBuffer) {
-                extractedText =
-                    (await PdfProcessor.extractText(pdfBuffer))?.trim() || '';
-            }
-        } catch (e) {
-            console.warn(
-                'Text extraction failed:',
-                e instanceof Error ? e.message : e
-            );
-        }
+        // 3) Извлекаем текст с помощью нового сервиса
+        let extractedText = await textExtractorService.extractText(
+            input,
+            mimeType
+        );
 
         // OCR-хук: если текста нет и включен OCR — постановка в очередь/лог
         if (!extractedText && options?.enableOcr && pdfBuffer) {
@@ -182,14 +138,6 @@ export class DocumentProcessor {
                 .slice(0, 100_000);
         }
 
-        // return {
-        //     original: { path: originalPath, mimeType, fileName: originalName },
-        //     derivativePdf: derivativePdfPath
-        //         ? { path: derivativePdfPath }
-        //         : undefined,
-        //     extractedText,
-        //     storage: originalKey ? { originalKey, pdfKey } : undefined,
-        // };
         return {
             original: { path: originalKey, mimeType, fileName: originalName },
             derivativePdf: pdfKey ? { path: pdfKey } : undefined,
@@ -223,26 +171,6 @@ export class DocumentProcessor {
 
         // 2. Обрабатываем приложения
         const attachmentResults: ProcessResult['attachments'] = [];
-        // for (const attachment of attachments) {
-        //     try {
-        //         const result = await this.processUpload(
-        //             attachment.buffer,
-        //             attachment.mimeType as SupportedMime,
-        //             attachment.fileName,
-        //             options
-        //         );
-        //         attachmentResults.push({
-        //             path: result.original.path,
-        //             fileName: result.original.fileName,
-        //             mimeType: result.original.mimeType,
-        //         });
-        //     } catch (error) {
-        //         console.warn(
-        //             `Failed to process attachment ${attachment.fileName}:`,
-        //             error
-        //         );
-        //     }
-        // }
 
         const tasks = attachments.map(async att => {
             if (!isSupportedMime(att.mimeType)) return;

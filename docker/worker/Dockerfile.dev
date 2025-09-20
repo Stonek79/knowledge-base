@@ -1,0 +1,21 @@
+FROM node:18-alpine
+
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+# Копируем package.json для установки зависимостей
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install
+
+# Копируем схему Prisma ПЕРЕД генерацией
+COPY prisma ./prisma
+
+# Генерируем Prisma-клиент
+RUN pnpm prisma generate
+
+# Копируем весь исходный код
+COPY . .
+
+# Запускаем наш новый dev-скрипт
+CMD ["pnpm", "dev:worker"]

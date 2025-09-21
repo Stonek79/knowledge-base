@@ -51,7 +51,6 @@ export function AttachmentManager({
     onAdd,
     onRemove,
 }: AttachmentManagerProps) {
-    console.log('attachments', attachments);
     return (
         <Box sx={{ mt: 4 }}>
             <Typography variant='h6'>Приложения</Typography>

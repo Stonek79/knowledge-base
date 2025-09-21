@@ -7,26 +7,33 @@ import { CacheOperationResult, CacheOptions, CacheStats } from '../types/cache';
  * Поддерживает Redis для распределенного кэширования
  */
 export class CacheService {
-    private client: Redis;
+    private client: Redis | null = null;
     private defaultTtl: number;
     private prefix: string;
 
     constructor() {
-        this.client = new Redis({
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
-            password: process.env.REDIS_PASSWORD,
-            db: parseInt(process.env.REDIS_DB || '0'),
-            enableAutoPipelining: true,
-            showFriendlyErrorStack: false,
-            maxRetriesPerRequest: 3,
-            retryStrategy: (times: number) => Math.min(times * 50, 1000),
-        });
-
         this.defaultTtl = 300; // 5 минут по умолчанию
         this.prefix = process.env.REDIS_KEY_PREFIX || 'kb:';
+    }
 
-        this.setupEventHandlers();
+    /**
+     * Lazily gets or creates the Redis client instance.
+     */
+    private getClient(): Redis {
+        if (!this.client) {
+            this.client = new Redis({
+                host: process.env.REDIS_HOST || 'localhost',
+                port: parseInt(process.env.REDIS_PORT || '6379'),
+                password: process.env.REDIS_PASSWORD,
+                db: parseInt(process.env.REDIS_DB || '0'),
+                enableAutoPipelining: true,
+                showFriendlyErrorStack: false,
+                maxRetriesPerRequest: 3,
+                retryStrategy: (times: number) => Math.min(times * 50, 1000),
+            });
+            this.setupEventHandlers(this.client);
+        }
+        return this.client;
     }
 
     /**
@@ -36,8 +43,9 @@ export class CacheService {
      */
     async get<T>(key: string): Promise<T | null> {
         try {
+            const client = this.getClient();
             const fullKey = this.buildKey(key);
-            const value = await this.client.get(fullKey);
+            const value = await client.get(fullKey);
 
             if (!value) return null;
 
@@ -60,14 +68,15 @@ export class CacheService {
         options: CacheOptions = {}
     ): Promise<CacheOperationResult> {
         try {
+            const client = this.getClient();
             const fullKey = this.buildKey(key);
             const ttl = options.ttl || this.defaultTtl;
             const serializedValue = JSON.stringify(value);
 
             if (ttl > 0) {
-                await this.client.setex(fullKey, ttl, serializedValue);
+                await client.setex(fullKey, ttl, serializedValue);
             } else {
-                await this.client.set(fullKey, serializedValue);
+                await client.set(fullKey, serializedValue);
             }
 
             return { success: true };
@@ -85,8 +94,9 @@ export class CacheService {
      */
     async delete(key: string): Promise<CacheOperationResult> {
         try {
+            const client = this.getClient();
             const fullKey = this.buildKey(key);
-            await this.client.del(fullKey);
+            await client.del(fullKey);
             return { success: true };
         } catch (error) {
             return {
@@ -102,11 +112,12 @@ export class CacheService {
      */
     async invalidateSearchResults(): Promise<CacheOperationResult> {
         try {
+            const client = this.getClient();
             const pattern = this.buildKey('search:*');
-            const keys = await this.client.keys(pattern);
+            const keys = await client.keys(pattern);
 
             if (keys.length > 0) {
-                await this.client.del(...keys);
+                await client.del(...keys);
             }
 
             return { success: true };
@@ -124,11 +135,12 @@ export class CacheService {
      */
     async invalidateByPattern(pattern: string): Promise<CacheOperationResult> {
         try {
+            const client = this.getClient();
             const fullPattern = this.buildKey(pattern);
-            const keys = await this.client.keys(fullPattern);
+            const keys = await client.keys(fullPattern);
 
             if (keys.length > 0) {
-                await this.client.del(...keys);
+                await client.del(...keys);
             }
 
             return { success: true };
@@ -146,8 +158,9 @@ export class CacheService {
      */
     async getStats(): Promise<CacheStats> {
         try {
-            const info = await this.client.info('memory');
-            const keys = await this.client.dbsize();
+            const client = this.getClient();
+            const info = await client.info('memory');
+            const keys = await client.dbsize();
 
             // Простая эвристика для hit rate
             const hitRate = 0.8; // TODO: Реализовать реальный подсчет
@@ -172,7 +185,8 @@ export class CacheService {
      */
     async clear(): Promise<CacheOperationResult> {
         try {
-            await this.client.flushdb();
+            const client = this.getClient();
+            await client.flushdb();
             return { success: true };
         } catch (error) {
             return {
@@ -186,7 +200,10 @@ export class CacheService {
      * Закрывает соединение с Redis
      */
     async disconnect(): Promise<void> {
-        await this.client.quit();
+        if (this.client) {
+            await this.client.quit();
+            this.client = null;
+        }
     }
 
     /**
@@ -201,16 +218,16 @@ export class CacheService {
     /**
      * Настраивает обработчики событий Redis
      */
-    private setupEventHandlers(): void {
-        this.client.on('connect', () => {
+    private setupEventHandlers(client: Redis): void {
+        client.on('connect', () => {
             console.log('✅ Redis подключен');
         });
 
-        this.client.on('error', error => {
+        client.on('error', error => {
             console.error('❌ Redis ошибка:', error);
         });
 
-        this.client.on('close', () => {
+        client.on('close', () => {
             console.log('🔌 Redis соединение закрыто');
         });
     }

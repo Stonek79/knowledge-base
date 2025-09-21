@@ -54,8 +54,6 @@ export async function GET(request: NextRequest) {
             search: searchParams.get('search') || '',
         });
 
-        console.log('[API DOCUMENTS] validation', validation);
-
         if (!validation.success) {
             return handleApiError(validation.error);
         }
@@ -105,9 +103,6 @@ export async function GET(request: NextRequest) {
             }),
             prisma.document.count({ where }),
         ]);
-
-        console.log('[API DOCUMENTS] documents', documents);
-        console.log('[API DOCUMENTS] total', total);
 
         const totalPages = Math.ceil(total / limit);
 
@@ -328,18 +323,11 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // ===== ИНДЕКСАЦИЯ =====
-        // Добавляем документ в поисковый индекс
-        // const engine =
-        //     (process.env
-        //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-        //     SearchEngine.FLEXSEARCH;
-        // const indexer = SearchFactory.createIndexer(engine);
-        // await indexer.indexDocument(document);
-
         // ===== ИНДЕКСАЦИЯ (в фоне) =====
         // Ставим задачу в очередь для фоновой индексации
-        console.log(`[API] Enqueuing job: 'index-document' for documentId: ${document.id}`);
+        console.log(
+            `[API] Enqueuing job: 'index-document' for documentId: ${document.id}`
+        );
         await indexingQueue.add('index-document', { documentId: document.id });
 
         return NextResponse.json({

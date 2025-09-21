@@ -44,9 +44,6 @@ export function FilteredList({ categoryId }: { categoryId: string }) {
         categoryIds: [categoryId],
     });
 
-    console.log('[FilteredList] documents', documents);
-
-    
     const [open, setOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedDocument, setSelectedDocument] =

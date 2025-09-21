@@ -16,8 +16,6 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 // Создаем отдельное соединение для воркера
 const redisConnection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 
-console.log('redisUrl', redisUrl);
-
 /**
  * Процессор задачи индексации.
  * Эта асинхронная функция будет вызываться для каждой задачи в очереди.

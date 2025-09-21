@@ -12,6 +12,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Сборка приложения
 FROM base AS builder
+RUN npm install -g pnpm
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -19,8 +20,9 @@ COPY . .
 # Генерация Prisma клиента
 RUN npx prisma generate
 
-# Сборка Next.js
+# Сборка Next.js и Воркера
 RUN npm run build
+RUN pnpm build:worker
 
 # Production образ
 FROM base AS runner
@@ -33,7 +35,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/scripts ./scripts
+# Копирование собранного воркера
+COPY --from=builder /app/dist ./dist
 COPY package.json pnpm-lock.yaml* ./
 
 RUN npm i -g pnpm && pnpm install --prod --frozen-lockfile --ignore-scripts
@@ -45,5 +48,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Инициализация БД + запуск приложения
-CMD ["node","server.js"]
+# Команда по умолчанию: запуск веб-сервера
+CMD ["pnpm", "start:prod:server"]

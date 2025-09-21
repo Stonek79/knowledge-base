@@ -34,12 +34,16 @@ dev-logs:
 # Сборка прод-образа для linux/amd64
 prod-build:
 	docker buildx build \
+		--no-cache \
 		--platform linux/amd64 \
 		--build-arg NODE_ENV=production \
 		-t $(IMAGE_NAME):$(APP_VERSION) \
-		-f docker/app/Dockerfile \
+		--push \
 		.
-		--push
+
+# Отправка уже собранного образа в Docker Hub
+prod-push:
+	docker push $(IMAGE_NAME):$(APP_VERSION)
 
 # ======================
 # MIGRATIONS & SEED

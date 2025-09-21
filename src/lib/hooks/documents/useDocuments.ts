@@ -48,10 +48,6 @@ export const useDocuments = (filters: DocumentFilters) => {
         }
     );
 
-    console.log('[useDocuments] data', data);
-    console.log('[useDocuments] error', error);
-    console.log('[useDocuments] isLoading', isLoading);
-
     // Мемоизируем результаты
     const documents = useMemo(() => data?.documents || [], [data?.documents]);
     const pagination = useMemo(() => data?.pagination, [data?.pagination]);

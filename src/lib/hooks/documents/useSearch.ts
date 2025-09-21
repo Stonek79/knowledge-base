@@ -19,19 +19,12 @@ export const useSearch = (query: string, filters?: SearchFilters) => {
         ...(filters?.sortOrder && { sortOrder: filters.sortOrder }),
     }).toString();
 
-    const { data, error, isLoading } = useSWR<{ results: SearchResult[] } | null>(
-        `${API_SEARCH_PATH}?${queryString}`,
-        fetcher,
-        {
-            revalidateOnFocus: false,
-            dedupingInterval: 2 * 60 * 1000, // 2 минуты
-        }
-    );
-
-    console.log('[useSearch] data', data);
-    console.log('[useSearch] query:', query);
-    console.log('[useSearch] filters:', filters);
-    console.log('[useSearch] queryString:', queryString);
+    const { data, error, isLoading } = useSWR<{
+        results: SearchResult[];
+    } | null>(`${API_SEARCH_PATH}?${queryString}`, fetcher, {
+        revalidateOnFocus: false,
+        dedupingInterval: 2 * 60 * 1000, // 2 минуты
+    });
 
     return { results: data?.results || [], error, isLoading };
 };

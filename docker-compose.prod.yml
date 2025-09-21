@@ -7,10 +7,14 @@ services:
         env_file: .env.prod
         restart: unless-stopped
         depends_on:
-            - postgres
-            - redis
-            - minio
-            - gotenberg
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            minio:
+                condition: service_healthy
+            gotenberg:
+                condition: service_healthy
         networks:
             - kb-network
 
@@ -21,7 +25,9 @@ services:
         restart: unless-stopped
         command: pnpm start:prod:worker
         depends_on:
-            - postgres
-            - redis
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         networks:
             - kb-network

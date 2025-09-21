@@ -40,7 +40,9 @@ COPY --from=builder /app/dist ./dist
 COPY package.json pnpm-lock.yaml* ./
 
 RUN npm i -g pnpm && pnpm install --prod --frozen-lockfile --ignore-scripts
+
 # Установка прав
+RUN chown -R node:node /app
 USER node
 
 EXPOSE 3000

@@ -23,52 +23,63 @@ interface CodedError extends Error {
 
 /**
  * Сервис для работы с файловым хранилищем MinIO
- * @description Сервис для работы с файловым хранилищем MinIO
- * @returns {FileStorageService}
- * @example
- * const fileStorageService = new FileStorageService();
- * const file = await fileStorageService.uploadDocument(file, metadata);
- * const file = await fileStorageService.downloadDocument(key);
- * const file = await fileStorageService.deleteDocument(key);
- * const file = await fileStorageService.getFileInfo(key);
- * const file = await fileStorageService.getFileUrl(key);
- * const file = await fileStorageService.generateStorageKey(originalName, hash);
- * const file = await fileStorageService.generateHash(buffer);
- * const file = await fileStorageService.ensureBucketExists();
  */
 export class FileStorageService {
-    private client: MinioClient;
+    private client: MinioClient | null = null;
     private bucket: string;
+    private bucketChecked = false;
 
     constructor() {
+        this.bucket = MINIO_CONFIG.bucket;
+    }
+
+    /**
+     * Lazily gets or creates the Minio client instance and ensures bucket exists.
+     */
+    private async getClient(): Promise<MinioClient> {
+        if (this.client) {
+            return this.client;
+        }
+
+        // В среде сборки (где нет MINIO_ENDPOINT) возвращаем mock-клиент
+        if (!process.env.MINIO_ENDPOINT) {
+            console.warn('>>> Build environment detected or MINIO_ENDPOINT is not set. Using MOCK Minio client.');
+            const mockClient = {
+                putObject: async () => ({ etag: '', versionId: '' }),
+                getObject: async () => null,
+                removeObject: async () => {},
+                statObject: async () => ({ size: 0, lastModified: new Date(), etag: '' }),
+                presignedGetObject: async () => 'http://mock-url',
+                bucketExists: async () => true,
+                makeBucket: async () => {},
+                copyObject: async () => ({ etag: '', versionId: '' }),
+            } as unknown as MinioClient;
+            return mockClient;
+        }
+
         const config: MinioConfig = {
-            endPoint: process.env.MINIO_ENDPOINT || 'localhost',
+            endPoint: process.env.MINIO_ENDPOINT,
             port: parseInt(process.env.MINIO_PORT || '9000'),
             useSSL: MINIO_CONFIG.useSSL,
-            accessKey: process.env.MINIO_ACCESS_KEY || 'kb_admin',
-            secretKey: process.env.MINIO_SECRET_KEY || 'kb_minio_password',
+            accessKey: process.env.MINIO_ROOT_USER || 'kb_admin',
+            secretKey: process.env.MINIO_ROOT_PASSWORD || 'kb_minio_password',
             region: MINIO_CONFIG.region,
         };
 
         this.client = new MinioClient(config);
-        this.bucket = MINIO_CONFIG.bucket;
-        this.ensureBucketExists();
+        await this.ensureBucketExists(this.client);
+        return this.client;
     }
 
     /**
      * Загружает документ в MinIO хранилище
-     * @param {Buffer} file - Файл для загрузки
-     * @param {FileMetadata} metadata - Метаданные файла
-     * @param {UploadOptions} options - Опции загрузки
-     * @returns {Promise<FileUploadResult>} Результат загрузки файла
-     * @example
-     * const file = await fileStorageService.uploadDocument(file, metadata);
      */
     async uploadDocument(
         file: Buffer,
         metadata: FileMetadata,
         options: UploadOptions = {}
     ): Promise<FileUploadResult> {
+        const client = await this.getClient();
         const hash = this.generateHash(file);
         const basePath = options.basePath ?? STORAGE_BASE_PATHS.ORIGINAL;
         const key = this.generateStorageKey(
@@ -99,7 +110,7 @@ export class FileStorageService {
                     )),
             };
 
-            await this.client.putObject(
+            await client.putObject(
                 this.bucket,
                 key,
                 file,
@@ -126,9 +137,6 @@ export class FileStorageService {
 
     /**
      * Загружает буфер по фиксированному ключу в MinIO
-     * @param key Ключ (например, "search-indexes/flexsearch-index.json")
-     * @param buffer Данные
-     * @param contentType MIME-тип (по умолчанию application/json)
      */
     async uploadByKey(
         key: string,
@@ -136,10 +144,11 @@ export class FileStorageService {
         contentType: string = 'application/json'
     ): Promise<void> {
         try {
+            const client = await this.getClient();
             const metaData = {
                 'Content-Type': contentType,
             };
-            await this.client.putObject(
+            await client.putObject(
                 this.bucket,
                 key,
                 buffer,
@@ -155,14 +164,11 @@ export class FileStorageService {
 
     /**
      * Скачивает документ из MinIO хранилища
-     * @param {string} key - Ключ файла
-     * @returns {Promise<Buffer>} Файл
-     * @example
-     * const file = await fileStorageService.downloadDocument(key);
      */
     async downloadDocument(key: string): Promise<Buffer> {
         try {
-            const stream = await this.client.getObject(this.bucket, key);
+            const client = await this.getClient();
+            const stream = await client.getObject(this.bucket, key);
             const chunks: Buffer[] = [];
 
             return new Promise((resolve, reject) => {
@@ -171,7 +177,6 @@ export class FileStorageService {
                 stream.on('error', reject);
             });
         } catch (error) {
-            // Безопасно проверяем, является ли ошибка ошибкой Minio "NoSuchKey"
             if (
                 typeof error === 'object' &&
                 error !== null &&
@@ -184,7 +189,6 @@ export class FileStorageService {
                 notFound.code = 'NoSuchKey';
                 throw notFound;
             }
-            // Остальные ошибки пробрасываем как есть
             if (error instanceof Error) {
                 throw error;
             }
@@ -194,14 +198,11 @@ export class FileStorageService {
 
     /**
      * Удаляет документ из хранилища
-     * @param {string} key - Ключ файла
-     * @returns {Promise<StorageOperationResult>} Результат удаления файла
-     * @example
-     * const result = await fileStorageService.deleteDocument(key);
      */
     async deleteDocument(key: string): Promise<StorageOperationResult> {
         try {
-            await this.client.removeObject(this.bucket, key);
+            const client = await this.getClient();
+            await client.removeObject(this.bucket, key);
             return { success: true };
         } catch (error) {
             return {
@@ -213,14 +214,11 @@ export class FileStorageService {
 
     /**
      * Получает информацию о файле
-     * @param {string} key - Ключ файла
-     * @returns {Promise<FileInfo>} Информация о файле
-     * @example
-     * const fileInfo = await fileStorageService.getFileInfo(key);
      */
     async getFileInfo(key: string): Promise<FileInfo> {
         try {
-            const stat = await this.client.statObject(this.bucket, key);
+            const client = await this.getClient();
+            const stat = await client.statObject(this.bucket, key);
             return {
                 key,
                 size: stat.size,
@@ -236,18 +234,14 @@ export class FileStorageService {
 
     /**
      * Получает presigned URL для файла
-     * @param {string} key - Ключ файла
-     * @param {number} expirySeconds - Время действия URL в секундах
-     * @returns {Promise<string>} URL файла
-     * @example
-     * const url = await fileStorageService.getFileUrl(key);
      */
     async getFileUrl(
         key: string,
         expirySeconds: number = 86400
     ): Promise<string> {
         try {
-            return await this.client.presignedGetObject(
+            const client = await this.getClient();
+            return await client.presignedGetObject(
                 this.bucket,
                 key,
                 expirySeconds
@@ -259,14 +253,6 @@ export class FileStorageService {
         }
     }
 
-    /**
-     * Генерирует уникальный ключ для хранения файла
-     * @param {string} originalName - Оригинальное имя файла
-     * @param {string} hash - Хеш файла
-     * @returns {string} Ключ файла
-     * @example
-     * const key = fileStorageService.generateStorageKey(originalName, hash);
-     */
     private generateStorageKey(
         originalName: string,
         hash: string,
@@ -281,43 +267,24 @@ export class FileStorageService {
         return `${STORAGE_PATHS[basePath]}/${year}/${month}/${fileName}.${extension}`;
     }
 
-    /**
-     * Генерирует SHA-256 хеш файла
-     * @param {Buffer} buffer - Буфер файла
-     * @returns {string} Хеш файла
-     * @example
-     * const hash = fileStorageService.generateHash(buffer);
-     */
     private generateHash(buffer: Buffer): string {
         return createHash('sha256').update(buffer).digest('hex');
     }
 
-    /**
-     * Создает bucket если он не существует
-     * @returns {Promise<void>}
-     * @example
-     * await fileStorageService.ensureBucketExists();
-     */
-    private async ensureBucketExists(): Promise<void> {
+    private async ensureBucketExists(client: MinioClient): Promise<void> {
+        if (this.bucketChecked) return;
         try {
-            const exists = await this.client.bucketExists(this.bucket);
+            const exists = await client.bucketExists(this.bucket);
             if (!exists) {
-                await this.client.makeBucket(this.bucket, MINIO_CONFIG.region);
+                await client.makeBucket(this.bucket, MINIO_CONFIG.region);
                 console.log(`Bucket ${this.bucket} создан`);
             }
+            this.bucketChecked = true;
         } catch (error) {
             console.error(`Ошибка создания bucket: ${error}`);
         }
     }
 
-    /**
-     * Перемещает файл из временного хранилища в основное хранилище
-     * @param {string} tempKey - Ключ временного файла
-     * @param {StorageBasePath} basePath - Базовый путь для хранения файла
-     * @returns {Promise<{ key: string; size: number; mimeType: string }>} Информация о файле
-     * @example
-     * const info = await fileStorageService.promoteFromTemp(tempKey, basePath);
-     */
     async promoteFromTemp(
         tempKey: string,
         basePath: StorageBasePath
@@ -334,32 +301,19 @@ export class FileStorageService {
         };
     }
 
-    /**
-     * Копирует файл из одного места в другое
-     * @param {string} srcKey - Ключ исходного файла
-     * @param {string} destKey - Ключ конечного файла
-     * @returns {Promise<void>}
-     * @example
-     * await fileStorageService.copyObject(srcKey, destKey);
-     */
     private async copyObject(srcKey: string, destKey: string): Promise<void> {
-        await this.client.copyObject(
+        const client = await this.getClient();
+        await client.copyObject(
             this.bucket,
             destKey,
             `/${this.bucket}/${srcKey}`
         );
     }
 
-    /**
-     * Удаляет файл
-     * @param {string} key - Ключ файла
-     * @returns {Promise<void>}
-     * @example
-     * await fileStorageService.safeDelete(key);
-     */
     async safeDelete(key: string): Promise<void> {
         try {
-            await this.client.removeObject(this.bucket, key);
+            const client = await this.getClient();
+            await client.removeObject(this.bucket, key);
         } catch {
             console.log(`[safeDelete] Файл не найден: ${key}`);
         }
@@ -368,8 +322,5 @@ export class FileStorageService {
 
 /**
  * Экспорт экземпляра для использования в приложении
- * @returns {FileStorageService}
- * @example
- * const fileStorageService = new FileStorageService();
  */
 export const fileStorageService = new FileStorageService();

@@ -121,7 +121,9 @@ name: knowledge-base
 
 services:
     postgres:
-        image: postgres:15-alpine
+        build:
+            context: ./docker/postgres
+            dockerfile: Dockerfile
         container_name: kb-postgres
         restart: unless-stopped
         environment:

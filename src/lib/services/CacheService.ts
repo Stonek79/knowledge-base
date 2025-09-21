@@ -20,19 +20,38 @@ export class CacheService {
      * Lazily gets or creates the Redis client instance.
      */
     private getClient(): Redis {
-        if (!this.client) {
-            this.client = new Redis({
-                host: process.env.REDIS_HOST || 'localhost',
-                port: parseInt(process.env.REDIS_PORT || '6379'),
-                password: process.env.REDIS_PASSWORD,
-                db: parseInt(process.env.REDIS_DB || '0'),
-                enableAutoPipelining: true,
-                showFriendlyErrorStack: false,
-                maxRetriesPerRequest: 3,
-                retryStrategy: (times: number) => Math.min(times * 50, 1000),
-            });
-            this.setupEventHandlers(this.client);
+        if (this.client) {
+            return this.client;
         }
+
+        const redisUrl = process.env.REDIS_URL;
+
+        // В среде сборки (где нет REDIS_URL) возвращаем mock-клиент
+        if (!redisUrl) {
+            console.warn('>>> Build environment detected or REDIS_URL is not set. Using MOCK Redis client.');
+            const mockClient = {
+                get: async () => null,
+                setex: async () => 'OK',
+                set: async () => 'OK',
+                del: async () => 1,
+                keys: async () => [],
+                info: async () => '',
+                dbsize: async () => 0,
+                flushdb: async () => 'OK',
+                quit: async () => 'OK',
+                on: () => mockClient, // Для цепочек вызовов
+            } as unknown as Redis;
+            return mockClient;
+        }
+
+        this.client = new Redis(redisUrl, {
+            enableAutoPipelining: true,
+            showFriendlyErrorStack: false,
+            maxRetriesPerRequest: 3,
+            retryStrategy: (times: number) => Math.min(times * 50, 1000),
+        });
+
+        this.setupEventHandlers(this.client);
         return this.client;
     }
 

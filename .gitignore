@@ -73,3 +73,7 @@ storage/flexsearch.db
 # memory-bank
 memory-bank/
 /memory-bank/
+GEMINI.md
+DOCKER_SETUP.md
+DEPLOYMENT_GUIDE.md
+BACKGROUND_INDEXING_PLAN.md

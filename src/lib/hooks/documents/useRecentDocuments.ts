@@ -55,7 +55,7 @@ export const useRecentDocuments = () => {
                     RECENT_DOCUMENTS_KEY,
                     JSON.stringify(updated)
                 );
-                console.log('Recent documents updated:', updated);
+                console.log('Recent documents updated:', updated?.map(d => d?.id));
             } catch (error) {
                 console.error('Failed to save recent documents:', error);
             }

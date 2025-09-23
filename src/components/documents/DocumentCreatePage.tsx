@@ -118,8 +118,6 @@ export function DocumentCreatePage() {
                 }
             );
 
-            console.log('[attachmentsToAdd]: ', attachmentsToAdd);
-
             // 2. Commit: отправляем один JSON-пакет на сервер
             const finalPayload: ComposeChangeSet = {
                 operationId: crypto.randomUUID(),
@@ -132,8 +130,6 @@ export function DocumentCreatePage() {
                     order: index,
                 })),
             };
-
-            console.log('[finalPayload]: ', finalPayload);
 
             const result = await commit(null, finalPayload); // `null` id означает создание
 

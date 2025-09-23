@@ -26,51 +26,28 @@ The application is designed to run in a containerized environment using Docker. 
 
 ## Development
 
-To run the project in development mode, you can use either Docker or run it locally.
-
-**With Docker (Recommended):**
+To run the project in development mode, use the provided Makefile for convenience.
 
 1.  **Set up environment variables:**
     ```bash
     cp .env.example .env.local
     ```
-    Then, edit `.env.local` with your desired settings.
+    Ensure `.env.local` is correctly populated, especially with `DATABASE_URL` and `REDIS_URL` pointing to the service names (e.g., `postgres`, `redis`).
 
 2.  **Start the services:**
     ```bash
-    docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-    ```
-
-**Locally:**
-
-1.  **Install dependencies:**
-    ```bash
-    pnpm install
-    ```
-
-2.  **Generate Prisma client:**
-    ```bash
-    pnpm prisma generate
-    ```
-
-3.  **Start the development server:**
-    ```bash
-    pnpm dev
+    make dev-up
     ```
 
 ## Production
 
-To build and run the project in production mode, use the following Docker command:
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
+A complete guide to deploying the application to a production server is available in **`DEPLOYMENT_GUIDE.md`**.
 
 # Development Conventions
 
 ## Database
 
-*   **Migrations:** Use `pnpm prisma migrate dev` to create new database migrations.
+*   **Migrations:** Use `make migrate-dev` to create and apply new database migrations in the development environment.
 *   **Studio:** Use `pnpm prisma studio` to open the Prisma Studio and browse your data.
 
 ## Testing and Linting

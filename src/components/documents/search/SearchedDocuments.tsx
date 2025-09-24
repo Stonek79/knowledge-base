@@ -20,14 +20,13 @@ import {
     Typography,
 } from '@mui/material';
 
-import { SearchResult } from '@/lib/types/document';
+import { DocumentWithAuthor, SearchedDocument } from '@/lib/types/document';
 
 import { DocumentViewer } from '../viewer/DocumentViewer';
 import { SearchHighlight } from './SearchHighlight';
 
-
 type SearchedDocumentsProps = {
-    results: SearchResult[];
+    results: SearchedDocument[];
     isLoading?: boolean;
     query: string;
 };
@@ -41,7 +40,7 @@ export function SearchedDocuments({
         new Set()
     );
     const [selectedDocument, setSelectedDocument] =
-        useState<SearchResult | null>(null);
+        useState<DocumentWithAuthor | null>(null);
     const [viewerOpen, setViewerOpen] = useState(false);
 
     if (!query.trim()) {
@@ -65,7 +64,7 @@ export function SearchedDocuments({
         return <Typography>Ничего не найдено</Typography>;
     }
 
-    const handleDocumentClick = (result: SearchResult) => {
+    const handleDocumentClick = (result: DocumentWithAuthor) => {
         setSelectedDocument(result);
         setViewerOpen(true);
         setViewedDocuments(prev => new Set([...prev, result.id]));
@@ -93,7 +92,7 @@ export function SearchedDocuments({
                     bgcolor: 'background.paper',
                 }}
             >
-                <List sx={{ p: 0 }}>
+                <List sx={{ p: 0, width: '100%' }}>
                     {results.map((result, index) => (
                         <Box
                             key={result.id}
@@ -102,17 +101,20 @@ export function SearchedDocuments({
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 2,
+                                width: '100%',
                             }}
                         >
                             <Avatar
                                 sx={{
                                     width: 32,
                                     height: 32,
-                                    bgcolor: viewedDocuments.has(result.id)
-                                        ? 'primary.main'
-                                        : 'grey.300',
+                                    border: 1,
+                                    borderColor: viewedDocuments.has(result.id)
+                                        ? 'secondary.main'
+                                        : 'primary.main',
+                                    bgcolor: 'action.selected',
                                     color: viewedDocuments.has(result.id)
-                                        ? 'white'
+                                        ? 'black'
                                         : 'text.secondary',
                                     fontSize: '0.875rem',
                                     fontWeight: 'bold',
@@ -120,7 +122,7 @@ export function SearchedDocuments({
                             >
                                 {index + 1}
                             </Avatar>
-                            <Card sx={{ m: 2 }}>
+                            <Card sx={{ m: 2, width: '100%' }}>
                                 <ListItem
                                     disablePadding
                                     sx={{
@@ -134,6 +136,7 @@ export function SearchedDocuments({
                                         '&:hover': {
                                             transform: 'translateX(4px)',
                                         },
+                                        width: '100%',
                                     }}
                                 >
                                     <ListItemButton
@@ -146,6 +149,7 @@ export function SearchedDocuments({
                                             '&:hover': {
                                                 bgcolor: 'action.hover',
                                             },
+                                            width: '100%',
                                         }}
                                     >
                                         {/* Основной контент */}
@@ -183,7 +187,7 @@ export function SearchedDocuments({
                                                 <SearchHighlight
                                                     text={result.content}
                                                     highlights={
-                                                        result.highlights
+                                                        result.highlights || []
                                                     }
                                                     query={query}
                                                 />
@@ -200,13 +204,16 @@ export function SearchedDocuments({
                                                 >
                                                     <Chip
                                                         icon={<PersonIcon />}
-                                                        label={result.author}
+                                                        label={
+                                                            result.author
+                                                                .username
+                                                        }
                                                         size='small'
                                                         variant='outlined'
                                                         color='secondary'
                                                     />
                                                     <Chip
-                                                        label={`Релевантность: ${(result.relevance * 100).toFixed(1)}%`}
+                                                        label={`Релевантность: ${((result?.relevance || 0) * 100).toFixed(1)}%`}
                                                         size='small'
                                                         variant='outlined'
                                                         color='info'
@@ -218,7 +225,7 @@ export function SearchedDocuments({
                                 </ListItem>
 
                                 {/* Разделитель между элементами (кроме последнего) */}
-                                {index < results.length - 1 && (
+                                {index < results?.length - 1 && (
                                     <Divider component='li' />
                                 )}
                             </Card>
@@ -228,10 +235,10 @@ export function SearchedDocuments({
             </Box>
 
             {/* Пагинация */}
-            {results.length > 25 && (
+            {results?.length > 25 && (
                 <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
                     <Pagination
-                        count={Math.ceil(results.length / 25)}
+                        count={Math.ceil(results?.length / 25)}
                         page={1}
                         onChange={(_, page) => {
                             console.log('Переход на страницу:', page);

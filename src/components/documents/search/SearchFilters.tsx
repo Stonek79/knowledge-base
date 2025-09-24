@@ -12,11 +12,11 @@ import {
     OutlinedInput,
     Paper,
     Select,
-    TextField,
     Typography,
 } from '@mui/material';
 
 import { useCategories } from '@/lib/hooks/documents/useCategories';
+import { useUsers } from '@/lib/hooks/useUsers';
 import { DocumentFilters } from '@/lib/types/document';
 
 interface SearchFiltersProps {
@@ -31,6 +31,7 @@ export function SearchFilters({
     onReset,
 }: SearchFiltersProps) {
     const { categories, isLoading } = useCategories();
+    const { users, isLoading: usersLoading } = useUsers();
 
     return (
         <Paper sx={{ p: 3 }}>
@@ -85,6 +86,30 @@ export function SearchFilters({
                     </FormControl>
                 </Grid>
 
+                {/* Автор */}
+                <Grid sx={{ xs: 12, md: 4 }}>
+                    <FormControl fullWidth>
+                        <InputLabel>Автор</InputLabel>
+                        <Select
+                            sx={{ minWidth: 200 }}
+                            value={filters.authorId || ''}
+                            onChange={e =>
+                                onFiltersChange({
+                                    authorId: e.target.value,
+                                })
+                            }
+                        >
+                            <MenuItem value=''>
+                                <em>Любой автор</em>
+                            </MenuItem>
+                            {users.map(u => (
+                                <MenuItem key={u.id} value={u.id}>
+                                    {u.username}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Grid>
                 {/* Сортировка */}
                 <Grid sx={{ xs: 12, md: 4 }}>
                     <FormControl fullWidth>
@@ -99,7 +124,9 @@ export function SearchFilters({
                             }
                         >
                             <MenuItem value='createdAt'>Дата создания</MenuItem>
-                            <MenuItem value='updatedAt'>Дата обновления</MenuItem>
+                            <MenuItem value='updatedAt'>
+                                Дата обновления
+                            </MenuItem>
                             <MenuItem value='title'>Название</MenuItem>
                             <MenuItem value='viewCount'>Просмотры</MenuItem>
                         </Select>

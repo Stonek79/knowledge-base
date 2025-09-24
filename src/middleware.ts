@@ -12,63 +12,72 @@ import {
 } from './constants/api';
 import { COOKIE_NAME } from './constants/app';
 
-// interface UserJWTPayload extends JWTPayload {
-//     id: string;
-//     username: string;
-//     role: 'USER' | 'ADMIN' | 'GUEST';
-// }
-
-// async function verifyAndDecodeToken(
-//     token: string
-// ): Promise<UserJWTPayload | null> {
-//     if (!JWT_SECRET) {
-//         console.error('JWT_SECRET is not set in environment variables');
-//         return null;
-//     }
-
-//     // sanitize: убираем кавычки и пробелы
-//     const compact = token.trim().replace(/^"|"$/g, '');
-
-//     // быстрый валидатор формата "x.y.z"
-//     const isCompactJws =
-//         /^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/.test(compact);
-//     if (!isCompactJws) {
-//         console.warn('JWT verification failed: non-compact token value');
-//         console.log('[middleware] verifyAndDecodeToken compact', compact);
-//         return null;
-//     }
-
-//     try {
-//         const secret = new TextEncoder().encode(JWT_SECRET);
-
-//         const { payload } = await jwtVerify(compact, secret, { clockTolerance: 5 });
-
-//         return payload as UserJWTPayload;
-//     } catch (error: unknown) {
-//         console.warn(
-//             'JWT verification failed:',
-//             error instanceof Error ? error.message : 'Unknown error'
-//         );
-//         return null;
-//     }
-// }
-
 type UserJWTPayload = {
     id: string;
     username: string;
     role: 'USER' | 'ADMIN' | 'GUEST';
+    exp?: number; // Срок действия токена
 };
 
-function unsafeDecodePayload<T = UserJWTPayload>(token: string): T | null {
+async function verifyJwtSafe(token: string): Promise<UserJWTPayload | null> {
     try {
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            console.error('JWT_SECRET not set in environment variables');
+            return null;
+        }
+
         const parts = token.trim().replace(/^"|"$/g, '').split('.');
         if (parts.length !== 3) return null;
-        const body = parts[1]?.replace(/-/g, '+').replace(/_/g, '/');
-        if (!body) return null;
-        const padded = body + '==='.slice((body.length + 3) % 4);
-        const json = atob(padded);
-        return JSON.parse(json) as T;
-    } catch {
+
+        const [headerB64, payloadB64, signatureB64] = parts;
+
+        // Создаем ключ из секрета для HMAC-SHA256
+        const secretKey = await crypto.subtle.importKey(
+            'raw',
+            new TextEncoder().encode(jwtSecret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['verify']
+        );
+
+        // Проверяем подпись
+        const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+        const signature = Uint8Array.from(
+            atob(signatureB64?.replace(/-/g, '+').replace(/_/g, '/') ?? ''),
+            c => c.charCodeAt(0)
+        );
+
+        const isValid = await crypto.subtle.verify(
+            'HMAC',
+            secretKey,
+            signature,
+            data
+        );
+
+        if (!isValid) {
+            console.warn('JWT signature verification failed');
+            return null;
+        }
+
+        // Декодируем payload безопасно
+        const payloadJson = atob(
+            payloadB64?.replace(/-/g, '+').replace(/_/g, '/') ?? ''
+        );
+        const payload = JSON.parse(payloadJson) as UserJWTPayload;
+
+        // Проверяем срок действия
+        if (payload.exp && payload.exp < Date.now() / 1000) {
+            console.warn('JWT token expired');
+            return null;
+        }
+
+        return payload;
+    } catch (error) {
+        console.warn(
+            'JWT verification failed:',
+            error instanceof Error ? error.message : 'Unknown error'
+        );
         return null;
     }
 }
@@ -95,7 +104,7 @@ export async function middleware(request: NextRequest) {
 
     // 3. Проверка аутентификации
     const isAuthenticated = Boolean(token);
-    const payload = token ? unsafeDecodePayload<UserJWTPayload>(token) : null;
+    const payload = token ? await verifyJwtSafe(token) : null;
     const userRole = payload?.role;
 
     if (!isAuthenticated && pathname === HOME_PATH) {

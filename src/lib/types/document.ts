@@ -59,6 +59,12 @@ export type DocumentListResponse = {
     pagination: Pagination;
 };
 
+export type SearchedDocument = DocumentWithAuthor & {
+    relevance?: number;
+    highlights?: string[];
+    isSearchResult?: boolean;
+};
+
 export type ViewableDocument = DocumentWithAuthor & {
     relevance?: number;
     highlights?: string[];

@@ -20,11 +20,12 @@ import {
     TableRow,
 } from '@mui/material';
 
-import { DocumentWithAuthor } from '@/lib/types/document';
+import { DocumentWithAuthor, SearchedDocument } from '@/lib/types/document';
 import { formatFileSize } from '@/utils/formatFileSize';
 
 interface DocumentTableProps {
-    documents: DocumentWithAuthor[];
+    documents: SearchedDocument[];
+    query: string | undefined;
     isLoading: boolean;
     selectedDocuments: string[];
     onSelectDocument: (documentId: string) => void;
@@ -44,6 +45,7 @@ interface DocumentTableProps {
  */
 export function DocumentTable({
     documents,
+    query,
     isLoading,
     selectedDocuments,
     onSelectDocument,
@@ -52,9 +54,61 @@ export function DocumentTable({
     onEdit,
     onDelete,
 }: DocumentTableProps) {
+    console.log('documents', documents);
+    function safeCreateHighlightRegex(searchTerm) {
+        // Проверяем входные данные
+        if (
+            !searchTerm ||
+            typeof searchTerm !== 'string' ||
+            !searchTerm.trim()
+        ) {
+            return null;
+        }
+
+        try {
+            const cleanTerm = searchTerm.trim();
+            const escapedTerm = cleanTerm.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&'
+            );
+
+            // Простая версия без \b для кириллицы
+            return new RegExp(`[а-яёa-z0-9]*${escapedTerm}[а-яёa-z0-9]*`, 'gi');
+        } catch (error) {
+            console.error('Regex creation failed:', error);
+            return null;
+        }
+    }
+
+    function safeHighlight(text, searchTerm) {
+        const regex = safeCreateHighlightRegex(searchTerm);
+        if (!regex) return text;
+
+        const matches = text.match(regex);
+        if (!matches) return text;
+
+        return matches;
+    }
+
+    const highlightedWords: string[] = documents
+        ?.map(document =>
+            document?.highlights?.flatMap(highlight => {
+                console.log('highlight', highlight);
+
+                return safeHighlight(highlight, query);
+            })
+        )
+        .filter(Boolean)
+        .flat();
+
+    console.log('highlightedWords', highlightedWords);
+
     if (isLoading) {
         return (
-            <TableContainer component={Paper} sx={{ overflowX: 'visible', maxWidth: '100%' }}>
+            <TableContainer
+                component={Paper}
+                sx={{ overflowX: 'visible', maxWidth: '100%' }}
+            >
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -63,6 +117,9 @@ export function DocumentTable({
                             </TableCell>
                             <TableCell>Название</TableCell>
                             <TableCell>Автор</TableCell>
+                            {highlightedWords?.length > 0 && (
+                                <TableCell>Найдено</TableCell>
+                            )}
                             <TableCell>Категории</TableCell>
                             <TableCell>Размер</TableCell>
                             <TableCell>Просмотры</TableCell>
@@ -88,7 +145,6 @@ export function DocumentTable({
                                 <TableCell>
                                     <Skeleton />
                                 </TableCell>
-
                                 <TableCell>
                                     <Skeleton />
                                 </TableCell>
@@ -134,6 +190,11 @@ export function DocumentTable({
                         </TableCell>
                         <TableCell>Название</TableCell>
                         <TableCell>Автор</TableCell>
+                        {highlightedWords?.length > 0 && (
+                            <TableCell>
+                                Найдено {highlightedWords?.length} совп.
+                            </TableCell>
+                        )}
                         <TableCell>Категории</TableCell>
                         <TableCell>Размер</TableCell>
                         <TableCell>Просмотры</TableCell>
@@ -164,6 +225,21 @@ export function DocumentTable({
                                 {document.title}
                             </TableCell>
                             <TableCell>{document.author.username}</TableCell>
+                            {highlightedWords?.length > 0 && (
+                                <TableCell>
+                                    <Stack direction='column' spacing={0.5}>
+                                        {highlightedWords
+                                            .slice(0, 3)
+                                            .map((word, i) => (
+                                                <Chip
+                                                    key={word + i}
+                                                    label={word}
+                                                    size='small'
+                                                />
+                                            ))}
+                                    </Stack>
+                                </TableCell>
+                            )}
                             <TableCell>
                                 <Stack direction='row' spacing={0.5}>
                                     {document.categories.map(docCategory => (

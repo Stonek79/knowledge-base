@@ -22,8 +22,8 @@ export function SearchHighlight({
 
     return (
         <Box>
-            {highlights.length > 0 ? (
-                highlights.map((highlight, index) => (
+            {highlights?.length > 0 ? (
+                highlights?.map((highlight, index) => (
                     <Typography
                         key={index}
                         variant='body2'

@@ -14,21 +14,23 @@ export const useDocuments = (filters: DocumentFilters) => {
         const params = new URLSearchParams({
             page: filters?.page?.toString() || '1',
             limit: filters?.limit?.toString() || '10',
-            ...(filters?.search && { search: filters.search }),
+            ...(filters?.q && { q: filters.q }),
             ...(filters?.categoryIds && {
                 categoryIds: filters.categoryIds.join(','),
             }),
             ...(filters?.sortBy && { sortBy: filters.sortBy }),
             ...(filters?.sortOrder && { sortOrder: filters.sortOrder }),
+            ...(filters?.authorId && { authorId: filters.authorId }),
         });
         return params.toString();
     }, [
         filters?.page,
         filters?.limit,
-        filters?.search,
+        filters?.q,
         filters?.categoryIds,
         filters?.sortBy,
         filters?.sortOrder,
+        filters?.authorId,
     ]);
 
     // Создаем стабильный ключ для SWR
@@ -37,15 +39,34 @@ export const useDocuments = (filters: DocumentFilters) => {
         [queryString]
     );
 
+    // Определяем тип запроса
+    const isSearchQuery = Boolean(filters?.q?.trim());
+
+    // Разные настройки для поиска и фильтрации
+    const swrConfig = useMemo(() => {
+        if (isSearchQuery) {
+            // Настройки для поиска
+            return {
+                revalidateOnFocus: false, // Не обновлять при фокусе
+                revalidateOnReconnect: true,
+                revalidateIfStale: true,
+                dedupingInterval: 5 * 60 * 1000, // 5 минут кэш
+            };
+        } else {
+            // Настройки для обычной фильтрации
+            return {
+                revalidateOnFocus: true,
+                revalidateOnReconnect: true,
+                revalidateIfStale: true,
+                dedupingInterval: 2000, // 2 секунды
+            };
+        }
+    }, [isSearchQuery]);
+
     const { data, error, isLoading, mutate } = useSWR<DocumentListResponse>(
         swrKey,
         fetcher,
-        {
-            revalidateOnFocus: true,
-            revalidateOnReconnect: true,
-            revalidateIfStale: true,
-            dedupingInterval: 2000,
-        }
+        swrConfig
     );
 
     // Мемоизируем результаты

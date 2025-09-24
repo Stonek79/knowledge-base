@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { GOTENBERG_URL } from '@/constants/app';
+import { SearchEngine } from '@/constants/document';
 import { USER_ROLES } from '@/constants/user';
 import { DocumentProcessor } from '@/core/documents/DocumentProcessor';
 import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter';
@@ -9,6 +10,7 @@ import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { documentListSchema } from '@/lib/schemas/document';
+import { SearchFactory } from '@/lib/search/factory';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 import { settingsService } from '@/lib/services/SettingsService';
 import type { WhereDocumentInput } from '@/lib/types/document';
@@ -27,7 +29,8 @@ import { isSupportedMime, mimeMapper } from '@/utils/mime';
  * - categoryIds: ID категорий через запятую
  * - sortBy: поле для сортировки (по умолчанию createdAt)
  * - sortOrder: порядок сортировки asc/desc (по умолчанию desc)
- * - search: поисковый запрос по title и content
+ * - q: поисковый запрос по title и content
+ * - authorId: ID автора документа
  *
  * Авторизация: требуется аутентификация
  * Гости видят только опубликованные документы
@@ -51,40 +54,109 @@ export async function GET(request: NextRequest) {
             categoryIds: searchParams.get('categoryIds')?.split(','),
             sortBy: searchParams.get('sortBy') || 'createdAt',
             sortOrder: searchParams.get('sortOrder') || 'desc',
-            search: searchParams.get('search') || '',
+            authorId: searchParams.get('authorId') || '',
+            q: searchParams.get('q') || '',
+            dateFrom: searchParams.get('dateFrom') || '',
+            dateTo: searchParams.get('dateTo') || '',
         });
 
         if (!validation.success) {
             return handleApiError(validation.error);
         }
 
-        const { page, limit, categoryIds, sortBy, sortOrder, search } =
-            validation.data;
+        const {
+            page,
+            limit,
+            categoryIds,
+            sortBy,
+            sortOrder,
+            q,
+            authorId,
+            dateFrom,
+            dateTo,
+        } = validation.data;
 
-        const where: WhereDocumentInput = {};
+        // Базовые условия фильтрации
+        const baseWhere: WhereDocumentInput = {};
 
         if (user.role === USER_ROLES.GUEST) {
-            where.isPublished = true;
+            baseWhere.isPublished = true;
         }
 
-        if (search) {
-            where.OR = [
-                { title: { contains: search } },
-                { content: { contains: search } },
-            ];
+        if (authorId) {
+            baseWhere.authorId = authorId;
         }
 
-        if (categoryIds && categoryIds.length > 0) {
-            where.categories = {
+        if (categoryIds) {
+            baseWhere.categories = {
                 some: {
                     categoryId: { in: categoryIds },
                 },
             };
         }
 
-        const [documents, total] = await Promise.all([
-            prisma.document.findMany({
-                where,
+        // НОВАЯ ЛОГИКА: Гибридный поиск
+        if (q && q.trim()) {
+            // Поиск через FlexSearch + пагинация в БД
+            const searchEngine =
+                (process.env
+                    .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
+                SearchEngine.FLEXSEARCH;
+            const indexer = SearchFactory.createIndexer(searchEngine);
+
+            // Проверяем и переиндексируем если нужно
+            if (indexer.isEmpty()) {
+                const allDocuments = await prisma.document.findMany({
+                    include: {
+                        author: {
+                            select: { id: true, username: true, role: true },
+                        },
+                        categories: { include: { category: true } },
+                    },
+                });
+                await indexer.reindexAll(allDocuments);
+            }
+
+            // ✅ Передаем все доступные фильтры из запроса
+            const searchFilters = {
+                ...(categoryIds && { categoryIds }),
+                ...(validation.data.authorId && {
+                    authorId: validation.data.authorId,
+                }),
+                ...(validation.data.dateFrom && {
+                    dateFrom: new Date(validation.data.dateFrom),
+                }),
+                ...(validation.data.dateTo && {
+                    dateTo: new Date(validation.data.dateTo),
+                }),
+            };
+
+            // Получаем все релевантные документы из FlexSearch
+            const searchResults = await indexer.search(q, searchFilters);
+
+            if (searchResults.length === 0) {
+                return NextResponse.json({
+                    documents: [],
+                    pagination: {
+                        page,
+                        limit,
+                        total: 0,
+                        totalPages: 0,
+                        hasNextPage: false,
+                        hasPrevPage: false,
+                    },
+                });
+            }
+
+            // Получаем ID документов в порядке релевантности
+            const documentIds = searchResults.map(result => result.id);
+
+            // Пагинируем найденные документы в БД
+            const documents = await prisma.document.findMany({
+                where: {
+                    ...baseWhere,
+                    id: { in: documentIds },
+                },
                 include: {
                     author: {
                         select: { id: true, username: true, role: true },
@@ -97,26 +169,89 @@ export async function GET(request: NextRequest) {
                         },
                     },
                 },
-                orderBy: { [sortBy]: sortOrder },
-                skip: (page - 1) * limit,
-                take: limit,
-            }),
-            prisma.document.count({ where }),
-        ]);
+            });
 
-        const totalPages = Math.ceil(total / limit);
+            // 3. Сливаем: { ...searchResult, ...document }
+            const mergedDocuments = searchResults
+                .map(searchResult => {
+                    const fullDoc = documents.find(
+                        d => d.id === searchResult.id
+                    );
+                    if (!fullDoc) return null;
 
-        return NextResponse.json({
-            documents,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages,
-                hasNext: page < totalPages,
-                hasPrev: page > 1,
-            },
-        });
+                    return {
+                        ...fullDoc, // Полные данные документа
+                        relevance: searchResult.relevance, // Релевантность из поиска
+                        highlights: searchResult.highlights, // Подсветки из поиска
+                        isSearchResult: true, // Флаг что это поиск
+                    };
+                })
+                .filter(Boolean);
+
+            // 4. Сохраняем порядок релевантности + применяем пагинацию
+            const paginatedResults = mergedDocuments.slice(
+                (page - 1) * limit,
+                page * limit
+            );
+
+            const total = mergedDocuments?.length;
+            const totalPages = Math.ceil(total / limit);
+
+            return NextResponse.json({
+                documents: paginatedResults,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1,
+                },
+            });
+        } else {
+            // Обычная фильтрация без поиска (текущая логика)
+            const where = { ...baseWhere };
+
+            const [documents, total] = await Promise.all([
+                prisma.document.findMany({
+                    where,
+                    include: {
+                        author: {
+                            select: { id: true, username: true, role: true },
+                        },
+                        categories: {
+                            include: {
+                                category: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        color: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    orderBy: { [sortBy]: sortOrder },
+                    take: limit,
+                    skip: (page - 1) * limit,
+                }),
+                prisma.document.count({ where }),
+            ]);
+
+            const totalPages = Math.ceil(total / limit);
+
+            return NextResponse.json({
+                documents,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1,
+                },
+            });
+        }
     } catch (error) {
         return handleApiError(error);
     }

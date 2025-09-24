@@ -10,7 +10,7 @@ import {
 } from '@mui/icons-material';
 import { Box, Button, Container, Grid, Typography } from '@mui/material';
 
-import { useSearch } from '@/lib/hooks/documents/useSearch';
+import { useDocuments } from '@/lib/hooks/documents/useDocuments';
 import { DocumentFilters } from '@/lib/types/document';
 
 import { SearchBar } from './SearchBar';
@@ -27,12 +27,14 @@ export function SearchPage() {
     const [filters, setFilters] = useState<DocumentFilters>({
         page: 1,
         limit: 20,
-        categoryIds: [],
+        categoryIds: undefined,
         sortBy: 'createdAt',
         sortOrder: 'desc',
-        search: initialQuery,
     });
-    const { results, isLoading } = useSearch(query, filters);
+    const { documents, isLoading } = useDocuments({
+        ...filters,
+        q: query, // Передаем поисковый запрос в фильтрах
+    });
     const [filtersExpanded, setFiltersExpanded] = useState(false);
 
     const updateUrl = (newQuery: string, newFilters: DocumentFilters) => {
@@ -40,13 +42,13 @@ export function SearchPage() {
         if (newQuery) params.set('q', newQuery);
         if (newFilters.categoryIds?.length)
             params.set('categories', newFilters.categoryIds.join(','));
-        if (newFilters.search) params.set('search', newFilters.search);
+        if (newFilters.authorId) params.set('authorId', newFilters.authorId);
 
         router.replace(`${pathname}?${params.toString()}`);
     };
 
     const handleSearch = (q: string) => {
-        const newFilters = { ...filters, search: q, page: 1 };
+        const newFilters = { ...filters, q: q, page: 1 };
         setQuery(q);
         setFilters(newFilters);
         updateUrl(q, newFilters);
@@ -64,7 +66,7 @@ export function SearchPage() {
             limit: 20,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            search: query,
+            authorId: '',
         };
         setFilters(defaultFilters);
         updateUrl(query, defaultFilters);
@@ -117,7 +119,7 @@ export function SearchPage() {
             <Box>
                 <Grid sx={{ xs: 12, md: 9, flex: 1 }}>
                     <SearchedDocuments
-                        results={results}
+                        results={documents}
                         isLoading={isLoading}
                         query={query}
                     />

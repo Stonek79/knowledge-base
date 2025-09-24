@@ -49,7 +49,7 @@ export default function CategoryPage() {
         limit: 10,
         sortBy: 'createdAt',
         sortOrder: 'desc',
-        search: undefined,
+        q: undefined,
         categoryIds: [categoryId], // Фильтруем по текущей категории
     });
 
@@ -99,7 +99,7 @@ export default function CategoryPage() {
             limit: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            search: undefined,
+            q: undefined,
             categoryIds: [categoryId],
         });
     };
@@ -369,6 +369,7 @@ export default function CategoryPage() {
                     categories={[category]} // Только текущая категория
                     isLoading={false}
                     onReset={resetFilters}
+                    categoryDisabled={true}
                 />
 
                 {/* Таблица документов */}

@@ -14,6 +14,7 @@ import {
     Stack,
 } from '@mui/material';
 
+import { useUsers } from '@/lib/hooks/useUsers';
 import type {
     CategoryBase,
     DocumentFilters as DocumentFiltersType,
@@ -25,6 +26,7 @@ interface DocumentFiltersProps {
     filters: DocumentFiltersType;
     onFiltersChange: (filters: DocumentFiltersType) => void;
     categories: CategoryBase[];
+    categoryDisabled?: boolean;
     isLoading: boolean;
     onReset: () => void;
 }
@@ -41,15 +43,17 @@ export function DocumentFilters({
     filters,
     onFiltersChange,
     categories,
+    categoryDisabled = false,
     isLoading,
     onReset,
 }: DocumentFiltersProps) {
+    const { users } = useUsers();
     const handleSearchChange = useCallback(
         (search: string) => {
             const trimmedSearch = search.trim();
             onFiltersChange({
                 ...filters,
-                search: trimmedSearch || undefined,
+                q: trimmedSearch || undefined,
                 page: 1,
             });
         },
@@ -100,12 +104,13 @@ export function DocumentFilters({
                 spacing={2}
                 alignItems='center'
                 width='100%'
+                sx={{ mr: 2, display: 'flex', flexWrap: 'nowrap', gap: 2 }}
             >
                 <Box sx={{ minWidth: 200 }}>
                     <SearchField
                         placeholder='Поиск документов...'
-                        value={filters.search || ''}
-                        onSearch={search => handleSearchChange(search)}
+                        value={filters.q || ''}
+                        onSearch={q => handleSearchChange(q)}
                     />
                 </Box>
 
@@ -113,6 +118,7 @@ export function DocumentFilters({
                     <InputLabel>Категория</InputLabel>
                     <Select
                         multiple
+                        disabled={categoryDisabled}
                         value={filters.categoryIds || []}
                         onChange={e => {
                             const value = e.target.value as string[];
@@ -125,7 +131,7 @@ export function DocumentFilters({
                         }}
                         label='Категория'
                     >
-                        <MenuItem value='all'>Все категории</MenuItem>
+                        <MenuItem value=''>Все категории</MenuItem>
                         {categories.map(category => (
                             <MenuItem key={category.id} value={category.id}>
                                 {category.name}
@@ -134,6 +140,30 @@ export function DocumentFilters({
                     </Select>
                 </FormControl>
 
+                {/* Автор */}
+                <FormControl sx={{ minWidth: 200 }}>
+                    <InputLabel>Автор</InputLabel>
+                    <Select
+                        sx={{ minWidth: 200 }}
+                        value={filters.authorId || ''}
+                        onChange={e => {
+                            console.log('e.target.value', e.target.value);
+                            return onFiltersChange({
+                                ...filters,
+                                authorId: e.target.value,
+                            });
+                        }}
+                    >
+                        <MenuItem value=''>
+                            <em>Любой автор</em>
+                        </MenuItem>
+                        {users.map(u => (
+                            <MenuItem key={u.id} value={u.id}>
+                                {u.username}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
                 <FormControl sx={{ minWidth: 200 }}>
                     <InputLabel>Сортировка</InputLabel>
                     <Select
@@ -166,7 +196,7 @@ export function DocumentFilters({
                     variant='outlined'
                     startIcon={<ClearIcon />}
                     onClick={onReset}
-                    disabled={!filters.search && !filters.categoryIds?.length}
+                    disabled={!filters.q && !filters.categoryIds?.length}
                 >
                     Сбросить
                 </Button>

@@ -54,6 +54,7 @@ export const lightTheme = createTheme({
             default: '#f0f2f5',
             paper: '#ffffff',
         },
+        secondary: { main: '#1976d2' },
     },
     // Наши кастомные цвета теперь находятся здесь, в корне темы.
     chat: {
@@ -72,6 +73,7 @@ export const darkTheme = createTheme({
             default: '#0a0a0a',
             paper: '#1a1a1a',
         },
+        secondary: { main: '#90caf9' },
     },
     // Наши кастомные цвета теперь находятся здесь, в корне темы.
     chat: {

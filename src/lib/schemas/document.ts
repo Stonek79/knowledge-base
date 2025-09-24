@@ -31,11 +31,14 @@ export const documentListSchema = z.object({
     page: z.number().min(1).default(1),
     limit: z.number().min(1).max(100).default(10),
     categoryIds: z.array(z.string()).optional(),
+    authorId: z.string().optional(),
+    dateFrom: z.string().optional(),
+    dateTo: z.string().optional(),
     sortBy: z
         .enum(['title', 'createdAt', 'updatedAt', 'viewCount', 'downloadCount'])
         .default('createdAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
-    search: z.string().optional(),
+    q: z.string().optional(),
 });
 
 export const createCategorySchema = z.object({

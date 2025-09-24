@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -60,8 +60,9 @@ export function AdminDocumentsPage() {
         limit: 10,
         sortBy: 'createdAt',
         sortOrder: 'desc',
-        search: undefined,
+        q: undefined,
         categoryIds: undefined,
+        authorId: undefined,
     });
 
     const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
@@ -73,6 +74,10 @@ export function AdminDocumentsPage() {
     const [documentToDelete, setDocumentToDelete] = useState<string | null>(
         null
     );
+
+    const query = useMemo(() => {
+        return filters.q;
+    }, [filters.q]);
 
     // Используем существующие хуки
     const { documents, pagination, isLoading, error, mutate } =
@@ -89,7 +94,7 @@ export function AdminDocumentsPage() {
             limit: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            search: undefined,
+            q: undefined,
             categoryIds: undefined,
         });
         setSelectedDocuments([]);
@@ -174,9 +179,7 @@ export function AdminDocumentsPage() {
                     <Button
                         variant='contained'
                         startIcon={<AddIcon />}
-                        onClick={() =>
-                            router.push(`${UPLOAD_PAGE_PATH}`)
-                        }
+                        onClick={() => router.push(`${UPLOAD_PAGE_PATH}`)}
                     >
                         Загрузить документ
                     </Button>
@@ -219,6 +222,7 @@ export function AdminDocumentsPage() {
                 {/* Таблица документов */}
                 <DocumentTable
                     documents={documents}
+                    query={query}
                     isLoading={isLoading}
                     selectedDocuments={selectedDocuments}
                     onSelectDocument={handleSelectDocument}

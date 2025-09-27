@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 
 import { COOKIE_NAME } from '@/constants/app';
-import { userResponseSchema } from '@/lib/schemas/user';
+import { JWT_SECRET } from '@/constants/auth';
+import { jwtPayloadSchema } from '@/lib/schemas/user';
 import { UserResponse } from '@/lib/types/user';
 
 /**
@@ -15,7 +16,7 @@ export async function validateToken(
     token: string
 ): Promise<UserResponse | null> {
     try {
-        const jwtSecret = process.env.JWT_SECRET;
+        const jwtSecret = process.env.JWT_SECRET || JWT_SECRET;
         if (!jwtSecret) {
             console.error('JWT_SECRET не определен в .env');
             return null;
@@ -29,7 +30,7 @@ export async function validateToken(
         }
         const decoded = jwt.verify(compact, jwtSecret);
 
-        const validationResult = userResponseSchema.safeParse(decoded);
+        const validationResult = jwtPayloadSchema.safeParse(decoded);
 
         if (!validationResult.success) {
             console.error('Невалидный формат JWT payload');
@@ -41,6 +42,7 @@ export async function validateToken(
             username: validationResult.data.username,
             role: validationResult.data.role,
             createdAt: validationResult.data.createdAt,
+            enabled: validationResult.data.enabled,
         };
     } catch (error) {
         console.error('Ошибка валидации JWT:', error);

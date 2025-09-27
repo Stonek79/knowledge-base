@@ -23,6 +23,10 @@ export const metadataPatchSchema = z.object({
     description: z.string().optional(),
     keywords: z.string().optional(), // "тег1, тег2"
     categoryIds: z.array(z.string()).optional(),
+    isConfidential: z.boolean().optional(),
+    isSecret: z.boolean().optional(),
+    accessCode: z.string().optional(),
+    confidentialAccessUserIds: z.array(z.string()).optional(),
 });
 
 export const composeChangeSetSchema = z.object({

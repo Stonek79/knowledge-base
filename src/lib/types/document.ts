@@ -1,4 +1,10 @@
-import { Category, Document, Prisma, Role } from '@prisma/client';
+import {
+    Category,
+    ConfidentialDocumentAccess,
+    Document,
+    Prisma,
+    Role,
+} from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -52,6 +58,7 @@ export type DocumentWithAuthor = Document & {
     categories: DocumentCategory[];
     description?: string | null;
     keywords: string[];
+    confidentialAccessUsers: ConfidentialDocumentAccess[];
 };
 
 export type DocumentListResponse = {

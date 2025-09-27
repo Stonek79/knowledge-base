@@ -41,7 +41,7 @@ export class FileStorageService {
             return this.client;
         }
 
-        // В среде сборки (где нет MINIO_ENDPOINT) возвращаем mock-клиент
+        // В среде сборки (где нет MINIO_ENDPOINT) возвращаем mock-клиент 
         if (!process.env.MINIO_ENDPOINT) {
             console.warn('>>> Build environment detected or MINIO_ENDPOINT is not set. Using MOCK Minio client.');
             const mockClient = {

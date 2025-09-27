@@ -1,7 +1,5 @@
 'use client';
 
-import { CategoryBase } from '@/lib/types/document';
-
 import {
     Box,
     Card,
@@ -13,6 +11,8 @@ import {
     Skeleton,
     Typography,
 } from '@mui/material';
+
+import { CategoryBase } from '@/lib/types/document';
 
 interface CategoriesListProps {
     categories: CategoryBase[];
@@ -43,14 +43,32 @@ export function CategoriesList({
     }
 
     return (
-        <Card>
-            <CardContent>
-                <Typography variant='h6' gutterBottom>
+        <Card sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+            <CardContent
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    minHeight: 0,
+                    p: 1,
+                }}
+            >
+                <Typography
+                    variant='h6'
+                    gutterBottom
+                    sx={{
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 1,
+                        bgcolor: 'background.paper',
+                        py: 1,
+                    }}
+                >
                     Категории
                 </Typography>
-                <List>
+                <List sx={{ flex: 1, overflow: 'auto', minHeight: 0, pr: 1 }}>
                     {categories.map(category => (
-                        <ListItem key={category.id} disablePadding>
+                        <ListItem key={category.id} disablePadding sx={{ border: '1px solid #e0e0e0', gap: 1, borderRadius: 1 }}>
                             <ListItemButton
                                 onClick={() => onCategoryClick(category.id)}
                             >

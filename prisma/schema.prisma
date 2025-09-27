@@ -14,10 +14,12 @@ model User {
     username  String   @unique @db.Citext // Логин
     password  String // bcrypt-хеш
     role      Role     @default(USER) // Роль пользователя
+    enabled   Boolean  @default(false) // Флаг доверенного пользователя
     createdAt DateTime @default(now()) // Дата создания
 
     documents Document[] // Документы пользователя
     updatedBy SystemSettings[] // Настройки системы, которые обновил пользователь
+    confidentialAccess ConfidentialDocumentAccess[] // Доступ к конфиденциальным документам
 }
 
 // Документы
@@ -35,6 +37,11 @@ model Document {
     isPublished  Boolean        @default(true) // Опубликован ли документ
     documentType DocumentType   @default(MAIN) // MAIN, ATTACHMENT, REFERENCE
     attachments  Attachment[] // Вложенные документы
+
+    // Поля для системы доступа
+    isConfidential Boolean @default(false) // Конфиденциальный документ
+    isSecret       Boolean @default(false) // Секретный документ
+    accessCodeHash String? // Хеш кода доступа для секретных документов
 
     // Метаданные для поиска
     tags     String[] // Массив тегов
@@ -59,6 +66,9 @@ model Document {
     // Основной PDF (с приложениями)
     mainPdf   ConvertedDocument? @relation("MainPdf", fields: [mainPdfId], references: [id], onDelete: SetNull) // Основной PDF
     mainPdfId String?            @unique // ID основного PDF
+
+    // Связь для доступа к конфиденциальным документам
+    confidentialAccessUsers ConfidentialDocumentAccess[]
 
     // Индексы для поиска
     @@index([title])
@@ -97,6 +107,19 @@ model DocumentCategory {
     @@unique([documentId, categoryId])
     @@index([documentId])
     @@index([categoryId])
+}
+
+// Связь для доступа к конфиденциальным документам
+model ConfidentialDocumentAccess {
+    id         String   @id @default(cuid())
+    userId     String
+    documentId String
+    createdAt  DateTime @default(now())
+
+    user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, documentId])
 }
 
 // Вложения

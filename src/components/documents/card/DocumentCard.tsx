@@ -19,7 +19,7 @@ export const DocumentCard = ({
     return (
         <Card
             key={document.id}
-            sx={{ mb: 2, width: '100%' }}
+            sx={{ mb: 2, width: '100%', height: '8em' }}
         >
             <CardContent>
                 <Box

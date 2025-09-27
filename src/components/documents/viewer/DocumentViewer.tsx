@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
+import dynamic from 'next/dynamic';
+
 import {
     Box,
     Button,
@@ -21,6 +23,10 @@ import { DocumentWithAuthor, SearchResult } from '@/lib/types/document';
 
 import { DownloadButtons } from '../download/DownloadButtons';
 
+const PDFDocumentViewer = dynamic(
+    () => import('./PDFViewer').then(m => m.PDFDocumentViewer),
+    { ssr: false }
+);
 interface DocumentViewerProps {
     document: SearchResult | DocumentWithAuthor;
     open: boolean;
@@ -97,28 +103,10 @@ export function DocumentViewer({
 
             <DialogContent dividers>
                 <Paper variant='outlined' sx={{ height: '90dvh' }}>
-                    <Box
-                        sx={{
-                            height: '100%',
-                            borderRadius: 1,
-                            overflow: 'hidden',
-                            bgcolor: 'background.paper',
-                        }}
-                    >
-                        <object
-                            data={documentPath}
-                            type='application/pdf'
-                            width='100%'
-                            height='100%'
-                        >
-                            <iframe
-                                src={documentPath}
-                                width='100%'
-                                height='100%'
-                                style={{ border: 0 }}
-                            />
-                        </object>
-                    </Box>
+                    <PDFDocumentViewer
+                        documentPath={documentPath}
+                        height='100%'
+                    />
                 </Paper>
             </DialogContent>
             <DialogActions>

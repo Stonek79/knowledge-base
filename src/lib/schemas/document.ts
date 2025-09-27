@@ -80,5 +80,9 @@ export const uploadFormSchema = z.object({
     description: z.string().optional(),
     categoryIds: z.array(z.string()).min(1, 'Выберите хотя бы одну категорию'),
     keywords: z.string().optional(),
+    isConfidential: z.boolean().default(true).optional(),
+    isSecret: z.boolean().default(false).optional(),
+    accessCode: z.string().optional(),
     attachments: z.array(baseAttachmentSchema).optional(),
+    confidentialAccessUserIds: z.array(z.string()).optional(),
 });

@@ -23,7 +23,8 @@ export class PdfProcessor {
      */
     static async extractText(buffer: Buffer): Promise<string> {
         // const loadingTask = getDocument({ data: buffer });
-        const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        const pdfjsDistPath = 'pdfjs-dist/build/pdf.js';
+        const { getDocument } = await import(pdfjsDistPath);
 
         const loadingTask = getDocument({ data: buffer });
         type PDFDocumentProxy = Awaited<typeof loadingTask.promise>;

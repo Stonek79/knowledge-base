@@ -11,6 +11,7 @@ import {
     LOGIN_PAGE_PATH,
 } from './constants/api';
 import { COOKIE_NAME } from './constants/app';
+import { JWT_SECRET } from './constants/auth';
 
 type UserJWTPayload = {
     id: string;
@@ -21,7 +22,7 @@ type UserJWTPayload = {
 
 async function verifyJwtSafe(token: string): Promise<UserJWTPayload | null> {
     try {
-        const jwtSecret = process.env.JWT_SECRET;
+        const jwtSecret = process.env.JWT_SECRET || JWT_SECRET;
         if (!jwtSecret) {
             console.error('JWT_SECRET not set in environment variables');
             return null;

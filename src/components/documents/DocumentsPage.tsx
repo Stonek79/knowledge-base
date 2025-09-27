@@ -37,9 +37,25 @@ export function DocumentsPage() {
             </Box>
 
             {/* Основной контент */}
-            <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    gap: 3,
+                    mb: 3,
+                    alignItems: 'stretch',
+                    minHeight: 0,
+                    height: '15em',
+                }}
+            >
                 {/* Категории */}
-                <Box sx={{ flex: 1 }}>
+                <Box
+                    sx={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                    }}
+                >
                     <CategoriesList
                         categories={categories}
                         isLoading={categoriesLoading}
@@ -48,7 +64,14 @@ export function DocumentsPage() {
                 </Box>
 
                 {/* Недавние документы */}
-                <Box sx={{ flex: 1 }}>
+                <Box
+                    sx={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                    }}
+                >
                     <RecentDocuments />
                 </Box>
             </Box>

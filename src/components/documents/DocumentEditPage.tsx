@@ -24,6 +24,7 @@ export function DocumentEditPage() {
     const documentId = params.documentId as string;
 
     const { document, mutate } = useDocument(documentId);
+
     const {
         stageFile,
         commit,
@@ -42,6 +43,11 @@ export function DocumentEditPage() {
         description: document?.description || '',
         categoryIds: document?.categories.map(c => c.categoryId) || [],
         keywords: document?.keywords?.join(',') || '',
+        isConfidential: document?.isConfidential || false,
+        isSecret: document?.isSecret || false,
+        accessCode: document?.accessCodeHash || '',
+        confidentialAccessUserIds:
+            document?.confidentialAccessUsers?.map(u => u.userId) || [],
     };
 
     if (!document) return <NoResults />;
@@ -75,12 +81,15 @@ export function DocumentEditPage() {
                 // Проверяем, что это не File, И что у него есть id.
                 // Это гарантирует, что мы используем id только от существующих
                 // в БД приложений.
-                const isExistingAttachment = att instanceof File === false && 'id' in att;
-                
+                const isExistingAttachment =
+                    att instanceof File === false && 'id' in att;
+
                 return {
-                    clientId: isExistingAttachment ? att.id : crypto.randomUUID(),
+                    clientId: isExistingAttachment
+                        ? att.id
+                        : crypto.randomUUID(),
                     item: att,
-                }
+                };
             });
 
             // 1. Staging: грузим только НОВЫЕ файлы

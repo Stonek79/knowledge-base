@@ -77,23 +77,40 @@ export async function GET(request: NextRequest) {
         } = validation.data;
 
         // Базовые условия фильтрации
-        const baseWhere: WhereDocumentInput = {};
+        const whereConditions: WhereDocumentInput[] = [];
+
+        whereConditions.push({ isSecret: false }); // Исключаем секретные документы из всех выборок
 
         if (user.role === USER_ROLES.GUEST) {
-            baseWhere.isPublished = true;
+            whereConditions.push({ isPublished: true });
+        }
+
+        // Добавляем логику доступа к конфиденциальным документам
+        if (user.role !== USER_ROLES.ADMIN) {
+            whereConditions.push({
+                OR: [
+                    { isConfidential: false },
+                    { authorId: user.id },
+                    { confidentialAccessUsers: { some: { userId: user.id } } },
+                ],
+            });
         }
 
         if (authorId) {
-            baseWhere.authorId = authorId;
+            whereConditions.push({ authorId: authorId });
         }
 
         if (categoryIds) {
-            baseWhere.categories = {
-                some: {
-                    categoryId: { in: categoryIds },
+            whereConditions.push({
+                categories: {
+                    some: {
+                        categoryId: { in: categoryIds },
+                    },
                 },
-            };
+            });
         }
+
+        const baseWhere: WhereDocumentInput = { AND: whereConditions };
 
         // НОВАЯ ЛОГИКА: Гибридный поиск
         if (q && q.trim()) {
@@ -109,9 +126,15 @@ export async function GET(request: NextRequest) {
                 const allDocuments = await prisma.document.findMany({
                     include: {
                         author: {
-                            select: { id: true, username: true, role: true },
+                            select: {
+                                id: true,
+                                username: true,
+                                role: true,
+                                confidentialAccess: true,
+                            },
                         },
                         categories: { include: { category: true } },
+                        confidentialAccessUsers: true,
                     },
                 });
                 await indexer.reindexAll(allDocuments);

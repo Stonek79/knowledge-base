@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Upload as UploadIcon } from '@mui/icons-material';
 import {
@@ -19,11 +19,13 @@ import { ATTACHMENT_TYPE } from '@/constants/document';
 import { MIME } from '@/constants/mime';
 import { USER_ROLES } from '@/constants/user';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useUsers } from '@/lib/hooks/useUsers';
 import { uploadFormSchema } from '@/lib/schemas/document';
 import { BaseAttachment } from '@/lib/types/attachment';
 import { UploadFormInput } from '@/lib/types/document';
 import { SupportedMime } from '@/lib/types/mime';
 
+import { ConfidentialAccessControl } from '../access/ConfidentialAccessControl';
 import { AttachmentManager } from '../attachments/AttachmentManager';
 import { DragDropZone } from './DragDropZone';
 import { FilePreview } from './FilePreview';
@@ -76,6 +78,7 @@ export function DocumentUploadForm({
     mode,
 }: DocumentUploadFormProps) {
     const { user } = useAuth();
+    const { users, isLoading: usersLoading } = useUsers();
     const [uploadProgress, setUploadProgress] = useState(0);
     const [attachments, setAttachments] = useState<
         (BaseAttachment & { file?: File })[]
@@ -98,8 +101,26 @@ export function DocumentUploadForm({
             description: initialData?.description || '',
             categoryIds: initialData?.categoryIds || [],
             keywords: initialData?.keywords || '',
+            isConfidential:
+                mode === 'create' ? true : initialData?.isConfidential || false,
+            isSecret: initialData?.isSecret || false,
+            accessCode: initialData?.accessCode || '',
+            confidentialAccessUserIds:
+                initialData?.confidentialAccessUserIds || [],
         },
     });
+
+    // Устанавливаем дефолтные значения для списка доступа в режиме создания
+    useEffect(() => {
+        if (mode === 'create' && !usersLoading && users.length > 0) {
+            const enabledUsers = users.filter(u => u.enabled);
+            const author = user?.id ? [user.id] : [];
+            const defaultIds = Array.from(
+                new Set([...author, ...enabledUsers.map(u => u.id)])
+            );
+            setValue('confidentialAccessUserIds', defaultIds);
+        }
+    }, [mode, usersLoading, users, user, setValue]);
 
     const isUser = user?.role === USER_ROLES.USER;
     const isAdmin = user?.role === USER_ROLES.ADMIN;
@@ -166,6 +187,10 @@ export function DocumentUploadForm({
                     description: data.description,
                     categoryIds: data.categoryIds,
                     keywords: data.keywords,
+                    isConfidential: data.isConfidential,
+                    isSecret: data.isSecret,
+                    accessCode: data.accessCode,
+                    confidentialAccessUserIds: data.confidentialAccessUserIds,
                 },
                 mainFile: mainFile, // Наш локальный стейт для основного файла
                 attachments: attachments.map(att => att.file ?? att), // Наш локальный стейт для приложений
@@ -210,6 +235,16 @@ export function DocumentUploadForm({
                     onFileSelect={handleFileSelect}
                     onError={error => console.error(error)}
                     disabled={isUploadingState}
+                />
+
+                {/* Конфиденциальный доступ */}
+                <ConfidentialAccessControl
+                    control={control}
+                    disabled={isUploadingState}
+                    setValue={setValue}
+                    currentUser={user}
+                    users={users}
+                    usersLoading={usersLoading}
                 />
 
                 {/* Выбранный файл */}

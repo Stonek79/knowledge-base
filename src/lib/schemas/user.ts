@@ -13,6 +13,7 @@ export const createUserSchema = z.object({
         }),
     password: z.string().min(6).max(25),
     role: z.enum(USER_ROLES).default(USER_ROLES.USER),
+    enabled: z.boolean().default(false),
 });
 
 export const userResponseSchema = z.object({
@@ -20,6 +21,15 @@ export const userResponseSchema = z.object({
     username: z.string(),
     role: z.enum(USER_ROLES),
     createdAt: z.union([z.iso.datetime(), z.date()]),
+    enabled: z.boolean(),
+});
+
+export const jwtPayloadSchema = z.object({
+    id: z.string(),
+    username: z.string(),
+    role: z.enum(USER_ROLES),
+    createdAt: z.union([z.string(), z.date()]), // или приведите к строке
+    enabled: z.boolean(),
 });
 
 export const usersListSchema = z.object({
@@ -40,6 +50,7 @@ export const updateUserSchema = z.object({
                 'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
         }),
     role: z.enum(USER_ROLES),
+    enabled: z.boolean().default(false),
     newpassword: z
         .string()
         .optional()

@@ -50,6 +50,7 @@ export async function POST(req: Request) {
             username: user.username,
             role: user.role,
             createdAt: user.createdAt,
+            enabled: user.enabled || false,
         };
 
         const jwtSecret: jwt.Secret = process.env.JWT_SECRET || JWT_SECRET;
@@ -73,10 +74,6 @@ export async function POST(req: Request) {
             },
             { status: 200 }
         );
-
-        console.log('[login] token', token);
-        console.log('[login] jwtSecret', jwtSecret);
-        console.log('[login] signOptions', signOptions);
 
         response.cookies.set(COOKIE_NAME, token, {
             httpOnly: true,

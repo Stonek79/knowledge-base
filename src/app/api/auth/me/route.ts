@@ -3,9 +3,10 @@ import jwt from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { COOKIE_NAME } from '@/constants/app';
+import { JWT_SECRET } from '@/constants/auth';
 import { ApiError, handleApiError } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
-import { userResponseSchema } from '@/lib/schemas/user';
+import { jwtPayloadSchema } from '@/lib/schemas/user';
 
 export async function GET(req: NextRequest) {
     try {
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
             throw new ApiError('Токен аутентификации не предоставлен', 401);
         }
 
-        const jwtSecret = process.env.JWT_SECRET;
+        const jwtSecret = process.env.JWT_SECRET || JWT_SECRET;
 
         if (!jwtSecret) {
             console.error('JWT_SECRET не определен в .env');
@@ -39,14 +40,20 @@ export async function GET(req: NextRequest) {
             return errResponse;
         }
 
-        const validationResult = userResponseSchema.safeParse(decoded);
+        const validationResult = jwtPayloadSchema.safeParse(decoded);
+
+        console.log('[me] validationResult', validationResult);
 
         if (!validationResult.success) {
-            // Если токен есть, но его содержимое не соответствует схеме, это тоже ошибка авторизации
             throw new ApiError('Некорректный формат токена', 401);
         }
 
         const { id } = validationResult.data;
+
+        if (!id) {
+            // Если токен есть, но его содержимое не соответствует схеме, это тоже ошибка авторизации
+            throw new ApiError('Некорректный формат токена', 401);
+        }
 
         // Получаем самые свежие данные пользователя из БД
         const user = await prisma.user.findUnique({
@@ -78,7 +85,7 @@ export async function GET(req: NextRequest) {
                 { message: error.message, error: error.name }, // Используем error.name для кода ошибки
                 { status: error.status }
             );
-            
+
             return response;
         }
         // Обработка остальных (непредвиденных) ошибок

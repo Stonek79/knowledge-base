@@ -50,7 +50,7 @@ prod-push:
 # ======================
 
 migrate-dev:
-	docker compose --env-file $(ENV_FILE_DEV) -f docker-compose.yml -f docker-compose.dev.yml run --rm worker npx prisma migrate deploy
+	docker compose --env-file $(ENV_FILE_DEV) -f docker-compose.yml -f docker-compose.dev.yml run --rm worker npx prisma migrate dev
 
 seed-dev:
 	docker compose --env-file $(ENV_FILE_DEV) -f docker-compose.yml -f docker-compose.dev.yml run --rm worker npx prisma db seed

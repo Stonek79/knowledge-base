@@ -3,6 +3,7 @@ import { isAbsolute } from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { DOCUMENTS_PAGE_PATH } from '@/constants/api';
 import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
@@ -40,7 +41,7 @@ import { fileStorageService } from '@/lib/services/FileStorageService';
  * GUEST пользователи могут видеть только опубликованные документы.
  *
  * @apiExample {curl} Получение документа:
- *     curl -H "Authorization: Bearer {token}" \
+ *     curl -H "Authorization: Bearer {token}"
  *          "http://localhost:3000/api/documents/{documentId}"
  */
 export async function GET(
@@ -61,7 +62,7 @@ export async function GET(
         const document = await prisma.document.findUnique({
             where: { id: documentId },
             include: {
-                author: { select: { id: true, username: true, role: true } },
+                author: { select: { id: true, username: true, role: true, enabled: true } },
                 categories: {
                     include: {
                         category: {
@@ -81,6 +82,7 @@ export async function GET(
                         createdAt: true,
                     },
                 },
+                confidentialAccessUsers: true,
                 mainPdf: { select: { id: true, filePath: true } },
             },
         });
@@ -90,6 +92,35 @@ export async function GET(
                 { message: 'Документ не найден' },
                 { status: 404 }
             );
+        }
+
+        // Проверка доступа к конфиденциальному документу
+        if (document.isConfidential) {
+            const isAuthor = user.id === document.authorId;
+            const isAdmin = user.role === USER_ROLES.ADMIN;
+
+            if (!isAuthor && !isAdmin) {
+                const hasAccess =
+                    await prisma.confidentialDocumentAccess.findUnique({
+                        where: {
+                            userId_documentId: {
+                                userId: user.id,
+                                documentId: document.id,
+                            },
+                        },
+                    });
+
+                if (!hasAccess) {
+                    console.warn(
+                        `User ${user.username} (ID: ${user.id}) attempted to access confidential document ${document.id} without permission.`
+                    );
+                    const documentsUrl = new URL(
+                        DOCUMENTS_PAGE_PATH,
+                        request.url
+                    );
+                    return NextResponse.redirect(documentsUrl);
+                }
+            }
         }
 
         if (user.role === USER_ROLES.GUEST && !document.isPublished) {
@@ -137,9 +168,9 @@ export async function GET(
  * ADMIN может редактировать любые документы. После обновления документ переиндексируется.
  *
  * @apiExample {curl} Обновление документа:
- *     curl -X PUT -H "Authorization: Bearer {token}" \
- *          -H "Content-Type: application/json" \
- *          -d '{"title":"Новый заголовок","keywords":"новое, ключевое, слово"}' \
+ *     curl -X PUT -H "Authorization: Bearer {token}"
+ *          -H "Content-Type: application/json"
+ *          -d '{"title":"Новый заголовок","keywords":"новое, ключевое, слово"}'
  *          "http://localhost:3000/api/documents/{documentId}"
  */
 export async function PUT(
@@ -214,7 +245,9 @@ export async function PUT(
 
         // ===== ИНДЕКСАЦИЯ (в фоне) =====
         // Ставим задачу в очередь для фоновой переиндексации
-        console.log(`[API] Enqueuing job: 'index-document' for documentId: ${updatedDocument.id}`);
+        console.log(
+            `[API] Enqueuing job: 'index-document' for documentId: ${updatedDocument.id}`
+        );
         await indexingQueue.add('index-document', {
             documentId: updatedDocument.id,
         });
@@ -250,7 +283,7 @@ export async function PUT(
  * 4) Удаляется из поискового индекса
  *
  * @apiExample {curl} Удаление документа:
- *     curl -X DELETE -H "Authorization: Bearer {token}" \
+ *     curl -X DELETE -H "Authorization: Bearer {token}"
  *          "http://localhost:3000/api/documents/{documentId}"
  */
 export async function DELETE(
@@ -338,7 +371,9 @@ export async function DELETE(
 
         // ===== ИНДЕКСАЦИЯ (в фоне) =====
         // Ставим задачу в очередь для фонового удаления из индекса
-        console.log(`[API] Enqueuing job: 'remove-from-index' for documentId: ${documentId}`);
+        console.log(
+            `[API] Enqueuing job: 'remove-from-index' for documentId: ${documentId}`
+        );
         await indexingQueue.add('remove-from-index', { documentId });
 
         return NextResponse.json({ message: 'Документ успешно удален' });

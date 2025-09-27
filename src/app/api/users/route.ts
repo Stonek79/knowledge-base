@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { USER_ROLES } from '@/constants/user';
+import { getCurrentUser } from '@/lib/actions/users';
 import { ApiError, handleApiError } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
 import { createUserSchema, usersListSchema } from '@/lib/schemas/user';
@@ -21,6 +23,8 @@ export async function GET(req: NextRequest) {
         const sortBy = searchParams.get('sortBy') || 'createdAt';
         const sortOrder = searchParams.get('sortOrder') || 'desc';
 
+        const user = await getCurrentUser(req);
+
         // Валидация параметров
         const validation = usersListSchema.safeParse({
             page,
@@ -39,6 +43,10 @@ export async function GET(req: NextRequest) {
 
         // Построение условий поиска с правильной типизацией
         const whereConditions: UserWhereInput[] = [];
+
+        if (user && user?.role !== USER_ROLES.ADMIN) {
+            whereConditions.push({ role: { not: USER_ROLES.ADMIN } });
+        }
 
         if (search) {
             // Используем raw query для регистронезависимого поиска в SQLite
@@ -70,6 +78,8 @@ export async function GET(req: NextRequest) {
                     id: true,
                     username: true,
                     role: true,
+                    enabled: true,
+                    confidentialAccess: true,
                     createdAt: true,
                     _count: {
                         select: {
@@ -149,7 +159,8 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        const { username, password, role }: CreateUserData = validation.data;
+        const { username, password, role, enabled }: CreateUserData =
+            validation.data;
 
         const result = await prisma.$transaction(async tx => {
             const existingUser = await tx.user.findUnique({
@@ -171,11 +182,14 @@ export async function POST(req: NextRequest) {
                     username,
                     password: hashedPassword,
                     role,
+                    enabled,
                 },
                 select: {
                     id: true,
                     username: true,
                     role: true,
+                    enabled, 
+                    confidentialAccess: true,
                     createdAt: true,
                     _count: {
                         select: {

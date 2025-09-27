@@ -31,9 +31,26 @@ export function RecentDocuments() {
 
     if (recentDocuments.length === 0) {
         return (
-            <Card>
-                <CardContent>
-                    <Typography variant='h6' gutterBottom>
+            <Card sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+                <CardContent
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flex: 1,
+                        minHeight: 0,
+                    }}
+                >
+                    <Typography
+                        variant='h6'
+                        gutterBottom
+                        sx={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 1,
+                            bgcolor: 'background.paper',
+                            py: 1,
+                        }}
+                    >
                         Недавние документы
                     </Typography>
                     <Box sx={{ textAlign: 'center', py: 4 }}>

@@ -9,6 +9,7 @@ import { composeChangeSetSchema } from '@/lib/schemas/compose';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 import { pdfCombiner } from '@/lib/services/PDFCombiner';
 import type { SupportedMime } from '@/lib/types/mime';
+import { hashPassword } from '@/utils/auth';
 import { isSupportedMime } from '@/utils/mime';
 
 /**
@@ -76,6 +77,12 @@ export async function POST(request: NextRequest) {
                             .digest('hex'),
                         isPublished: true,
                         authorId: user.id,
+                        isConfidential:
+                            parsed.metadata?.isConfidential ?? false,
+                        isSecret: parsed.metadata?.isSecret ?? false,
+                        accessCodeHash: parsed.metadata?.accessCode
+                            ? await hashPassword(parsed.metadata.accessCode)
+                            : null,
                         keywords: parsed.metadata?.keywords
                             ? parsed.metadata.keywords
                                   .split(',')
@@ -97,6 +104,21 @@ export async function POST(request: NextRequest) {
                         categories: { include: { category: true } },
                     },
                 });
+
+                // Создаем записи в списке доступа, если документ конфиденциальный
+                if (
+                    doc.isConfidential &&
+                    parsed.metadata?.confidentialAccessUserIds?.length
+                ) {
+                    await tx.confidentialDocumentAccess.createMany({
+                        data: parsed.metadata.confidentialAccessUserIds.map(
+                            userId => ({
+                                documentId: doc.id,
+                                userId: userId,
+                            })
+                        ),
+                    });
+                }
 
                 const clientIdToAttachmentId: Record<string, string> = {};
 

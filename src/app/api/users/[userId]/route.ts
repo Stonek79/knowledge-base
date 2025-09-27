@@ -28,7 +28,7 @@ export async function PUT(
             });
         }
 
-        const { username, newpassword, role } = validation.data;
+        const { username, newpassword, role, enabled } = validation.data;
 
         // Использование транзакции для атомарности
         const result = await prisma.$transaction(async tx => {
@@ -39,6 +39,7 @@ export async function PUT(
                     id: true,
                     username: true,
                     role: true,
+                    enabled: true,
                 },
             });
 
@@ -66,6 +67,7 @@ export async function PUT(
                 username?: string;
                 role?: UserRole;
                 password?: string;
+                enabled?: boolean;
             } = {};
 
             if (username) updateData.username = username;
@@ -73,7 +75,7 @@ export async function PUT(
             if (newpassword) {
                 updateData.password = await bcrypt.hash(newpassword, 12);
             }
-
+            if (enabled) updateData.enabled = enabled;
             // Обновление пользователя с возвратом расширенных данных
             const user = await tx.user.update({
                 where: { id: userId },
@@ -82,6 +84,7 @@ export async function PUT(
                     id: true,
                     username: true,
                     role: true,
+                    enabled: true,
                     createdAt: true,
                     _count: {
                         select: {

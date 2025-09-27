@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { STORAGE_BASE_PATHS } from '@/constants/app';
-import { SearchEngine } from '@/constants/document';
 import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { composeChangeSetSchema } from '@/lib/schemas/compose';
-import { SearchFactory } from '@/lib/search/factory';
 import { fileStorageService } from '@/lib/services/FileStorageService';
 import { pdfCombiner } from '@/lib/services/PDFCombiner';
 import type { SupportedMime } from '@/lib/types/mime';
+import { hashPassword } from '@/utils/auth';
 import { isSupportedMime } from '@/utils/mime';
 
 export async function POST(
@@ -80,6 +79,11 @@ export async function POST(
                             title: parsed.metadata.title,
                             description: parsed.metadata.description,
                             keywords,
+                            isConfidential: parsed.metadata.isConfidential,
+                            isSecret: parsed.metadata.isSecret,
+                            accessCodeHash: parsed.metadata.accessCode
+                                ? await hashPassword(parsed.metadata.accessCode)
+                                : undefined,
                             categories: parsed.metadata.categoryIds
                                 ? {
                                       deleteMany: {},
@@ -90,6 +94,29 @@ export async function POST(
                                 : undefined,
                         },
                     });
+
+                    // Синхронизируем список доступа для конфиденциальных документов
+                    if (
+                        parsed.metadata.isConfidential &&
+                        parsed.metadata.confidentialAccessUserIds
+                    ) {
+                        await tx.confidentialDocumentAccess.deleteMany({
+                            where: { documentId: documentId },
+                        });
+                        await tx.confidentialDocumentAccess.createMany({
+                            data: parsed.metadata.confidentialAccessUserIds.map(
+                                userId => ({
+                                    documentId: documentId,
+                                    userId: userId,
+                                })
+                            ),
+                        });
+                    } else if (parsed.metadata.isConfidential === false) {
+                        // Если документ перестал быть конфиденциальным, чистим список доступа
+                        await tx.confidentialDocumentAccess.deleteMany({
+                            where: { documentId: documentId },
+                        });
+                    }
                 }
 
                 // 2) replaceMain (опционально)
@@ -301,27 +328,6 @@ export async function POST(
                     cleanupOnSuccess.push(doc.mainPdf.filePath);
                 }
 
-                // 7) индексация
-                // const fullDoc = await tx.document.findUnique({
-                //     where: { id: doc.id },
-                //     include: {
-                //         author: true,
-                //         categories: { include: { category: true } },
-                //     },
-                // });
-
-                // const engine =
-                //     (process.env
-                //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-                //     SearchEngine.FLEXSEARCH;
-                // const indexer = SearchFactory.createIndexer(engine);
-
-                // if (!fullDoc) {
-                //     throw new Error('Document disappeared during transaction');
-                // }
-
-                // await indexer.indexDocument(fullDoc);
-
                 // ===== ИНДЕКСАЦИЯ (в фоне) =====
                 const hasFileChanges =
                     !!parsed.replaceMain ||
@@ -332,13 +338,17 @@ export async function POST(
                 if (doc.id) {
                     if (hasFileChanges) {
                         // Если менялся состав файлов, запускаем полную пересборку контента
-                        console.log(`[API] Enqueuing job: 'update-content-and-reindex' for documentId: ${doc.id}`);
+                        console.log(
+                            `[API] Enqueuing job: 'update-content-and-reindex' for documentId: ${doc.id}`
+                        );
                         await indexingQueue.add('update-content-and-reindex', {
                             documentId: doc.id,
                         });
                     } else {
                         // Если менялись только метаданные, достаточно простой переиндексации
-                        console.log(`[API] Enqueuing job: 'index-document' for documentId: ${doc.id}`);
+                        console.log(
+                            `[API] Enqueuing job: 'index-document' for documentId: ${doc.id}`
+                        );
                         await indexingQueue.add('index-document', {
                             documentId: doc.id,
                         });

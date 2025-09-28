@@ -2,7 +2,7 @@ import {
     FLEXSEARCH_DOCS_DUMP_KEY,
     FLEXSEARCH_INDEX_DUMP_KEY,
 } from '@/constants/search';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { SearchDocument } from '@/lib/types/document';
 
 type IndexDump = Record<string, string>;
@@ -12,7 +12,7 @@ type DocsDump = Record<string, SearchDocument>;
 async function saveObjectToMinio(key: string, data: object): Promise<void> {
     try {
         const buffer = Buffer.from(JSON.stringify(data));
-        await fileStorageService.uploadByKey(key, buffer, 'application/json');
+        await getFileStorageService().uploadByKey(key, buffer, 'application/json');
     } catch (error) {
         console.error(
             `Failed to upload object to MinIO with key ${key}:`,
@@ -25,7 +25,7 @@ async function saveObjectToMinio(key: string, data: object): Promise<void> {
 // Универсальная функция для загрузки JSON-объекта из MinIO
 async function loadObjectFromMinio(key: string): Promise<unknown | null> {
     try {
-        const buf = await fileStorageService.downloadDocument(key);
+        const buf = await getFileStorageService().downloadDocument(key);
         return JSON.parse(buf.toString('utf-8'));
     } catch (e) {
         if (isNoSuchKey(e)) return null; // нет дампа — это нормально

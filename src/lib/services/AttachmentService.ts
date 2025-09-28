@@ -3,7 +3,7 @@ import { STORAGE_BASE_PATHS } from '@/constants/app';
 import { attachmentMetadataSchema } from '@/lib/schemas/attachment';
 import type { AttachmentMetadata } from '@/lib/types/attachment';
 
-import { fileStorageService } from './FileStorageService';
+import { getFileStorageService } from './FileStorageService';
 
 /**
  * Сервис для управления приложениями к документам
@@ -13,7 +13,7 @@ import { fileStorageService } from './FileStorageService';
  * Управление записями БД происходит в API роутах.
  */
 export class AttachmentService {
-    constructor(private readonly storage: typeof fileStorageService) {}
+    constructor() {}
 
     /**
      * Загружает приложение в MinIO
@@ -29,7 +29,7 @@ export class AttachmentService {
         const validatedMetadata = attachmentMetadataSchema.parse(metadata);
 
         // Загружаем файл в MinIO
-        const result = await this.storage.uploadDocument(
+        const result = await getFileStorageService().uploadDocument(
             fileBuffer,
             {
                 originalName: validatedMetadata.fileName,
@@ -51,7 +51,7 @@ export class AttachmentService {
      * @param fileKey Ключ файла в MinIO
      */
     async deleteAttachment(fileKey: string): Promise<void> {
-        await this.storage.deleteDocument(fileKey);
+        await getFileStorageService().deleteDocument(fileKey);
     }
 
     /**
@@ -59,7 +59,7 @@ export class AttachmentService {
      * @param fileKey Ключ файла в MinIO
      */
     async getAttachmentInfo(fileKey: string) {
-        return this.storage.getFileInfo(fileKey);
+        return getFileStorageService().getFileInfo(fileKey);
     }
 
     /**
@@ -67,7 +67,7 @@ export class AttachmentService {
      * @param fileKey Ключ файла в MinIO
      */
     async downloadAttachment(fileKey: string): Promise<Buffer> {
-        return this.storage.downloadDocument(fileKey);
+        return getFileStorageService().downloadDocument(fileKey);
     }
 
     /**
@@ -79,9 +79,9 @@ export class AttachmentService {
         fileKey: string,
         expirySeconds?: number
     ): Promise<string> {
-        return this.storage.getFileUrl(fileKey, expirySeconds);
+        return getFileStorageService().getFileUrl(fileKey, expirySeconds);
     }
 }
 
 // Экспорт экземпляра сервиса
-export const attachmentService = new AttachmentService(fileStorageService);
+export const attachmentService = new AttachmentService();

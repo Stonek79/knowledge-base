@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { STORAGE_BASE_PATHS } from '@/constants/app';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { settingsService } from '@/lib/services/SettingsService';
 import type { SupportedMime } from '@/lib/types/mime';
 import { isSupportedMime } from '@/utils/mime';
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         const mime: SupportedMime = file.type;
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const upload = await fileStorageService.uploadDocument(
+        const upload = await getFileStorageService().uploadDocument(
             buffer,
             {
                 originalName: file.name,

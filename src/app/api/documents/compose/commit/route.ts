@@ -6,7 +6,7 @@ import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { composeChangeSetSchema } from '@/lib/schemas/compose';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { pdfCombiner } from '@/lib/services/PDFCombiner';
 import type { SupportedMime } from '@/lib/types/mime';
 import { hashPassword } from '@/utils/auth';
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
                 tempKeys.push(parsed.replaceMain.tempKey);
 
-                const main = await fileStorageService.promoteFromTemp(
+                const main = await getFileStorageService().promoteFromTemp(
                     parsed.replaceMain.tempKey,
                     STORAGE_BASE_PATHS.ORIGINAL
                 );
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
                         tempKeys.push(att.tempKey);
 
                         const promotedAtt =
-                            await fileStorageService.promoteFromTemp(
+                            await getFileStorageService().promoteFromTemp(
                                 att.tempKey,
                                 STORAGE_BASE_PATHS.ATTACHMENTS
                             );
@@ -251,13 +251,13 @@ export async function POST(request: NextRequest) {
 
         // финализация (после коммита): удалить старые файлы и любые temp
         for (const t of tempKeys) {
-            await fileStorageService.safeDelete(t);
+            await getFileStorageService().safeDelete(t);
         }
 
         return NextResponse.json({ status: 'ok', ...result });
     } catch (error) {
         for (const key of promoted) {
-            await fileStorageService.safeDelete(key);
+            await getFileStorageService().safeDelete(key);
         }
 
         return handleApiError(error);

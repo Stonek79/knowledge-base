@@ -2,11 +2,7 @@ import Redis from 'ioredis';
 
 import { CacheOperationResult, CacheOptions, CacheStats } from '../types/cache';
 
-/**
- * Сервис кэширования для улучшения производительности
- * Поддерживает Redis для распределенного кэширования
- */
-export class CacheService {
+class CacheService {
     private client: Redis | null = null;
     private defaultTtl: number;
     private prefix: string;
@@ -16,9 +12,6 @@ export class CacheService {
         this.prefix = process.env.REDIS_KEY_PREFIX || 'kb:';
     }
 
-    /**
-     * Lazily gets or creates the Redis client instance.
-     */
     private getClient(): Redis {
         if (this.client) {
             return this.client;
@@ -26,7 +19,6 @@ export class CacheService {
 
         const redisUrl = process.env.REDIS_URL;
 
-        // В среде сборки (где нет REDIS_URL) возвращаем mock-клиент
         if (!redisUrl) {
             console.warn('>>> Build environment detected or REDIS_URL is not set. Using MOCK Redis client.');
             const mockClient = {
@@ -39,7 +31,7 @@ export class CacheService {
                 dbsize: async () => 0,
                 flushdb: async () => 'OK',
                 quit: async () => 'OK',
-                on: () => mockClient, // Для цепочек вызовов
+                on: () => mockClient,
             } as unknown as Redis;
             return mockClient;
         }
@@ -55,11 +47,6 @@ export class CacheService {
         return this.client;
     }
 
-    /**
-     * Получает значение из кэша
-     * @param key - Ключ кэша
-     * @returns Значение или null если не найдено
-     */
     async get<T>(key: string): Promise<T | null> {
         try {
             const client = this.getClient();
@@ -75,12 +62,6 @@ export class CacheService {
         }
     }
 
-    /**
-     * Сохраняет значение в кэш
-     * @param key - Ключ кэша
-     * @param value - Значение для сохранения
-     * @param options - Опции кэширования
-     */
     async set<T>(
         key: string,
         value: T,
@@ -107,10 +88,6 @@ export class CacheService {
         }
     }
 
-    /**
-     * Удаляет значение из кэша
-     * @param key - Ключ для удаления
-     */
     async delete(key: string): Promise<CacheOperationResult> {
         try {
             const client = this.getClient();
@@ -125,10 +102,6 @@ export class CacheService {
         }
     }
 
-    /**
-     * Инвалидирует все результаты поиска
-     * Вызывается при изменении документов
-     */
     async invalidateSearchResults(): Promise<CacheOperationResult> {
         try {
             const client = this.getClient();
@@ -148,10 +121,6 @@ export class CacheService {
         }
     }
 
-    /**
-     * Инвалидирует кэш по паттерну
-     * @param pattern - Паттерн ключей для удаления
-     */
     async invalidateByPattern(pattern: string): Promise<CacheOperationResult> {
         try {
             const client = this.getClient();
@@ -171,22 +140,17 @@ export class CacheService {
         }
     }
 
-    /**
-     * Получает статистику кэша
-     * @returns Статистика использования кэша
-     */
     async getStats(): Promise<CacheStats> {
         try {
             const client = this.getClient();
             const info = await client.info('memory');
             const keys = await client.dbsize();
 
-            // Простая эвристика для hit rate
-            const hitRate = 0.8; // TODO: Реализовать реальный подсчет
+            const hitRate = 0.8;
 
             return {
                 totalKeys: keys,
-                memoryUsage: 0, // TODO: Извлечь из info
+                memoryUsage: 0,
                 hitRate,
                 lastCleanup: new Date(),
             };
@@ -199,9 +163,6 @@ export class CacheService {
         }
     }
 
-    /**
-     * Очищает весь кэш
-     */
     async clear(): Promise<CacheOperationResult> {
         try {
             const client = this.getClient();
@@ -215,9 +176,6 @@ export class CacheService {
         }
     }
 
-    /**
-     * Закрывает соединение с Redis
-     */
     async disconnect(): Promise<void> {
         if (this.client) {
             await this.client.quit();
@@ -225,18 +183,10 @@ export class CacheService {
         }
     }
 
-    /**
-     * Строит полный ключ с префиксом
-     * @param key - Базовый ключ
-     * @returns Полный ключ с префиксом
-     */
     private buildKey(key: string): string {
         return `${this.prefix}${key}`;
     }
 
-    /**
-     * Настраивает обработчики событий Redis
-     */
     private setupEventHandlers(client: Redis): void {
         client.on('connect', () => {
             console.log('✅ Redis подключен');
@@ -252,5 +202,11 @@ export class CacheService {
     }
 }
 
-// Экспорт экземпляра для использования в приложении
-export const cacheService = new CacheService();
+let cacheServiceInstance: CacheService | null = null;
+
+export const getCacheService = (): CacheService => {
+    if (!cacheServiceInstance) {
+        cacheServiceInstance = new CacheService();
+    }
+    return cacheServiceInstance;
+};

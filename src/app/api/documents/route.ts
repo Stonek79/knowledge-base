@@ -11,7 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { documentListSchema } from '@/lib/schemas/document';
 import { SearchFactory } from '@/lib/search/factory';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { settingsService } from '@/lib/services/SettingsService';
 import type { WhereDocumentInput } from '@/lib/types/document';
 import type { SupportedMime } from '@/lib/types/mime';
@@ -383,7 +383,7 @@ export async function POST(request: NextRequest) {
         // Конвертируем в PDF, извлекаем текст, сохраняем в MinIO
         const gotenbergUrl = process.env.GOTENBERG_URL || GOTENBERG_URL;
         const adapter = new GotenbergAdapter(gotenbergUrl);
-        const processor = new DocumentProcessor(adapter, fileStorageService);
+        const processor = new DocumentProcessor(adapter);
 
         const processed = await processor.processUpload(
             buffer,
@@ -439,7 +439,7 @@ export async function POST(request: NextRequest) {
                             conversionType: 'PDF',
                             filePath: processed.storage.pdfKey,
                             fileSize: (
-                                await fileStorageService.getFileInfo(
+                                await getFileStorageService().getFileInfo(
                                     processed.storage.pdfKey
                                 )
                             ).size,
@@ -467,7 +467,7 @@ export async function POST(request: NextRequest) {
                     conversionType: 'PDF',
                     filePath: processed.storage.pdfKey,
                     fileSize: (
-                        await fileStorageService.getFileInfo(
+                        await getFileStorageService().getFileInfo(
                             processed.storage.pdfKey
                         )
                     ).size,
@@ -494,10 +494,10 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         if (createdPdfKey) {
-            void fileStorageService.deleteDocument(createdPdfKey);
+            void getFileStorageService().deleteDocument(createdPdfKey);
         }
         if (createdFileKey) {
-            void fileStorageService.deleteDocument(createdFileKey);
+            void getFileStorageService().deleteDocument(createdFileKey);
         }
         return handleApiError(error);
     }

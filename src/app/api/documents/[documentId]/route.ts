@@ -10,7 +10,7 @@ import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { updateDocumentSchema } from '@/lib/schemas/document';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 
 /**
  * @api {GET} /api/documents/:documentId Получение документа
@@ -354,7 +354,7 @@ export async function DELETE(
                 if (isAbsolute(key)) {
                     await unlink(key);
                 } else {
-                    await fileStorageService.deleteDocument(key);
+                    await getFileStorageService().deleteDocument(key);
                 }
             } catch (e) {
                 console.log(`Failed to delete file ${key}`, e);

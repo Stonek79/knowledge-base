@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { prisma } from '@/lib/prisma';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { FileUtils } from '@/utils/files';
 
 export async function GET(
@@ -64,6 +64,8 @@ export async function GET(
             archive.on('error', err => controller.error(err));
         },
     });
+
+    const fileStorageService = getFileStorageService();
 
     // основной оригинал
     {

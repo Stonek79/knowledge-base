@@ -3,14 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MIME } from '@/constants/mime';
 import { getCurrentUser } from '@/lib/actions/users';
 import { prisma } from '@/lib/prisma';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 
 export const runtime = 'nodejs';
 
 function safeFileName(name: string): string {
     // минимальная экранизация для заголовка
     return name
-        .replace(/[^\w\s\-\.]/g, '') // Убираем спецсимволы
+        .replace(/[^\u0000-\u007F]/g, '') // Убираем спецсимволы, оставляем ASCII
         .replace(/\s+/g, ' ') // Нормализуем пробелы
         .trim();
 }
@@ -30,8 +30,7 @@ async function resolveFile(request: NextRequest, documentId: string) {
     const { searchParams } = new URL(request.url);
 
     const fileType = (searchParams.get('type') || 'original').toLowerCase();
-    const disposition =
-        searchParams.get('disposition') === 'inline' ? 'inline' : 'attachment';
+    const disposition = searchParams.get('disposition') === 'inline' ? 'inline' : 'attachment';
 
     if (!allowedTypes.includes(fileType)) {
         return { status: 400 as const, error: 'Invalid file type' };
@@ -105,7 +104,7 @@ async function resolveFile(request: NextRequest, documentId: string) {
     }
 
     try {
-        await fileStorageService.getFileInfo(filePath);
+        await getFileStorageService().getFileInfo(filePath);
     } catch {
         return { status: 404 as const, error: 'File not found' };
     }
@@ -181,7 +180,7 @@ export async function GET(
             );
         }
 
-        const fileBuffer = await fileStorageService.downloadDocument(
+        const fileBuffer = await getFileStorageService().downloadDocument(
             resolved.filePath
         );
 

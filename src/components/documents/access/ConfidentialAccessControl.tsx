@@ -9,7 +9,7 @@ import {
     useWatch,
 } from 'react-hook-form';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import {
     Autocomplete,
@@ -48,12 +48,21 @@ export function ConfidentialAccessControl({
     const selectedIds =
         useWatch({ control, name: 'confidentialAccessUserIds' }) ?? [];
 
-    const options = currentUser
-        ? [currentUser, ...users.filter(u => u.id !== currentUser.id)]
-        : users;
+    // Guard against non-array users prop and memoize options for performance
+    const options = useMemo(() => {
+        const validUsers = Array.isArray(users) ? users : [];
+        if (!currentUser) {
+            return validUsers;
+        }
+        return [
+            currentUser,
+            ...validUsers.filter(u => u.id !== currentUser.id),
+        ];
+    }, [currentUser, users]);
 
     useEffect(() => {
-        if (!currentUser) return;
+        // Guard against invalid props
+        if (!currentUser || !Array.isArray(users)) return;
 
         if (isConfidential === false) {
             setValue('confidentialAccessUserIds', []);

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { SupportedMime } from '@/lib/types/mime';
 import { isSupportedMime } from '@/utils/mime';
 
@@ -66,7 +66,7 @@ class DocumentContentService {
         // 3. Параллельно скачиваем все файлы
         const fileBuffers = await Promise.all(
             filesToProcess.map(file =>
-                fileStorageService.downloadDocument(file.key)
+                getFileStorageService().downloadDocument(file.key)
             )
         );
 
@@ -83,7 +83,7 @@ class DocumentContentService {
         // 5. Объединяем весь извлеченный текст и обновляем документ в БД
         const combinedText = extractedTexts
             .filter(Boolean)
-            .join('\\n\\n')
+            .join('\n\n')
             .trim();
 
         await prisma.document.update({

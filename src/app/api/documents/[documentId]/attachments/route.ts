@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/actions/users';
 import { prisma } from '@/lib/prisma';
 import { attachmentMetadataSchema } from '@/lib/schemas/attachment';
 import { attachmentService } from '@/lib/services/AttachmentService';
-import { fileStorageService } from '@/lib/services/FileStorageService';
+import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { pdfCombiner } from '@/lib/services/PDFCombiner';
 import { settingsService } from '@/lib/services/SettingsService';
 import { CreateAttachmentData } from '@/lib/types/attachment';
@@ -123,7 +123,7 @@ export async function POST(
             );
         } catch (err) {
             // транзакция по БД упала — чистим загруженный файл
-            await fileStorageService.deleteDocument(result.key);
+            await getFileStorageService().deleteDocument(result.key);
             throw err;
         }
 
@@ -177,10 +177,10 @@ export async function POST(
                         where: { id: createdAttachmentId },
                     });
                 }
-                await fileStorageService.deleteDocument(result.key);
+                await getFileStorageService().deleteDocument(result.key);
 
                 if (doc.mainPdf?.filePath) {
-                    void fileStorageService.deleteDocument(
+                    void getFileStorageService().deleteDocument(
                         doc.mainPdf.filePath
                     );
                 }
@@ -203,7 +203,7 @@ export async function POST(
             if (pdfResult.success && pdfResult.combinedPdfKey) {
                 // удалить старый объединенный, если был
                 if (doc.mainPdf?.filePath) {
-                    void fileStorageService.deleteDocument(
+                    void getFileStorageService().deleteDocument(
                         doc.mainPdf.filePath
                     );
                 }

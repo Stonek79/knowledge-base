@@ -1,6 +1,6 @@
 import { STORAGE_BASE_PATHS } from '@/constants/app';
 import { MIME } from '@/constants/mime';
-import { FileStorageService } from '@/lib/services/FileStorageService';
+import { FileStorageService, getFileStorageService } from '@/lib/services/FileStorageService';
 import type { SupportedMime } from '@/lib/types/mime';
 import { FileUtils } from '@/utils/files';
 import { isSupportedMime } from '@/utils/mime';
@@ -28,10 +28,13 @@ export interface ProcessResult {
  * Ошибки конвертации/извлечения логируются; документ создаётся всегда.
  */
 export class DocumentProcessor {
+    private storage: FileStorageService;
+
     constructor(
         private readonly conversion: ConversionService,
-        private readonly storage: FileStorageService
-    ) {}
+    ) {
+        this.storage = getFileStorageService();
+    }
 
     /**
      * Полный цикл обработки одного файла.

@@ -21,9 +21,6 @@ interface CodedError extends Error {
     code?: string;
 }
 
-/**
- * Сервис для работы с файловым хранилищем MinIO
- */
 export class FileStorageService {
     private client: MinioClient | null = null;
     private bucket: string;
@@ -33,15 +30,11 @@ export class FileStorageService {
         this.bucket = MINIO_CONFIG.bucket;
     }
 
-    /**
-     * Lazily gets or creates the Minio client instance and ensures bucket exists.
-     */
     private async getClient(): Promise<MinioClient> {
         if (this.client) {
             return this.client;
         }
 
-        // В среде сборки (где нет MINIO_ENDPOINT) возвращаем mock-клиент 
         if (!process.env.MINIO_ENDPOINT) {
             console.warn('>>> Build environment detected or MINIO_ENDPOINT is not set. Using MOCK Minio client.');
             const mockClient = {
@@ -71,9 +64,6 @@ export class FileStorageService {
         return this.client;
     }
 
-    /**
-     * Загружает документ в MinIO хранилище
-     */
     async uploadDocument(
         file: Buffer,
         metadata: FileMetadata,
@@ -135,9 +125,6 @@ export class FileStorageService {
         }
     }
 
-    /**
-     * Загружает буфер по фиксированному ключу в MinIO
-     */
     async uploadByKey(
         key: string,
         buffer: Buffer,
@@ -162,9 +149,6 @@ export class FileStorageService {
         }
     }
 
-    /**
-     * Скачивает документ из MinIO хранилища
-     */
     async downloadDocument(key: string): Promise<Buffer> {
         try {
             const client = await this.getClient();
@@ -196,9 +180,6 @@ export class FileStorageService {
         }
     }
 
-    /**
-     * Удаляет документ из хранилища
-     */
     async deleteDocument(key: string): Promise<StorageOperationResult> {
         try {
             const client = await this.getClient();
@@ -212,9 +193,6 @@ export class FileStorageService {
         }
     }
 
-    /**
-     * Получает информацию о файле
-     */
     async getFileInfo(key: string): Promise<FileInfo> {
         try {
             const client = await this.getClient();
@@ -232,9 +210,6 @@ export class FileStorageService {
         }
     }
 
-    /**
-     * Получает presigned URL для файла
-     */
     async getFileUrl(
         key: string,
         expirySeconds: number = 86400
@@ -320,7 +295,11 @@ export class FileStorageService {
     }
 }
 
-/**
- * Экспорт экземпляра для использования в приложении
- */
-export const fileStorageService = new FileStorageService();
+let fileStorageServiceInstance: FileStorageService | null = null;
+
+export const getFileStorageService = (): FileStorageService => {
+    if (!fileStorageServiceInstance) {
+        fileStorageServiceInstance = new FileStorageService();
+    }
+    return fileStorageServiceInstance;
+};

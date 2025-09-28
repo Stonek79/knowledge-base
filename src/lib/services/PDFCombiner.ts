@@ -5,7 +5,7 @@ import type { SupportedMime } from '@/lib/types/mime';
 import type { PdfCombineRequest, PdfCombineResult } from '@/lib/types/pdf';
 
 import { attachmentService } from './AttachmentService';
-import { fileStorageService } from './FileStorageService';
+import { getFileStorageService, FileStorageService } from './FileStorageService';
 
 /**
  * Сервис для объединения PDF документов с приложениями
@@ -13,13 +13,14 @@ import { fileStorageService } from './FileStorageService';
  */
 export class PDFCombiner {
     private gotenberg: GotenbergAdapter;
+    private storage: FileStorageService;
 
     constructor(
-        private readonly storage: typeof fileStorageService,
         private readonly attachments: typeof attachmentService,
         gotenbergUrl: string
     ) {
         this.gotenberg = new GotenbergAdapter(gotenbergUrl);
+        this.storage = getFileStorageService();
     }
     /**
      * Обеспечивает PDF формат (конвертирует если нужно)
@@ -201,7 +202,6 @@ export class PDFCombiner {
 
 // Экспорт экземпляра сервиса
 export const pdfCombiner = new PDFCombiner(
-    fileStorageService,
     attachmentService,
     process.env.GOTENBERG_URL || GOTENBERG_URL
 );

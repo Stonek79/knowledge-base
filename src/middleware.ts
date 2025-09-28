@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
 import {
     ADMIN_PREFIX,
@@ -20,65 +21,13 @@ type UserJWTPayload = {
     exp?: number; // Срок действия токена
 };
 
-async function verifyJwtSafe(token: string): Promise<UserJWTPayload | null> {
+async function getJwtPayload(token: string): Promise<UserJWTPayload | null> {
     try {
-        const jwtSecret = process.env.JWT_SECRET || JWT_SECRET;
-        if (!jwtSecret) {
-            console.error('JWT_SECRET not set in environment variables');
-            return null;
-        }
-
-        const parts = token.trim().replace(/^"|"$/g, '').split('.');
-        if (parts.length !== 3) return null;
-
-        const [headerB64, payloadB64, signatureB64] = parts;
-
-        // Создаем ключ из секрета для HMAC-SHA256
-        const secretKey = await crypto.subtle.importKey(
-            'raw',
-            new TextEncoder().encode(jwtSecret),
-            { name: 'HMAC', hash: 'SHA-256' },
-            false,
-            ['verify']
-        );
-
-        // Проверяем подпись
-        const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
-        const signature = Uint8Array.from(
-            atob(signatureB64?.replace(/-/g, '+').replace(/_/g, '/') ?? ''),
-            c => c.charCodeAt(0)
-        );
-
-        const isValid = await crypto.subtle.verify(
-            'HMAC',
-            secretKey,
-            signature,
-            data
-        );
-
-        if (!isValid) {
-            console.warn('JWT signature verification failed');
-            return null;
-        }
-
-        // Декодируем payload безопасно
-        const payloadJson = atob(
-            payloadB64?.replace(/-/g, '+').replace(/_/g, '/') ?? ''
-        );
-        const payload = JSON.parse(payloadJson) as UserJWTPayload;
-
-        // Проверяем срок действия
-        if (payload.exp && payload.exp < Date.now() / 1000) {
-            console.warn('JWT token expired');
-            return null;
-        }
-
-        return payload;
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || JWT_SECRET);
+        const { payload } = await jwtVerify(token, secret);
+        return payload as UserJWTPayload;
     } catch (error) {
-        console.warn(
-            'JWT verification failed:',
-            error instanceof Error ? error.message : 'Unknown error'
-        );
+        console.warn('JWT verification failed:', error instanceof Error ? error.message : 'Unknown error');
         return null;
     }
 }
@@ -104,8 +53,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // 3. Проверка аутентификации
-    const isAuthenticated = Boolean(token);
-    const payload = token ? await verifyJwtSafe(token) : null;
+    const payload = token ? await getJwtPayload(token) : null;
+    const isAuthenticated = !!payload;
     const userRole = payload?.role;
 
     if (!isAuthenticated && pathname === HOME_PATH) {

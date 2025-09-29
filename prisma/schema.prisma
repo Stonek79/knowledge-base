@@ -1,6 +1,6 @@
 generator client {
     provider      = "prisma-client-js"
-    binaryTargets = ["native","linux-musl","linux-musl-arm64-openssl-3.0.x"]
+    binaryTargets = ["native", "linux-musl", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -17,8 +17,8 @@ model User {
     enabled   Boolean  @default(false) // Флаг доверенного пользователя
     createdAt DateTime @default(now()) // Дата создания
 
-    documents Document[] // Документы пользователя
-    updatedBy SystemSettings[] // Настройки системы, которые обновил пользователь
+    documents          Document[] // Документы пользователя
+    updatedBy          SystemSettings[] // Настройки системы, которые обновил пользователь
     confidentialAccess ConfidentialDocumentAccess[] // Доступ к конфиденциальным документам
 }
 

@@ -1,16 +1,11 @@
-import { unlink } from 'fs/promises';
-import { isAbsolute } from 'path';
-
 import { NextRequest, NextResponse } from 'next/server';
 
-import { DOCUMENTS_PAGE_PATH } from '@/constants/api';
 import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
-import { prisma } from '@/lib/prisma';
-import { indexingQueue } from '@/lib/queues/indexing';
 import { updateDocumentSchema } from '@/lib/schemas/document';
-import { getFileStorageService } from '@/lib/services/FileStorageService';
+import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
+import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
 
 /**
  * @api {GET} /api/documents/:documentId Получение документа
@@ -52,6 +47,7 @@ export async function GET(
 
     try {
         const user = await getCurrentUser(request);
+
         if (!user) {
             return NextResponse.json(
                 { message: 'Unauthorized' },
@@ -59,82 +55,10 @@ export async function GET(
             );
         }
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-            include: {
-                author: { select: { id: true, username: true, role: true, enabled: true } },
-                categories: {
-                    include: {
-                        category: {
-                            select: { id: true, name: true, color: true },
-                        },
-                    },
-                },
-                attachments: {
-                    orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-                    select: {
-                        id: true,
-                        fileName: true,
-                        fileSize: true,
-                        mimeType: true,
-                        filePath: true,
-                        order: true,
-                        createdAt: true,
-                    },
-                },
-                confidentialAccessUsers: true,
-                mainPdf: { select: { id: true, filePath: true } },
-            },
-        });
-
-        if (!document) {
-            return NextResponse.json(
-                { message: 'Документ не найден' },
-                { status: 404 }
-            );
-        }
-
-        // Проверка доступа к конфиденциальному документу
-        if (document.isConfidential) {
-            const isAuthor = user.id === document.authorId;
-            const isAdmin = user.role === USER_ROLES.ADMIN;
-
-            if (!isAuthor && !isAdmin) {
-                const hasAccess =
-                    await prisma.confidentialDocumentAccess.findUnique({
-                        where: {
-                            userId_documentId: {
-                                userId: user.id,
-                                documentId: document.id,
-                            },
-                        },
-                    });
-
-                if (!hasAccess) {
-                    console.warn(
-                        `User ${user.username} (ID: ${user.id}) attempted to access confidential document ${document.id} without permission.`
-                    );
-                    const documentsUrl = new URL(
-                        DOCUMENTS_PAGE_PATH,
-                        request.url
-                    );
-                    return NextResponse.redirect(documentsUrl);
-                }
-            }
-        }
-
-        if (user.role === USER_ROLES.GUEST && !document.isPublished) {
-            return NextResponse.json(
-                { message: 'Доступ запрещен' },
-                { status: 403 }
-            );
-        }
-
-        // Увеличение счетчика просмотров
-        await prisma.document.update({
-            where: { id: documentId },
-            data: { viewCount: { increment: 1 } },
-        });
+        const document = await DocumentQueryService.getDocumentById(
+            documentId,
+            user
+        );
 
         return NextResponse.json({ document });
     } catch (error) {
@@ -186,71 +110,12 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const validation = updateDocumentSchema.safeParse(body);
-        if (!validation.success) {
-            return handleApiError(validation.error);
-        }
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-            include: { author: true },
-        });
-
-        if (!document) {
-            return NextResponse.json(
-                { message: 'Документ не найден' },
-                { status: 404 }
-            );
-        }
-
-        if (user.role === USER_ROLES.USER && document.authorId !== user.id) {
-            return NextResponse.json(
-                { message: 'Можно редактировать только свои документы' },
-                { status: 403 }
-            );
-        }
-
-        const updatedDocument = await prisma.document.update({
-            where: { id: documentId },
-            data: {
-                title: validation.data.title,
-                description: validation.data.description,
-                keywords: validation.data.keywords
-                    ? validation.data.keywords
-                          .split(',')
-                          .map(s => s.trim())
-                          .filter(Boolean)
-                    : undefined,
-                categories: validation.data.categoryIds
-                    ? {
-                          deleteMany: {},
-                          create: validation.data.categoryIds.map(
-                              categoryId => ({ categoryId })
-                          ),
-                      }
-                    : undefined,
-            },
-            include: {
-                author: { select: { id: true, username: true, role: true } },
-                categories: { include: { category: true } },
-            },
-        });
-
-        // const engine =
-        //     (process.env
-        //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-        //     SearchEngine.FLEXSEARCH;
-        // const indexer = SearchFactory.createIndexer(engine);
-        // await indexer.indexDocument(updatedDocument);
-
-        // ===== ИНДЕКСАЦИЯ (в фоне) =====
-        // Ставим задачу в очередь для фоновой переиндексации
-        console.log(
-            `[API] Enqueuing job: 'index-document' for documentId: ${updatedDocument.id}`
+        const updatedDocument = await DocumentCommandService.updateDocument(
+            documentId,
+            body,
+            user
         );
-        await indexingQueue.add('index-document', {
-            documentId: updatedDocument.id,
-        });
 
         return NextResponse.json({
             message: 'Документ успешно обновлен',
@@ -298,85 +163,11 @@ export async function DELETE(
             return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
         }
 
-        const exists = await prisma.document.findUnique({
-            where: { id: documentId },
-            select: { id: true },
+        await DocumentCommandService.deleteDocument(documentId, user);
+
+        return NextResponse.json({
+            message: 'Документ успешно удален',
         });
-        if (!exists) {
-            return NextResponse.json(
-                { message: 'Документ не найден' },
-                { status: 404 }
-            );
-        }
-
-        // 1) Транзакция: собираем ключи файлов и удаляем записи
-        const fileKeys: string[] = [];
-        await prisma.$transaction(async tx => {
-            const doc = await tx.document.findUnique({
-                where: { id: documentId },
-                select: { filePath: true },
-            });
-            if (doc?.filePath) fileKeys.push(doc.filePath);
-
-            const converted = await tx.convertedDocument.findMany({
-                where: { documentId },
-                select: { filePath: true },
-            });
-            for (const it of converted) fileKeys.push(it.filePath);
-
-            const snapshot = await tx.document.findUnique({
-                where: { id: documentId },
-                select: {
-                    filePath: true, // оригинал документа
-                    mainPdf: { select: { filePath: true } }, // текущий объединённый PDF
-                    attachments: { select: { filePath: true } }, // все приложения
-                    convertedVersions: { select: { filePath: true } }, // все конвертированные версии
-                },
-            });
-
-            if (snapshot?.filePath) fileKeys.push(snapshot.filePath);
-            if (snapshot?.mainPdf?.filePath)
-                fileKeys.push(snapshot.mainPdf.filePath);
-            for (const a of snapshot?.attachments ?? [])
-                fileKeys.push(a.filePath);
-            for (const c of snapshot?.convertedVersions ?? [])
-                fileKeys.push(c.filePath);
-
-            await tx.convertedDocument.deleteMany({ where: { documentId } });
-            await tx.documentCategory.deleteMany({ where: { documentId } });
-            await tx.attachment.deleteMany({ where: { documentId } });
-            await tx.document.delete({ where: { id: documentId } });
-        });
-
-        // 2) Best-effort удаление файлов из MinIO/ФС (после коммита)
-        for (const key of fileKeys) {
-            try {
-                if (isAbsolute(key)) {
-                    await unlink(key);
-                } else {
-                    await getFileStorageService().deleteDocument(key);
-                }
-            } catch (e) {
-                console.log(`Failed to delete file ${key}`, e);
-            }
-        }
-
-        // 3) Удаление из поискового индекса
-        // const engine =
-        //     (process.env
-        //         .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-        //     SearchEngine.FLEXSEARCH;
-        // const indexer = SearchFactory.createIndexer(engine);
-        // await indexer.removeFromIndex(documentId);
-
-        // ===== ИНДЕКСАЦИЯ (в фоне) =====
-        // Ставим задачу в очередь для фонового удаления из индекса
-        console.log(
-            `[API] Enqueuing job: 'remove-from-index' for documentId: ${documentId}`
-        );
-        await indexingQueue.add('remove-from-index', { documentId });
-
-        return NextResponse.json({ message: 'Документ успешно удален' });
     } catch (error) {
         return handleApiError(error);
     }

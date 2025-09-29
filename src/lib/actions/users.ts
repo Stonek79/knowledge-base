@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 
 import { API_USERS_PATH } from '@/constants/api';
 import { api } from '@/lib/api/apiHelper';
+import { AuthService } from '@/lib/auth/AuthService';
 import { CreateUserData, UpdateUserData, UserResponse } from '@/lib/types/user';
-import { extractToken, validateToken } from '@/utils/jwt';
 
 export async function createUser(data: CreateUserData) {
     const { user } = await api.post<{ user: UserResponse }>(
@@ -39,10 +39,10 @@ export async function deleteUser(userId: string) {
 export async function getCurrentUser(
     req: NextRequest
 ): Promise<UserResponse | null> {
-    const token = await extractToken(req);
+    const token = AuthService.getTokenFromRequest(req);
     if (!token) {
         return null;
     }
 
-    return validateToken(token);
+    return AuthService.verifyToken(token);
 }

@@ -49,6 +49,12 @@ export type DocumentCategory = Prisma.DocumentCategoryGetPayload<{
     };
 }>;
 
+export type CreateDocumentServiceData = Omit<UploadFormData, 'username'> & {
+    file: File;
+    creatorId: string;
+    authorId: string;
+};
+
 export type DocumentWithAuthor = Document & {
     author: {
         id: string;

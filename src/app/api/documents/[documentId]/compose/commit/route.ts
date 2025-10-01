@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { STORAGE_BASE_PATHS } from '@/constants/app';
 import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
-import { handleApiError } from '@/lib/api/apiError';
+import { ApiError, handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { composeChangeSetSchema } from '@/lib/schemas/compose';
@@ -13,6 +13,7 @@ import { DocumentComposeService } from '@/lib/services/documents/DocumentCompose
 import type { SupportedMime } from '@/lib/types/mime';
 import { hashPassword } from '@/utils/auth';
 import { isSupportedMime } from '@/utils/mime';
+import { UserService } from '@/lib/services/UserService';
 
 export async function POST(
     request: NextRequest,
@@ -33,6 +34,23 @@ export async function POST(
 
         const { documentId } = await params;
         const body = await request.json();
+        const validation = composeChangeSetSchema.safeParse(body);
+
+        if (!validation.success) {
+            return handleApiError(validation.error);
+        }
+
+        let authorId: string | undefined = undefined;
+        const metadata = validation.data.metadata;
+
+        if (metadata?.authorId) {
+            authorId = metadata.authorId;
+        } else if (metadata?.username) {
+            const author = await UserService.findOrCreateAuthor(
+                metadata.username
+            );
+            authorId = author.id;
+        }
         // const parsed = composeChangeSetSchema.parse(body);
 
         // const result = await prisma.$transaction(
@@ -373,10 +391,12 @@ export async function POST(
 
         const result = await DocumentComposeService.composeUpdateDocument(
             documentId,
-            body,
-            user
+            validation.data,
+            user,
+            authorId
         );
-        return NextResponse.json({ ...result });
+
+        return NextResponse.json({ status: 'ok', ...result });
     } catch (error) {
         // компенсации: удалить все продвинутые ключи
 

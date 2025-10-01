@@ -37,6 +37,7 @@
         "concurrently": "^8.2.2",
         "dompurify": "^3.2.6",
         "dotenv": "^17.2.1",
+        "dotenv-cli": "^10.0.0",
         "flexsearch": "^0.8.205",
         "form-data": "^4.0.4",
         "ioredis": "^5.7.0",

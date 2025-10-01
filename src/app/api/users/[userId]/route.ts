@@ -88,7 +88,7 @@ export async function PUT(
                     createdAt: true,
                     _count: {
                         select: {
-                            documents: true,
+                            authoredDocuments: true,
                         },
                     },
                 },
@@ -126,7 +126,7 @@ export async function DELETE(
                     role: true,
                     _count: {
                         select: {
-                            documents: true,
+                            authoredDocuments: true,
                         },
                     },
                 },
@@ -137,9 +137,9 @@ export async function DELETE(
             }
 
             // Проверка, что у пользователя нет документов
-            if (userWithStats._count.documents > 0) {
+            if (userWithStats._count.authoredDocuments > 0) {
                 throw new ApiError(
-                    `Нельзя удалить пользователя "${userWithStats.username}", у которого есть ${userWithStats._count.documents} документов`,
+                    `Нельзя удалить пользователя "${userWithStats.username}", у которого есть ${userWithStats._count.authoredDocuments} документов`,
                     400
                 );
             }

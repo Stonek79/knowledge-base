@@ -6,6 +6,7 @@ import { handleApiError } from '@/lib/api/apiError';
 import { updateDocumentSchema } from '@/lib/schemas/document';
 import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
 import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
+import { UserService } from '@/lib/services/UserService';
 
 /**
  * @api {GET} /api/documents/:documentId Получение документа
@@ -60,6 +61,13 @@ export async function GET(
             user
         );
 
+        if (!document) {
+            return NextResponse.json(
+                { message: 'Документ не найден' },
+                { status: 404 }
+            );
+        }
+
         return NextResponse.json({ document });
     } catch (error) {
         return handleApiError(error);
@@ -110,11 +118,27 @@ export async function PUT(
         }
 
         const body = await request.json();
+        const validation = updateDocumentSchema.safeParse(body);
+        if (!validation.success) {
+            return handleApiError(validation.error);
+        }
+
+        let authorId: string | undefined = undefined;
+
+        if (validation.data.authorId) {
+            authorId = validation.data.authorId;
+        } else if (validation.data.username) {
+            const author = await UserService.findOrCreateAuthor(
+                validation.data.username
+            );
+            authorId = author.id;
+        }
 
         const updatedDocument = await DocumentCommandService.updateDocument(
             documentId,
-            body,
-            user
+            validation.data,
+            user,
+            authorId
         );
 
         return NextResponse.json({

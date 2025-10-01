@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
+import { z } from 'zod';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 import { COOKIE_NAME } from '@/constants/app';
@@ -38,10 +40,16 @@ export class AuthService {
      */
     public static async signToken(user: UserJWTPayload): Promise<string> {
         const secret = this.getJwtSecret();
+
+        console.log(
+            '[signToken] process.env.JWT_MAX_AGE',
+            process.env.JWT_MAX_AGE
+        );
+
         return new SignJWT(user)
             .setProtectedHeader({ alg: 'HS256' })
             .setIssuedAt()
-            .setExpirationTime(JWT_EXPIRES_IN)
+            .setExpirationTime(`${JWT_EXPIRES_IN}s`)
             .sign(secret);
     }
 
@@ -77,7 +85,11 @@ export class AuthService {
     }> {
         const validation = loginSchema.safeParse(credentials);
         if (!validation.success) {
-            throw new ApiError('Ошибка валидации данных', 400, validation.error);
+            throw new ApiError(
+                'Ошибка валидации данных',
+                400,
+                z.flattenError(validation.error).fieldErrors
+            );
         }
 
         const { username, password } = validation.data;
@@ -85,6 +97,10 @@ export class AuthService {
 
         if (!user) {
             throw new ApiError('Пользователь не найден', 404);
+        }
+
+        if (user.status === 'PLACEHOLDER') {
+            throw new ApiError('Учетная запись не активирована', 403);
         }
 
         if (!user.password) {
@@ -131,7 +147,7 @@ export class AuthService {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: parseInt(JWT_EXPIRES_IN, 10) || 3600 * 24, // 24 hours
+            maxAge: JWT_EXPIRES_IN,
             path: '/',
         });
     }

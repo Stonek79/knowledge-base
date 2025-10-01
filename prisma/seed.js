@@ -16,6 +16,11 @@ async function main() {
             password: hashedPasswordAdmin,
             role: Role.ADMIN,
             enabled: true,
+            profile: {
+                create: {
+                    fullName: 'Administrator',
+                },
+            },
         },
     });
     console.log('Admin user created/updated.');
@@ -29,6 +34,11 @@ async function main() {
             password: hashedPasswordUser,
             role: Role.USER,
             enabled: true,
+            profile: {
+                create: {
+                    fullName: 'Default User',
+                },
+            },
         },
     });
     console.log('Regular user created/updated.');
@@ -68,6 +78,7 @@ async function main() {
             fileSize: 12345,
             mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             hash: 'hash_regular_doc_1',
+            creatorId: admin.id,
             authorId: admin.id,
             categories: {
                 create: [{ categoryId: staffCategory.id }],
@@ -87,6 +98,7 @@ async function main() {
             fileSize: 54321,
             mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             hash: 'hash_confidential_doc_1',
+            creatorId: admin.id,
             authorId: admin.id,
             isConfidential: true,
             categories: {
@@ -109,6 +121,7 @@ async function main() {
             fileSize: 67890,
             mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             hash: 'hash_secret_doc_1',
+            creatorId: admin.id,
             authorId: admin.id,
             isSecret: true,
             accessCodeHash: hashedSecretCode,

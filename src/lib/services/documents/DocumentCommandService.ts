@@ -1,6 +1,5 @@
 import { unlink } from 'fs/promises';
 import { isAbsolute } from 'path';
-import { z } from 'zod';
 
 import { GOTENBERG_URL } from '@/constants/app';
 import { USER_ROLES } from '@/constants/user';
@@ -9,11 +8,12 @@ import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter';
 import { ApiError } from '@/lib/api';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { DocumentRepository } from '@/lib/repositories/documentRepository';
-import { uploadFormSchema } from '@/lib/schemas/document';
-import { updateDocumentSchema } from '@/lib/schemas/document';
 import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { settingsService } from '@/lib/services/SettingsService';
-import { UploadFormData } from '@/lib/types/document';
+import {
+    CreateDocumentServiceData,
+    UpdateDocumentData,
+} from '@/lib/types/document';
 import { SupportedMime } from '@/lib/types/mime';
 import { UserResponse } from '@/lib/types/user';
 import { FileUtils } from '@/utils/files';
@@ -29,7 +29,10 @@ export class DocumentCommandService {
      * @param user - Пользователь, выполняющий действие.
      * @returns - Созданный объект документа.
      */
-    public static async createDocument(formData: FormData, user: UserResponse) {
+    public static async createDocument(
+        data: CreateDocumentServiceData,
+        user: UserResponse
+    ) {
         let createdFileKey: string | null = null;
         let createdPdfKey: string | null = null;
 
@@ -38,24 +41,10 @@ export class DocumentCommandService {
                 throw new ApiError('Forbidden', 403);
             }
 
-            // Валидация и преобразование FormData в типизированный объект
-            const rawData = Object.fromEntries(formData.entries());
-            const validation = uploadFormSchema.safeParse(rawData);
-            if (!validation.success) {
-                throw new ApiError(
-                    'Ошибка валидации данных',
-                    400,
-                    z.flattenError(validation.error).fieldErrors
-                );
-            }
-            const data: UploadFormData = {
-                ...validation.data,
-                file: formData.get('file') as File, // Zod не может обработать File, добавляем вручную
-            };
-
             const {
                 file,
                 authorId,
+                creatorId,
                 title,
                 description,
                 categoryIds,
@@ -152,6 +141,7 @@ export class DocumentCommandService {
                                 keywords?.split(',').filter(Boolean) || [],
                             isPublished: true,
                             authorId: authorId,
+                            creatorId: creatorId,
                             categories: {
                                 create: categoryIds.map(
                                     (categoryId: string) => ({ categoryId })
@@ -220,24 +210,23 @@ export class DocumentCommandService {
      */
     public static async updateDocument(
         id: string,
-        data: unknown,
-        user: UserResponse
+        data: UpdateDocumentData,
+        user: UserResponse,
+        authorId: string | undefined
     ) {
-        const validation = updateDocumentSchema.safeParse(data);
-        if (!validation.success) {
-            throw new ApiError(
-                'Ошибка валидации данных',
-                400,
-                z.flattenError(validation.error).fieldErrors
-            );
-        }
-
-        const document = await DocumentRepository.findUnique({ where: { id } });
+        const document = await DocumentRepository.findUnique({
+            where: { id },
+        });
         if (!document) {
             throw new ApiError('Документ не найден', 404);
         }
 
-        if (user.role === USER_ROLES.USER && document.authorId !== user.id) {
+        if (
+            user.role !== USER_ROLES.ADMIN &&
+            user.role === USER_ROLES.USER &&
+            document.authorId !== user.id &&
+            document.creatorId !== user.id
+        ) {
             throw new ApiError(
                 'Можно редактировать только свои документы',
                 403
@@ -247,24 +236,26 @@ export class DocumentCommandService {
         const updatedDocument = await DocumentRepository.update({
             where: { id },
             data: {
-                title: validation.data.title,
-                description: validation.data.description,
+                title: data.title,
+                description: data.description,
                 keywords:
-                    validation.data.keywords
+                    data.keywords
                         ?.split(',')
                         .map(s => s.trim())
                         .filter(Boolean) || undefined,
-                categories: validation.data.categoryIds
+                authorId: authorId,
+                categories: data.categoryIds
                     ? {
                           deleteMany: {},
-                          create: validation.data.categoryIds.map(
-                              categoryId => ({ categoryId })
-                          ),
+                          create: data.categoryIds.map(categoryId => ({
+                              categoryId,
+                          })),
                       }
                     : undefined,
             },
             include: {
-                author: { select: { id: true, username: true, role: true } },
+                author: true,
+                creator: true,
                 categories: { include: { category: true } },
             },
         });
@@ -279,16 +270,9 @@ export class DocumentCommandService {
     /**
      * Удаляет документ и все связанные с ним данные и файлы.
      * @param id - ID документа.
-     * @param user - Текущий пользователь (должен быть ADMIN).
+     * @param user - Текущий пользователь (должен быть ADMIN или создатель документа).
      */
     public static async deleteDocument(id: string, user: UserResponse) {
-        if (user.role !== USER_ROLES.ADMIN) {
-            throw new ApiError(
-                'Только администратор может удалять документы',
-                403
-            );
-        }
-
         const fileKeys: string[] = [];
         await DocumentRepository.interactiveTransaction(async tx => {
             const snapshot = await tx.document.findUnique({
@@ -307,7 +291,11 @@ export class DocumentCommandService {
                 throw new ApiError('Документ не найден', 404);
             }
 
-            if (snapshot.author.id !== user.id) {
+            if (
+                snapshot.author.id !== user.id &&
+                snapshot.creatorId !== user.id &&
+                user.role !== USER_ROLES.ADMIN
+            ) {
                 throw new ApiError(
                     'Вы можете удалять только свои документы',
                     403
@@ -333,9 +321,9 @@ export class DocumentCommandService {
                 where: { id: snapshot.id },
             });
             await tx.documentCategory.deleteMany({
-                where: { id: snapshot.id },
+                where: { documentId: snapshot.id },
             });
-            await tx.attachment.deleteMany({ where: { id: snapshot.id } });
+            await tx.attachment.deleteMany({ where: { documentId: snapshot.id } });
             await tx.document.delete({ where: { id: snapshot.id } });
         });
 

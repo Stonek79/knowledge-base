@@ -83,10 +83,10 @@ export async function GET(req: NextRequest) {
                     createdAt: true,
                     _count: {
                         select: {
-                            documents: true,
+                            authoredDocuments: true,
                         },
                     },
-                    documents: {
+                    authoredDocuments: {
                         take: 1,
                         orderBy: { createdAt: 'desc' },
                         select: {
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
                     createdAt: true,
                     _count: {
                         select: {
-                            documents: true,
+                            authoredDocuments: true,
                         },
                     },
                 },

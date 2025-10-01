@@ -18,16 +18,24 @@ export const stagedFileSchema = z.object({
     clientId: z.string(),
 });
 
-export const metadataPatchSchema = z.object({
-    title: z.string().min(1).optional(),
-    description: z.string().optional(),
-    keywords: z.string().optional(), // "тег1, тег2"
-    categoryIds: z.array(z.string()).optional(),
-    isConfidential: z.boolean().optional(),
-    isSecret: z.boolean().optional(),
-    accessCode: z.string().optional(),
-    confidentialAccessUserIds: z.array(z.string()).optional(),
-});
+export const metadataPatchSchema = z
+    .object({
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        keywords: z.string().optional(), // "тег1, тег2"
+        categoryIds: z.array(z.string()).optional(),
+        isConfidential: z.boolean().optional(),
+        isSecret: z.boolean().optional(),
+        accessCode: z.string().optional(),
+        confidentialAccessUserIds: z.array(z.string()).optional(),
+        authorId: z.string().optional(),
+        username: z.string().optional(),
+    })
+    .refine(data => !!data.authorId || !!data.username, {
+        message:
+            'Необходимо указать автора (либо выбрать существующего, либо ввести имя нового)',
+        path: ['authorId'], // Путь для отображения ошибки
+    });
 
 export const composeChangeSetSchema = z.object({
     operationId: z.uuid(),

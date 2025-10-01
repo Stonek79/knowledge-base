@@ -19,13 +19,21 @@ export const createDocumentSchema = z.object({
     authorId: z.string(),
 });
 
-export const updateDocumentSchema = z.object({
-    title: z.string().min(1).max(200).optional(),
-    description: z.string().max(1000).optional(),
-    categoryIds: z.array(z.string()).optional(),
-    keywords: z.string().max(500).optional(),
-    attachments: z.array(attachmentMetadataSchema).optional(),
-});
+export const updateDocumentSchema = z
+    .object({
+        title: z.string().min(1).max(200).optional(),
+        description: z.string().max(1000).optional(),
+        categoryIds: z.array(z.string()).optional(),
+        keywords: z.string().max(500).optional(),
+        attachments: z.array(attachmentMetadataSchema).optional(),
+        authorId: z.string().optional(),
+        username: z.string().optional(),
+    })
+    .refine(data => !!data.authorId || !!data.username, {
+        message:
+            'Необходимо указать автора (либо выбрать существующего, либо ввести имя нового)',
+        path: ['authorId'], // Путь для отображения ошибки
+    });
 
 export const documentListSchema = z.object({
     page: z.number().min(1).default(1),
@@ -73,16 +81,25 @@ export const searchSchema = z.object({
     sortOrder: z.string().nullable().optional(),
 });
 
-export const uploadFormSchema = z.object({
-    file: z.any().optional(),
-    authorId: z.string().optional(),
-    title: z.string().min(1, 'Введите название документа'),
-    description: z.string().optional(),
-    categoryIds: z.array(z.string()).min(1, 'Выберите хотя бы одну категорию'),
-    keywords: z.string().optional(),
-    isConfidential: z.boolean().default(true).optional(),
-    isSecret: z.boolean().default(false).optional(),
-    accessCode: z.string().optional(),
-    attachments: z.array(baseAttachmentSchema).optional(),
-    confidentialAccessUserIds: z.array(z.string()).optional(),
-});
+export const uploadFormSchema = z
+    .object({
+        file: z.any().optional(),
+        title: z.string().min(1, 'Введите название документа'),
+        description: z.string().optional(),
+        categoryIds: z
+            .array(z.string())
+            .min(1, 'Выберите хотя бы одну категорию'),
+        keywords: z.string().optional(),
+        isConfidential: z.boolean().default(true).optional(),
+        isSecret: z.boolean().default(false).optional(),
+        accessCode: z.string().optional(),
+        attachments: z.array(baseAttachmentSchema).optional(),
+        confidentialAccessUserIds: z.array(z.string()).optional(),
+        authorId: z.string().optional(),
+        username: z.string().optional(),
+    })
+    .refine(data => !!data.authorId || !!data.username, {
+        message:
+            'Необходимо указать автора (либо выбрать существующего, либо ввести имя нового)',
+        path: ['authorId'], // Путь для отображения ошибки
+    });

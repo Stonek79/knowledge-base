@@ -10,14 +10,17 @@ datasource db {
 
 // Пользователи
 model User {
-    id        String   @id @default(cuid())
-    username  String   @unique @db.Citext // Логин
-    password  String // bcrypt-хеш
-    role      Role     @default(USER) // Роль пользователя
-    enabled   Boolean  @default(false) // Флаг доверенного пользователя
-    createdAt DateTime @default(now()) // Дата создания
+    id        String     @id @default(cuid())
+    username  String     @unique @db.Citext // Логин
+    password  String? // bcrypt-хеш
+    role      Role       @default(USER) // Роль пользователя
+    status    UserStatus @default(ACTIVE) // Статус пользователя
+    enabled   Boolean    @default(false) // Флаг доверенного пользователя
+    createdAt DateTime   @default(now()) // Дата создания
 
-    documents          Document[] // Документы пользователя
+    profile            Profile? // Профиль пользователя
+    createdDocuments   Document[]                   @relation("CreatedDocuments")
+    authoredDocuments  Document[]                   @relation("AuthoredDocuments")
     updatedBy          SystemSettings[] // Настройки системы, которые обновил пользователь
     confidentialAccess ConfidentialDocumentAccess[] // Доступ к конфиденциальным документам
 }
@@ -56,8 +59,10 @@ model Document {
     updatedAt DateTime @updatedAt
 
     // Связи
-    authorId String // ID автора
-    author   User   @relation(fields: [authorId], references: [id]) // Автор документа
+    creatorId String
+    creator   User   @relation("CreatedDocuments", fields: [creatorId], references: [id])
+    authorId  String // ID автора
+    author    User   @relation("AuthoredDocuments", fields: [authorId], references: [id]) // Автор документа
 
     // Связь многие-ко-многим с категориями
     categories        DocumentCategory[] // Категории документа
@@ -73,6 +78,7 @@ model Document {
     // Индексы для поиска
     @@index([title])
     @@index([createdAt])
+    @@index([creatorId])
     @@index([authorId])
     @@index([fileSize])
     @@index([isPublished])
@@ -180,11 +186,38 @@ model SystemSettings {
     updatedByUser User?    @relation(fields: [updatedBy], references: [id]) // Пользователь, который обновил настройки
 }
 
+model Profile {
+    id     String @id @default(cuid())
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    fullName      String?
+    jobTitle      String?
+    email         String?
+    phoneCity     String? // Городской
+    phoneInternal String? // Внутренний
+    phoneMobile   String? // Мобильный
+    manager       String? // Руководитель (пока просто строкой)
+    birthday      DateTime?
+    aboutMe       String?   @db.Text
+
+    // Настройки видимости полей. true = видно всем
+    visibilitySettings Json?
+
+    updatedAt DateTime @updatedAt
+}
+
 // Роли пользователей
 enum Role {
     ADMIN // Администратор
     USER // Пользователь
     GUEST // Гость
+}
+
+// Статусы пользователей
+enum UserStatus {
+    PLACEHOLDER // Плейсхолдер
+    ACTIVE // Активный
 }
 
 // Форматы документов

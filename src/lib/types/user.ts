@@ -27,9 +27,9 @@ export type UserLoginInput = Pick<CreateUserData, 'username' | 'password'>;
 export type UserRole = Role;
 export type UserWithDocuments = UserResponse & {
     _count: {
-        documents: number;
+        authoredDocuments: number;
     };
-    documents: Array<{
+    authoredDocuments: Array<{
         id: string;
         title: string;
         createdAt: Date;
@@ -65,7 +65,7 @@ export type CreateUserResponse = {
     message: string;
     user: UserResponse & {
         _count: {
-            documents: number;
+            authoredDocuments: number;
         };
     };
 };
@@ -74,7 +74,7 @@ export type UpdateUserResponse = {
     message: string;
     user: UserResponse & {
         _count: {
-            documents: number;
+            authoredDocuments: number;
         };
     };
 };

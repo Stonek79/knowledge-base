@@ -3,7 +3,7 @@ import { USER_ROLES } from '@/constants/user';
 import { ApiError } from '@/lib/api/apiError';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { DocumentRepository } from '@/lib/repositories/documentRepository';
-import { composeChangeSetSchema } from '@/lib/schemas/compose';
+import { ComposeChangeSet } from '@/lib/types/compose';
 import { SupportedMime } from '@/lib/types/mime';
 import { UserResponse } from '@/lib/types/user';
 import { hashPassword } from '@/utils/auth';
@@ -20,46 +20,46 @@ export class DocumentComposeService {
     /**
      * Создает документ.
      * @param data - Данные для создания.
-     * @param user - Пользователь.
+     * @param creator - Пользователь.
+     * @param authorId - ID автора.
      * @returns Результат создания.
      */
     public static async composeCreateDocument(
-        data: unknown,
-        user: UserResponse
+        data: ComposeChangeSet,
+        creator: UserResponse,
+        authorId: string
     ) {
         // подготовка списков для компенсаций/очистки
         const promoted: string[] = []; // новые ключи, созданные в процессе (удаляем при rollback)
         const tempKeys: string[] = []; // временные ключи (чистятся promote'ом; на всякий случай чистим после)
 
         try {
-            const parsed = composeChangeSetSchema.parse(data);
-
-            if (!parsed.replaceMain) {
+            if (!data.replaceMain) {
                 throw new ApiError(
                     'Main document file is required for creation.',
                     400
                 );
             }
 
-            if (!isSupportedMime(parsed?.replaceMain?.mimeType)) {
+            if (!isSupportedMime(data?.replaceMain?.mimeType)) {
                 throw new ApiError('Unsupported main file type', 400);
             }
 
-            const mainMime: SupportedMime = parsed.replaceMain.mimeType;
+            const mainMime: SupportedMime = data.replaceMain.mimeType;
 
             const result = await DocumentRepository.interactiveTransaction(
                 async tx => {
                     // 1) продвинуть основной
-                    if (!parsed.replaceMain)
+                    if (!data.replaceMain)
                         throw new ApiError(
                             'replaceMain is required for creation',
                             400
                         );
 
-                    tempKeys.push(parsed.replaceMain.tempKey);
+                    tempKeys.push(data.replaceMain.tempKey);
 
                     const main = await getFileStorageService().promoteFromTemp(
-                        parsed.replaceMain.tempKey,
+                        data.replaceMain.tempKey,
                         STORAGE_BASE_PATHS.ORIGINAL
                     );
 
@@ -69,12 +69,12 @@ export class DocumentComposeService {
                     const doc = await tx.document.create({
                         data: {
                             title:
-                                parsed.metadata?.title ??
-                                parsed.replaceMain.originalName,
-                            description: parsed.metadata?.description ?? null,
+                                data.metadata?.title ??
+                                data.replaceMain.originalName,
+                            description: data.metadata?.description ?? null,
                             content: '', // будет заполнено воркером
                             filePath: main.key,
-                            fileName: parsed.replaceMain.originalName,
+                            fileName: data.replaceMain.originalName,
                             fileSize: main.size,
                             mimeType: mainMime,
                             hash: (await import('crypto'))
@@ -82,22 +82,23 @@ export class DocumentComposeService {
                                 .update(main.key)
                                 .digest('hex'),
                             isPublished: true,
-                            authorId: user.id,
+                            authorId: authorId,
+                            creatorId: creator.id,
                             isConfidential:
-                                parsed.metadata?.isConfidential ?? false,
-                            isSecret: parsed.metadata?.isSecret ?? false,
-                            accessCodeHash: parsed.metadata?.accessCode
-                                ? await hashPassword(parsed.metadata.accessCode)
+                                data.metadata?.isConfidential ?? false,
+                            isSecret: data.metadata?.isSecret ?? false,
+                            accessCodeHash: data.metadata?.accessCode
+                                ? await hashPassword(data.metadata.accessCode)
                                 : null,
-                            keywords: parsed.metadata?.keywords
-                                ? parsed.metadata.keywords
+                            keywords: data.metadata?.keywords
+                                ? data.metadata.keywords
                                       .split(',')
                                       .map(s => s.trim())
                                       .filter(Boolean)
                                 : [],
-                            categories: parsed.metadata?.categoryIds
+                            categories: data.metadata?.categoryIds
                                 ? {
-                                      create: parsed.metadata.categoryIds.map(
+                                      create: data.metadata.categoryIds.map(
                                           id => ({
                                               categoryId: id,
                                           })
@@ -107,6 +108,7 @@ export class DocumentComposeService {
                         },
                         include: {
                             author: true,
+                            creator: true,
                             categories: { include: { category: true } },
                         },
                     });
@@ -114,10 +116,10 @@ export class DocumentComposeService {
                     // Создаем записи в списке доступа, если документ конфиденциальный
                     if (
                         doc.isConfidential &&
-                        parsed.metadata?.confidentialAccessUserIds?.length
+                        data.metadata?.confidentialAccessUserIds?.length
                     ) {
                         await tx.confidentialDocumentAccess.createMany({
-                            data: parsed.metadata.confidentialAccessUserIds.map(
+                            data: data.metadata.confidentialAccessUserIds.map(
                                 userId => ({
                                     documentId: doc.id,
                                     userId: userId,
@@ -129,8 +131,8 @@ export class DocumentComposeService {
                     const clientIdToAttachmentId: Record<string, string> = {};
 
                     // 3) приложения
-                    if (parsed.addAttachments?.length) {
-                        for (const att of parsed.addAttachments) {
+                    if (data.addAttachments?.length) {
+                        for (const att of data.addAttachments) {
                             if (!isSupportedMime(att.mimeType)) {
                                 throw new ApiError(
                                     'Unsupported attachment type',
@@ -167,12 +169,12 @@ export class DocumentComposeService {
                     }
 
                     // Применяем порядок для ВСЕХ приложений
-                    if (parsed.reorder?.length) {
+                    if (data.reorder?.length) {
                         for (const {
                             attachmentId,
                             clientId,
                             order,
-                        } of parsed.reorder) {
+                        } of data.reorder) {
                             const finalId =
                                 attachmentId ??
                                 clientIdToAttachmentId[clientId];
@@ -249,7 +251,7 @@ export class DocumentComposeService {
                         });
                     }
 
-                    return { docId: doc.id };
+                    return doc;
                 },
                 {
                     timeout: 60000,
@@ -262,7 +264,7 @@ export class DocumentComposeService {
                 await getFileStorageService().safeDelete(t);
             }
 
-            return { status: 'ok', ...result };
+            return result;
         } catch (error) {
             for (const key of promoted) {
                 await getFileStorageService().safeDelete(key);
@@ -284,13 +286,15 @@ export class DocumentComposeService {
      * Обновляет документ.
      * @param documentId - ID документа.
      * @param data - Данные для обновления.
-     * @param user - Пользователь.
+     * @param usere - Пользователь.
+     * @param authorId - ID автора.
      * @returns Результат обновления.
      */
     public static async composeUpdateDocument(
         documentId: string,
-        data: unknown,
-        user: UserResponse
+        data: ComposeChangeSet,
+        user: UserResponse,
+        authorId: string | undefined
     ) {
         // подготовка списков для компенсаций/очистки
         const promoted: string[] = []; // новые ключи, созданные в процессе (удаляем при rollback)
@@ -298,8 +302,6 @@ export class DocumentComposeService {
         const cleanupOnSuccess: string[] = []; // старые ключи, которые надо удалить после успешного коммита
 
         try {
-            const parsed = composeChangeSetSchema.parse(data);
-
             const result = DocumentRepository.interactiveTransaction(
                 async tx => {
                     // 0) загрузить документ и проверить права
@@ -308,6 +310,7 @@ export class DocumentComposeService {
                         select: {
                             id: true,
                             authorId: true,
+                            creatorId: true,
                             filePath: true,
                             fileName: true,
                             mimeType: true,
@@ -322,15 +325,16 @@ export class DocumentComposeService {
                     // USER может менять только свои документы
                     if (
                         user.role !== USER_ROLES.ADMIN &&
-                        existing.authorId !== user.id
+                        existing.authorId !== user.id &&
+                        existing.creatorId !== user.id
                     ) {
                         throw new ApiError('Forbidden', 403);
                     }
 
                     // 1) metadata
-                    if (parsed.metadata) {
+                    if (data.metadata) {
                         const keywords =
-                            parsed.metadata.keywords
+                            data.metadata.keywords
                                 ?.split(',')
                                 .map(s => s.trim())
                                 .filter(Boolean) ?? undefined;
@@ -338,20 +342,21 @@ export class DocumentComposeService {
                         await tx.document.update({
                             where: { id: documentId },
                             data: {
-                                title: parsed.metadata.title,
-                                description: parsed.metadata.description,
+                                title: data.metadata.title,
+                                description: data.metadata.description,
                                 keywords,
-                                isConfidential: parsed.metadata.isConfidential,
-                                isSecret: parsed.metadata.isSecret,
-                                accessCodeHash: parsed.metadata.accessCode
+                                authorId: authorId,
+                                isConfidential: data.metadata.isConfidential,
+                                isSecret: data.metadata.isSecret,
+                                accessCodeHash: data.metadata.accessCode
                                     ? await hashPassword(
-                                          parsed.metadata.accessCode
+                                          data.metadata.accessCode
                                       )
                                     : undefined,
-                                categories: parsed.metadata.categoryIds
+                                categories: data.metadata.categoryIds
                                     ? {
                                           deleteMany: {},
-                                          create: parsed.metadata.categoryIds.map(
+                                          create: data.metadata.categoryIds.map(
                                               id => ({ categoryId: id })
                                           ),
                                       }
@@ -361,21 +366,21 @@ export class DocumentComposeService {
 
                         // Синхронизируем список доступа для конфиденциальных документов
                         if (
-                            parsed.metadata.isConfidential &&
-                            parsed.metadata.confidentialAccessUserIds
+                            data.metadata.isConfidential &&
+                            data.metadata.confidentialAccessUserIds
                         ) {
                             await tx.confidentialDocumentAccess.deleteMany({
                                 where: { documentId: documentId },
                             });
                             await tx.confidentialDocumentAccess.createMany({
-                                data: parsed.metadata.confidentialAccessUserIds.map(
+                                data: data.metadata.confidentialAccessUserIds.map(
                                     userId => ({
                                         documentId: documentId,
                                         userId: userId,
                                     })
                                 ),
                             });
-                        } else if (parsed.metadata.isConfidential === false) {
+                        } else if (data.metadata.isConfidential === false) {
                             // Если документ перестал быть конфиденциальным, чистим список доступа
                             await tx.confidentialDocumentAccess.deleteMany({
                                 where: { documentId: documentId },
@@ -384,20 +389,20 @@ export class DocumentComposeService {
                     }
 
                     // 2) replaceMain (опционально)
-                    if (parsed.replaceMain) {
-                        if (!isSupportedMime(parsed.replaceMain.mimeType)) {
+                    if (data.replaceMain) {
+                        if (!isSupportedMime(data.replaceMain.mimeType)) {
                             throw new ApiError(
                                 'Unsupported main file type',
                                 400
                             );
                         }
                         const mainMime: SupportedMime =
-                            parsed.replaceMain.mimeType;
-                        tempKeys.push(parsed.replaceMain.tempKey);
+                            data.replaceMain.mimeType;
+                        tempKeys.push(data.replaceMain.tempKey);
 
                         const promotedMain =
                             await getFileStorageService().promoteFromTemp(
-                                parsed.replaceMain.tempKey,
+                                data.replaceMain.tempKey,
                                 STORAGE_BASE_PATHS.ORIGINAL
                             );
                         promoted.push(promotedMain.key);
@@ -412,9 +417,10 @@ export class DocumentComposeService {
                             where: { id: documentId },
                             data: {
                                 filePath: promotedMain.key,
-                                fileName: parsed.replaceMain.originalName,
+                                fileName: data.replaceMain.originalName,
                                 fileSize: promotedMain.size,
                                 mimeType: mainMime,
+                                authorId: authorId,
                             },
                         });
                     }
@@ -422,8 +428,8 @@ export class DocumentComposeService {
                     const clientIdToAttachmentId: Record<string, string> = {};
 
                     // 3) addAttachments (опционально)
-                    if (parsed.addAttachments?.length) {
-                        for (const att of parsed.addAttachments) {
+                    if (data.addAttachments?.length) {
+                        for (const att of data.addAttachments) {
                             if (!isSupportedMime(att.mimeType)) {
                                 throw new ApiError(
                                     'Unsupported attachment type',
@@ -457,10 +463,10 @@ export class DocumentComposeService {
                     }
 
                     // 4) deleteAttachmentIds (опционально)
-                    if (parsed.deleteAttachmentIds?.length) {
+                    if (data.deleteAttachmentIds?.length) {
                         const toDelete = await tx.attachment.findMany({
                             where: {
-                                id: { in: parsed.deleteAttachmentIds },
+                                id: { in: data.deleteAttachmentIds },
                                 documentId,
                             },
                             select: { id: true, filePath: true },
@@ -470,15 +476,15 @@ export class DocumentComposeService {
                         }
                         await tx.attachment.deleteMany({
                             where: {
-                                id: { in: parsed.deleteAttachmentIds },
+                                id: { in: data.deleteAttachmentIds },
                                 documentId,
                             },
                         });
                     }
 
                     // 5) reorder (опционально)
-                    if (parsed.reorder?.length) {
-                        const existingIdsFromClient = parsed.reorder
+                    if (data.reorder?.length) {
+                        const existingIdsFromClient = data.reorder
                             .map(item => item.attachmentId)
                             .filter((id): id is string => !!id);
 
@@ -506,7 +512,7 @@ export class DocumentComposeService {
                             attachmentId,
                             clientId,
                             order,
-                        } of parsed.reorder) {
+                        } of data.reorder) {
                             const finalId =
                                 attachmentId ??
                                 clientIdToAttachmentId[clientId];
@@ -600,9 +606,9 @@ export class DocumentComposeService {
 
                     // ===== ИНДЕКСАЦИЯ (в фоне) =====
                     const hasFileChanges =
-                        !!parsed.replaceMain ||
-                        !!parsed.addAttachments?.length ||
-                        !!parsed.deleteAttachmentIds?.length;
+                        !!data.replaceMain ||
+                        !!data.addAttachments?.length ||
+                        !!data.deleteAttachmentIds?.length;
 
                     // Ставим задачу в очередь для фоновой переиндексации
                     if (doc.id) {
@@ -627,7 +633,7 @@ export class DocumentComposeService {
                             });
                         }
                     }
-                    return { docId: doc.id };
+                    return doc;
                 },
                 {
                     timeout: 60000,
@@ -643,7 +649,7 @@ export class DocumentComposeService {
                 await getFileStorageService().safeDelete(t);
             }
 
-            return { status: 'ok', ...result };
+            return result;
         } catch (error) {
             // компенсации: удалить все продвинутые ключи
 

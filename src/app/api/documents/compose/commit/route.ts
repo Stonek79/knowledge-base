@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { STORAGE_BASE_PATHS } from '@/constants/app';
 import { getCurrentUser } from '@/lib/actions/users';
-import { handleApiError } from '@/lib/api/apiError';
+import { ApiError, handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { indexingQueue } from '@/lib/queues/indexing';
 import { composeChangeSetSchema } from '@/lib/schemas/compose';
 import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { pdfCombiner } from '@/lib/services/PDFCombiner';
+import { UserService } from '@/lib/services/UserService';
 import { DocumentComposeService } from '@/lib/services/documents/DocumentComposeService';
 import type { SupportedMime } from '@/lib/types/mime';
 import { hashPassword } from '@/utils/auth';
@@ -30,7 +31,27 @@ export async function POST(request: NextRequest) {
             );
 
         const body = await request.json();
-        // const parsed = composeChangeSetSchema.parse(body);
+        const validation = composeChangeSetSchema.safeParse(body);
+
+        if (!validation.success) {
+            return handleApiError(validation.error);
+        }
+
+        let authorId: string;
+        const metadata = validation.data.metadata;
+
+        if (metadata?.authorId) {
+            authorId = metadata.authorId;
+        } else if (metadata?.username) {
+            // Если пришло имя, идем в UserService
+            const author = await UserService.findOrCreateAuthor(
+                metadata.username
+            );
+            authorId = author.id;
+        } else {
+            // Если не пришло ни то, ни другое - это ошибка
+            authorId = user.id;
+        }
 
         // if (!parsed.replaceMain) {
         //     throw new Error('Main document file is required for creation.');
@@ -256,10 +277,11 @@ export async function POST(request: NextRequest) {
         // }
 
         const result = await DocumentComposeService.composeCreateDocument(
-            body,
-            user
+            validation.data,
+            user,
+            authorId
         );
-        return NextResponse.json({ ...result });
+        return NextResponse.json({ status: 'ok', ...result });
     } catch (error) {
         return handleApiError(error);
     }

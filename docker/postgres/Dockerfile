@@ -2,7 +2,7 @@ FROM postgres:15-alpine
 
 # Установка дополнительных инструментов для мониторинга
 RUN apk add --no-cache \
-    postgresql-contrib \
+    postgresql15-contrib \
     && rm -rf /var/cache/apk/*
 
 EXPOSE 5432

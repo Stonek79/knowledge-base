@@ -1,8 +1,10 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/actions/users';
-import { handleApiError } from '@/lib/api/apiError';
-import { documentListSchema } from '@/lib/schemas/document';
+import { ApiError, handleApiError } from '@/lib/api/apiError';
+import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document';
+import { UserService } from '@/lib/services/UserService';
 import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
 import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
 
@@ -88,8 +90,38 @@ export async function POST(request: NextRequest) {
 
         const formData = await request.formData();
 
+        const rawData = Object.fromEntries(formData.entries());
+        if (typeof rawData.categoryIds === 'string') {
+            rawData.categoryIds = JSON.parse(rawData.categoryIds);
+        }
+
+        const validation = uploadFormSchema.safeParse(rawData);
+
+        if (!validation.success) {
+            return handleApiError(validation.error);
+        }
+
+        let authorId: string;
+        if (validation.data.authorId) {
+            authorId = validation.data.authorId;
+        } else if (validation.data.username) {
+            const author = await UserService.findOrCreateAuthor(
+                validation.data.username
+            );
+            authorId = author.id;
+        } else {
+            authorId = user.id;
+        }
+
+        const documentData = {
+            ...validation.data,
+            file: formData.get('file') as File,
+            creatorId: user.id, // Текущий юзер - это создатель
+            authorId: authorId, // Автор - тот, кого нашли или создали
+        };
+
         const document = await DocumentCommandService.createDocument(
-            formData,
+            documentData,
             user
         );
 

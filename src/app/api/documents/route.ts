@@ -2,28 +2,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/actions/users';
-import { ApiError, handleApiError } from '@/lib/api/apiError';
+import { handleApiError } from '@/lib/api/apiError';
 import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document';
 import { UserService } from '@/lib/services/UserService';
 import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
 import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
 
 /**
- * Получает список документов с пагинацией, фильтрацией и поиском
- * @param request - Next.js request объект
- * @returns Список документов с метаданными пагинации
- *
- * Поддерживаемые query параметры:
- * - page: номер страницы (по умолчанию 1)
- * - limit: количество документов на странице (по умолчанию 10)
- * - categoryIds: ID категорий через запятую
- * - sortBy: поле для сортировки (по умолчанию createdAt)
- * - sortOrder: порядок сортировки asc/desc (по умолчанию desc)
- * - q: поисковый запрос по title и content
- * - authorId: ID автора документа
- *
- * Авторизация: требуется аутентификация
- * Гости видят только опубликованные документы
+ * @swagger
+ * /documents:
+ *   get:
+ *     summary: Get a list of documents with filtering, sorting, and searching
+ *     tags: [Documents]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
+ *       - in: query
+ *         name: categoryIds
+ *         schema: { type: string }
+ *         description: Comma-separated category IDs
+ *       - in: query
+ *         name: sortBy
+ *         schema: { type: string, default: 'createdAt' }
+ *       - in: query
+ *         name: sortOrder
+ *         schema: { type: string, default: 'desc' }
+ *       - in: query
+ *         name: authorId
+ *         schema: { type: string }
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Full-text search query
+ *       - in: query
+ *         name: dateFrom
+ *         schema: { type: string, format: 'date' }
+ *       - in: query
+ *         name: dateTo
+ *         schema: { type: string, format: 'date' }
+ *     responses:
+ *       200:
+ *         description: A list of documents
+ *       401:
+ *         description: Unauthorized
  */
 export async function GET(request: NextRequest) {
     try {
@@ -65,21 +90,33 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Загружает и обрабатывает новый документ
- * @param request - Next.js request объект с FormData
- * @returns Созданный документ с метаданными
- *
- * FormData поля:
- * - file: файл документа (DOCX, DOC, PDF)
- * - authorId: ID автора документа
- * - title: название документа
- * - description: описание документа
- * - categoryIds: JSON массив ID категорий
- * - keywords: ключевые слова через запятую
- *
- * Авторизация: требуется роль выше GUEST
- * Валидация: размер файла, MIME тип, дубликаты
- * Обработка: конвертация в PDF, извлечение текста, индексация
+ * @swagger
+ * /documents:
+ *   post:
+ *     summary: Create a new document
+ *     tags: [Documents]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file: {
+ *                 type: string,
+ *                 format: binary
+ *               }
+ *               title: { type: string }
+ *               description: { type: string }
+ *               authorId: { type: string }
+ *               username: { type: string }
+ *               categoryIds: { type: string, description: "JSON array of strings" }
+ *               keywords: { type: string, description: "Comma-separated string" }
+ *     responses:
+ *       201:
+ *         description: Document created successfully
+ *       403:
+ *         description: Forbidden
  */
 export async function POST(request: NextRequest) {
     try {

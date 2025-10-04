@@ -14,8 +14,42 @@ import type { SupportedMime } from '@/lib/types/mime';
 import { isSupportedMime } from '@/utils/mime';
 
 /**
- * POST /api/documents/[documentId]/attachments
- * Добавляет приложение к документу
+ * @swagger
+ * /documents/{documentId}/attachments:
+ *   post:
+ *     summary: Add an attachment to a document
+ *     tags: [Attachments]
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The document ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               metadata:
+ *                 type: string
+ *                 description: "JSON string of attachment metadata"
+ *     responses:
+ *       200:
+ *         description: Attachment added successfully
+ *       400:
+ *         description: Bad request, missing file or metadata
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Document not found
  */
 export async function POST(
     request: NextRequest,
@@ -243,8 +277,22 @@ export async function POST(
 }
 
 /**
- * GET /api/documents/[documentId]/attachments
- * Получает список приложений документа
+ * @swagger
+ * /documents/{documentId}/attachments:
+ *   get:
+ *     summary: Get attachments for a document
+ *     tags: [Attachments]
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Attachments for the document
+ *       401:
+ *         description: Unauthorized
  */
 export async function GET(
     request: NextRequest,

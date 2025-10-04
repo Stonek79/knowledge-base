@@ -1,20 +1,37 @@
 import { z } from 'zod';
 
-import { USER_ROLES } from '@/constants/user';
+import { USER_ROLES, USER_STATUSES } from '@/constants/user';
 
-export const createUserSchema = z.object({
-    username: z
-        .string()
-        .min(3)
-        .max(50)
-        .regex(/^[a-zA-Z0-9_-]+$/, {
-            message:
-                'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
-        }),
-    password: z.string().min(6).max(25),
-    role: z.enum(USER_ROLES).default(USER_ROLES.USER),
-    enabled: z.boolean().default(false),
-});
+export const createUserSchema = z
+    .object({
+        username: z
+            .string()
+            .min(3, {
+                message: 'Имя пользователя должно быть минимум 3 символа',
+            })
+            .max(50, {
+                message: 'Имя пользователя должно быть максимум 50 символов',
+            })
+            .regex(/^[a-zA-Z0-9_-]+$/, {
+                message:
+                    'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
+            }),
+        password: z
+            .string()
+            .min(6, { message: 'Пароль должен быть минимум 6 символов' })
+            .max(25, { message: 'Пароль должен быть максимум 25 символов' }),
+        confirmPassword: z
+            .string()
+            .min(6, { message: 'Пароль должен быть минимум 6 символов' })
+            .max(25, { message: 'Пароль должен быть максимум 25 символов' }),
+        role: z.enum(USER_ROLES).default(USER_ROLES.USER),
+        status: z.enum(USER_STATUSES).default(USER_STATUSES.ACTIVE),
+        enabled: z.boolean().default(false),
+    })
+    .refine(data => data.password === data.confirmPassword, {
+        message: 'Пароли не совпадают',
+        path: ['confirmPassword'],
+    });
 
 export const userResponseSchema = z.object({
     id: z.string(),
@@ -22,6 +39,7 @@ export const userResponseSchema = z.object({
     role: z.enum(USER_ROLES),
     createdAt: z.union([z.iso.datetime(), z.date()]),
     enabled: z.boolean(),
+    status: z.enum(USER_STATUSES).optional(),
 });
 
 export const jwtPayloadSchema = z.object({
@@ -40,49 +58,63 @@ export const usersListSchema = z.object({
     sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export const updateUserSchema = z.object({
-    username: z
-        .string()
-        .min(3)
-        .max(50)
-        .regex(/^[a-zA-Z0-9_-]+$/, {
-            message:
-                'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
-        }),
-    role: z.enum(USER_ROLES),
-    enabled: z.boolean().default(false),
-    newpassword: z
-        .string()
-        .optional()
-        .superRefine((val, ctx) => {
-            // Если поле пустое - не валидируем
-            if (!val || val.trim() === '') {
-                return;
+export const updateUserSchema = z
+    .object({
+        username: z
+            .string()
+            .min(3, {
+                message: 'Имя пользователя должно быть минимум 3 символа',
+            })
+            .max(50, {
+                message: 'Имя пользователя должно быть максимум 50 символов',
+            })
+            .regex(/^[a-zA-Z0-9_-]+$/, {
+                message:
+                    'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
+            }),
+        role: z.enum(USER_ROLES),
+        status: z.enum(USER_STATUSES).optional(),
+        enabled: z.boolean().optional(),
+        newPassword: z.string().optional(),
+        confirmNewPassword: z.string().optional(),
+    })
+    .refine(
+        data => {
+            if (!data.newPassword) {
+                return true; // Если пароль не меняется, пропускаем проверку
             }
+            return data.newPassword.length >= 6;
+        },
+        {
+            message: 'Пароль должен быть минимум 6 символов',
+            path: ['newPassword'],
+        }
+    )
+    .refine(
+        data => {
+            if (!data.newPassword) {
+                return true; // Если пароль не меняется, пропускаем проверку
+            }
+            return data.newPassword.length <= 25;
+        },
+        {
+            message: 'Пароль должен быть максимум 25 символов',
+            path: ['newPassword'],
+        }
+    )
+    .refine(
+        data => {
+            // Если пароль меняется, он должен совпадать с подтверждением
+            if (data.newPassword) {
+                return data.newPassword === data.confirmNewPassword;
+            }
+            // Если не меняется, пропускаем
+            return true;
+        },
+        {
+            message: 'Пароли не совпадают',
+            path: ['confirmNewPassword'],
+        }
+    );
 
-            // Если есть значение - валидируем
-            if (val.length < 6) {
-                ctx.addIssue({
-                    code: 'too_small',
-                    minimum: 6,
-                    origin: 'string',
-                    type: 'string',
-                    inclusive: true,
-                    message: 'Пароль должен содержать минимум 6 символов',
-                    input: val,
-                });
-            }
-
-            if (val.length > 25) {
-                ctx.addIssue({
-                    code: 'too_big',
-                    maximum: 25,
-                    origin: 'string',
-                    type: 'string',
-                    inclusive: true,
-                    message: 'Пароль должен содержать максимум 25 символов',
-                    input: val,
-                });
-            }
-        }),
-});
+    

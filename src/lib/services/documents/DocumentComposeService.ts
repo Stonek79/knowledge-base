@@ -264,7 +264,7 @@ export class DocumentComposeService {
                 await getFileStorageService().safeDelete(t);
             }
 
-            return result;
+            return { docId: result.id };
         } catch (error) {
             for (const key of promoted) {
                 await getFileStorageService().safeDelete(key);
@@ -649,7 +649,7 @@ export class DocumentComposeService {
                 await getFileStorageService().safeDelete(t);
             }
 
-            return result;
+            return { docId: (await result).id };
         } catch (error) {
             // компенсации: удалить все продвинутые ключи
 

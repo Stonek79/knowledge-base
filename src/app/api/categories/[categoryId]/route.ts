@@ -6,6 +6,25 @@ import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { updateCategorySchema } from '@/lib/schemas/document';
 
+/**
+ * @swagger
+ * /categories/{categoryId}:
+ *   get:
+ *     summary: Get a single category by ID
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The category ID
+ *     responses:
+ *       200:
+ *         description: The category object
+ *       404:
+ *         description: Category not found
+ */
 export async function GET(
     request: NextRequest,
     { params }: { params: { categoryId: string } }
@@ -32,6 +51,33 @@ export async function GET(
     }
 }
 
+/**
+ * @swagger
+ * /categories/{categoryId}:
+ *   put:
+ *     summary: Update a category
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The category ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateCategorySchema'
+ *     responses:
+ *       200:
+ *         description: Category updated successfully
+ *       400:
+ *         description: Validation error
+ *       403:
+ *         description: Forbidden
+ */
 export async function PUT(
     request: NextRequest,
     { params }: { params: { categoryId: string } }
@@ -63,6 +109,27 @@ export async function PUT(
     }
 }
 
+/**
+ * @swagger
+ * /categories/{categoryId}:
+ *   delete:
+ *     summary: Delete a category
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The category ID
+ *     responses:
+ *       200:
+ *         description: Category deleted successfully
+ *       400:
+ *         description: Category is not empty or is a default category
+ *       403:
+ *         description: Forbidden
+ */
 export async function DELETE(
     request: NextRequest,
     { params }: { params: { categoryId: string } }

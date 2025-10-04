@@ -4,8 +4,6 @@ import {
     Control,
     Controller,
     UseFormSetValue,
-    useForm,
-    useFormContext,
     useWatch,
 } from 'react-hook-form';
 
@@ -15,13 +13,12 @@ import {
     Autocomplete,
     Box,
     Checkbox,
-    Chip,
-    CircularProgress,
     FormControlLabel,
     TextField,
     Typography,
 } from '@mui/material';
 
+import { USER_ROLES } from '@/constants/user';
 import { UploadFormInput } from '@/lib/types/document';
 import { UserResponse, UserWithDocuments } from '@/lib/types/user';
 
@@ -50,8 +47,10 @@ export function ConfidentialAccessControl({
 
     // Guard against non-array users prop and memoize options for performance
     const options = useMemo(() => {
-        const validUsers = Array.isArray(users) ? users : [];
-        if (!currentUser) {
+        const validUsers = Array.isArray(users)
+            ? users.filter(u => u.role !== USER_ROLES.ADMIN)
+            : [];
+        if (!currentUser || currentUser.role === USER_ROLES.ADMIN) {
             return validUsers;
         }
         return [
@@ -62,7 +61,12 @@ export function ConfidentialAccessControl({
 
     useEffect(() => {
         // Guard against invalid props
-        if (!currentUser || !Array.isArray(users)) return;
+        if (
+            !currentUser ||
+            !Array.isArray(users) ||
+            currentUser.role === USER_ROLES.ADMIN
+        )
+            return;
 
         if (isConfidential === false) {
             setValue('confidentialAccessUserIds', []);
@@ -76,7 +80,9 @@ export function ConfidentialAccessControl({
             selectedIds.length === 0 &&
             users.length > 0
         ) {
-            const enabledIds = users.filter(u => u.enabled).map(u => u.id);
+            const enabledIds = users
+                .filter(u => u.enabled && u.role !== USER_ROLES.ADMIN)
+                .map(u => u.id);
             const preselected = Array.from(
                 new Set([currentUser.id, ...enabledIds])
             );
@@ -147,7 +153,7 @@ export function ConfidentialAccessControl({
                         value={options.filter(u =>
                             (field.value ?? []).includes(u.id)
                         )}
-                        onChange={(e, newValue) => {
+                        onChange={(_, newValue) => {
                             const ensured = currentUser
                                 ? [
                                       currentUser,

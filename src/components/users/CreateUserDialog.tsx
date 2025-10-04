@@ -15,15 +15,22 @@ import {
     DialogContent,
     DialogTitle,
     FormControl,
+    FormControlLabel,
     IconButton,
     InputAdornment,
     InputLabel,
     MenuItem,
     Select,
+    Switch,
     TextField,
 } from '@mui/material';
 
-import { USER_ROLES, USER_ROLES_LABELS } from '@/constants/user';
+import {
+    USER_ROLES,
+    USER_ROLES_LABELS,
+    USER_STATUSES,
+    USER_STATUSES_LABELS,
+} from '@/constants/user';
 import { createUser } from '@/lib/actions/users';
 import { createUserSchema } from '@/lib/schemas/user';
 import { CreateUserData } from '@/lib/types/user';
@@ -133,13 +140,22 @@ export function CreateUserDialog({
                             },
                         }}
                     />
+                    <TextField
+                        {...register('confirmPassword')}
+                        type={showPassword ? 'text' : 'password'}
+                        label='Подтверждение пароля'
+                        fullWidth
+                        margin='normal'
+                        error={!!errors.confirmPassword}
+                        helperText={errors.confirmPassword?.message}
+                    />
 
                     <FormControl fullWidth margin='normal'>
                         <InputLabel>Роль</InputLabel>
                         <Select
                             {...register('role')}
                             label='Роль'
-                            defaultValue={USER_ROLES.GUEST}
+                            defaultValue={USER_ROLES.USER}
                         >
                             <MenuItem value={USER_ROLES.GUEST}>
                                 {USER_ROLES_LABELS.GUEST}
@@ -152,6 +168,25 @@ export function CreateUserDialog({
                             </MenuItem>
                         </Select>
                     </FormControl>
+                    <FormControl fullWidth margin='normal'>
+                        <InputLabel>Статус</InputLabel>
+                        <Select
+                            {...register('status')}
+                            label='Статус'
+                            defaultValue={USER_STATUSES.ACTIVE}
+                        >
+                            <MenuItem value={USER_STATUSES.ACTIVE}>
+                                {USER_STATUSES_LABELS.ACTIVE}
+                            </MenuItem>
+                            <MenuItem value={USER_STATUSES.PLACEHOLDER}>
+                                {USER_STATUSES_LABELS.PLACEHOLDER}
+                            </MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControlLabel
+                        control={<Switch {...register('enabled')} />}
+                        label='Доверенный пользователь'
+                    />
                 </DialogContent>
 
                 <DialogActions>

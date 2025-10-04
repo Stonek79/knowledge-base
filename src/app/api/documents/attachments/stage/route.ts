@@ -8,6 +8,35 @@ import { settingsService } from '@/lib/services/SettingsService';
 import type { SupportedMime } from '@/lib/types/mime';
 import { isSupportedMime } from '@/utils/mime';
 
+/**
+ * @swagger
+ * /documents/attachments/stage:
+ *   post:
+ *     summary: Stage a file for attachment
+ *     tags: [Attachments]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file: {
+ *                 type: string,
+ *                 format: binary
+ *               }
+ *     responses:
+ *       200:
+ *         description: File staged successfully, returns a temporary key
+ *       400:
+ *         description: Missing file
+ *       401:
+ *         description: Unauthorized
+ *       413:
+ *         description: File too large
+ *       415:
+ *         description: Unsupported file type
+ */
 export async function POST(request: NextRequest) {
     try {
         const user = await getCurrentUser(request);

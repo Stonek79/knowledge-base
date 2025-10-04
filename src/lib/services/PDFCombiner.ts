@@ -131,7 +131,7 @@ export class PDFCombiner {
             // 3. Объединение всех PDF через Gotenberg
             const allPdfs = [
                 { buffer: mainPdfBuffer, fileName: `000-${mainPdfName}` },
-                ...attachmentPdfBuffers.reverse().map((p, i) => ({
+                ...attachmentPdfBuffers.map((p, i) => ({
                     buffer: p.buffer,
                     fileName: `${String(i + 1).padStart(3, '0')}-${p.fileName}`,
                 })),

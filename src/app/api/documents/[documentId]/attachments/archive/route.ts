@@ -9,6 +9,34 @@ import { prisma } from '@/lib/prisma';
 import { getFileStorageService } from '@/lib/services/FileStorageService';
 import { FileUtils } from '@/utils/files';
 
+/**
+ * @swagger
+ * /documents/{documentId}/attachments/archive:
+ *   get:
+ *     summary: Download all document attachments as a zip archive
+ *     tags: [Attachments]
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The document ID
+ *     responses:
+ *       200:
+ *         description: A zip archive of the document and its attachments
+ *         content:
+ *           application/zip:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Document not found
+ */
 export async function GET(
     request: NextRequest,
     { params }: { params: { documentId: string } }

@@ -2,11 +2,41 @@ import bcrypt from 'bcryptjs';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { USER_STATUSES } from '@/constants/user';
 import { ApiError, handleApiError } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
 import { updateUserSchema } from '@/lib/schemas/user';
-import { UserRole } from '@/lib/types/user';
+import { UpdateUserData } from '@/lib/types/user';
 
+/**
+ * @swagger
+ * /users/{userId}:
+ *   put:
+ *     summary: Update a user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateUserSchema'
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ *       409:
+ *         description: Username already exists
+ */
 export async function PUT(
     req: NextRequest,
     { params }: { params: { userId: string } }
@@ -28,7 +58,8 @@ export async function PUT(
             });
         }
 
-        const { username, newpassword, role, enabled } = validation.data;
+        const { username, newPassword, role, enabled, status } =
+            validation.data;
 
         // Использование транзакции для атомарности
         const result = await prisma.$transaction(async tx => {
@@ -63,19 +94,17 @@ export async function PUT(
             }
 
             // Подготовка данных для обновления
-            const updateData: {
-                username?: string;
-                role?: UserRole;
-                password?: string;
-                enabled?: boolean;
-            } = {};
+            const updateData: Partial<UpdateUserData> & { password?: string } =
+                {};
 
             if (username) updateData.username = username;
             if (role) updateData.role = role;
-            if (newpassword) {
-                updateData.password = await bcrypt.hash(newpassword, 12);
+            if (status) updateData.status = status;
+            if (newPassword) {
+                updateData.password = await bcrypt.hash(newPassword, 12);
             }
-            if (enabled) updateData.enabled = enabled;
+            if (typeof enabled === 'boolean') updateData.enabled = enabled;
+
             // Обновление пользователя с возвратом расширенных данных
             const user = await tx.user.update({
                 where: { id: userId },
@@ -85,6 +114,7 @@ export async function PUT(
                     username: true,
                     role: true,
                     enabled: true,
+                    status: true,
                     createdAt: true,
                     _count: {
                         select: {
@@ -108,6 +138,25 @@ export async function PUT(
     }
 }
 
+/**
+ * @swagger
+ * /users/{userId}:
+ *   delete:
+ *     summary: Delete or deactivate a user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user ID
+ *     responses:
+ *       200:
+ *         description: User deleted or deactivated successfully
+ *       404:
+ *         description: User not found
+ */
 export async function DELETE(
     req: NextRequest,
     { params }: { params: { userId: string } }
@@ -115,18 +164,15 @@ export async function DELETE(
     try {
         const { userId } = await params;
 
-        // Использование транзакции для атомарности
-        await prisma.$transaction(async tx => {
-            // Проверка существования пользователя с агрегацией
+        const result = await prisma.$transaction(async tx => {
             const userWithStats = await tx.user.findUnique({
                 where: { id: userId },
                 select: {
-                    id: true,
                     username: true,
-                    role: true,
                     _count: {
                         select: {
                             authoredDocuments: true,
+                            createdDocuments: true,
                         },
                     },
                 },
@@ -136,23 +182,32 @@ export async function DELETE(
                 throw new ApiError('Пользователь не найден', 404);
             }
 
-            // Проверка, что у пользователя нет документов
-            if (userWithStats._count.authoredDocuments > 0) {
-                throw new ApiError(
-                    `Нельзя удалить пользователя "${userWithStats.username}", у которого есть ${userWithStats._count.authoredDocuments} документов`,
-                    400
-                );
+            const hasAuthoredDocs = userWithStats._count.authoredDocuments > 0;
+            const hasCreatedDocs = userWithStats._count.createdDocuments > 0;
+
+            if (hasAuthoredDocs || hasCreatedDocs) {
+                await tx.user.update({
+                    where: { id: userId },
+                    data: {
+                        enabled: false,
+                        status: USER_STATUSES.PLACEHOLDER,
+                    },
+                });
+                return {
+                    action: 'deactivated',
+                    username: userWithStats.username,
+                    message: `Пользователь "${userWithStats.username}" не может быть удален, так как связан с документами. Учетная запись была деактивирована.`,
+                };
+            } else {
+                await tx.user.delete({ where: { id: userId } });
+                return {
+                    action: 'deleted',
+                    message: 'Пользователь успешно удален',
+                };
             }
-
-            // Удаление пользователя
-            await tx.user.delete({
-                where: { id: userId },
-            });
         });
 
-        return NextResponse.json({
-            message: 'Пользователь успешно удален',
-        });
+        return NextResponse.json(result);
     } catch (error) {
         return handleApiError(error, {
             message: 'Ошибка при удалении пользователя',

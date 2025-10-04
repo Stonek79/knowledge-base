@@ -3,6 +3,32 @@ import { NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api';
 import { AuthService } from '@/lib/auth/AuthService';
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Log in a user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       200:
+ *         description: Login successful, returns user and sets auth cookie
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Invalid credentials
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();

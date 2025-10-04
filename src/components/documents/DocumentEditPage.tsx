@@ -190,6 +190,7 @@ export function DocumentEditPage() {
             )}
             <DocumentUploadForm
                 mode='edit'
+                document={document}
                 initialAttachments={document?.attachments ?? []}
                 initialData={initialData}
                 onSubmit={handleFormSubmit}

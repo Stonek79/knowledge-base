@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { useState } from 'react';
 
@@ -13,13 +13,20 @@ import {
     DialogContent,
     DialogTitle,
     FormControl,
+    FormControlLabel,
     InputLabel,
     MenuItem,
     Select,
+    Switch,
     TextField,
 } from '@mui/material';
 
-import { USER_ROLES, USER_ROLES_LABELS } from '@/constants/user';
+import {
+    USER_ROLES,
+    USER_ROLES_LABELS,
+    USER_STATUSES,
+    USER_STATUSES_LABELS,
+} from '@/constants/user';
 import { updateUser } from '@/lib/actions/users';
 import { updateUserSchema } from '@/lib/schemas/user';
 import { UpdateUserData, UserWithDocuments } from '@/lib/types/user';
@@ -39,17 +46,23 @@ export function EditUserDialog({
 }: EditUserDialogProps) {
     const [error, setError] = useState<string | null>(null);
 
+    console.log('[EditUserDialog] user', user);
+
     const {
         register,
         handleSubmit,
         reset,
+        control,
         formState: { errors, isLoading },
-    } = useForm({
+    } = useForm<UpdateUserData>({
         resolver: zodResolver(updateUserSchema),
         defaultValues: {
             username: user.username,
             role: user.role,
-            newpassword: '',
+            status: user.status,
+            enabled: user.enabled,
+            newPassword: undefined,
+            confirmNewPassword: undefined,
         },
     });
 
@@ -61,6 +74,8 @@ export function EditUserDialog({
 
     const onSubmit = async (data: UpdateUserData) => {
         setError(null);
+
+        console.log('[EditUserDialog] onSubmit', data);
 
         try {
             await updateUser(user.id, data);
@@ -96,32 +111,75 @@ export function EditUserDialog({
                         helperText={errors.username?.message}
                     />
                     <TextField
-                        {...register('newpassword')}
+                        {...register('newPassword')}
                         label='Новый пароль'
+                        type='password'
                         fullWidth
                         margin='normal'
-                        error={!!errors.newpassword}
-                        helperText={errors.newpassword?.message}
+                        error={!!errors.newPassword}
+                        helperText={errors.newPassword?.message}
+                    />
+                    <TextField
+                        {...register('confirmNewPassword')}
+                        label='Подтверждение пароля'
+                        type='password'
+                        fullWidth
+                        margin='normal'
+                        error={!!errors.confirmNewPassword}
+                        helperText={errors.confirmNewPassword?.message}
                     />
 
-                    <FormControl fullWidth margin='normal'>
-                        <InputLabel>Роль</InputLabel>
-                        <Select
-                            {...register('role')}
-                            label='Роль'
-                            defaultValue={USER_ROLES.GUEST}
-                        >
-                            <MenuItem value={USER_ROLES.GUEST}>
-                                {USER_ROLES_LABELS.GUEST}
-                            </MenuItem>
-                            <MenuItem value={USER_ROLES.USER}>
-                                {USER_ROLES_LABELS.USER}
-                            </MenuItem>
-                            <MenuItem value={USER_ROLES.ADMIN}>
-                                {USER_ROLES_LABELS.ADMIN}
-                            </MenuItem>
-                        </Select>
-                    </FormControl>
+                    <Controller
+                        name='role'
+                        control={control}
+                        render={({ field }) => (
+                            <FormControl fullWidth margin='normal'>
+                                <InputLabel>Роль</InputLabel>
+                                <Select {...field} label='Роль'>
+                                    <MenuItem value={USER_ROLES.GUEST}>
+                                        {USER_ROLES_LABELS.GUEST}
+                                    </MenuItem>
+                                    <MenuItem value={USER_ROLES.USER}>
+                                        {USER_ROLES_LABELS.USER}
+                                    </MenuItem>
+                                    <MenuItem value={USER_ROLES.ADMIN}>
+                                        {USER_ROLES_LABELS.ADMIN}
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
+                        )}
+                    />
+
+                    <Controller
+                        name='status'
+                        control={control}
+                        render={({ field }) => (
+                            <FormControl fullWidth margin='normal'>
+                                <InputLabel>Статус</InputLabel>
+                                <Select {...field} label='Статус'>
+                                    <MenuItem value={USER_STATUSES.ACTIVE}>
+                                        {USER_STATUSES_LABELS.ACTIVE}
+                                    </MenuItem>
+                                    <MenuItem value={USER_STATUSES.PLACEHOLDER}>
+                                        {USER_STATUSES_LABELS.PLACEHOLDER}
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
+                        )}
+                    />
+
+                    <Controller
+                        name='enabled'
+                        control={control}
+                        render={({ field }) => (
+                            <FormControlLabel
+                                control={
+                                    <Switch {...field} checked={field.value} />
+                                }
+                                label='Доверенный пользователь'
+                            />
+                        )}
+                    />
                 </DialogContent>
 
                 <DialogActions>

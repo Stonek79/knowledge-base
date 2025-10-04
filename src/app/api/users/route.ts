@@ -8,12 +8,41 @@ import { ApiError, handleApiError } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
 import { createUserSchema, usersListSchema } from '@/lib/schemas/user';
 import type {
-    CreateUserData,
     CreateUserResponse,
     UserWhereInput,
     UsersListResponse,
 } from '@/lib/types/user';
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get a list of users
+ *     tags: [Users]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: The page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: The number of items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search query for username or id
+ *     responses:
+ *       200:
+ *         description: A list of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UsersListResponse'
+ */
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -49,8 +78,6 @@ export async function GET(req: NextRequest) {
         }
 
         if (search) {
-            // Используем raw query для регистронезависимого поиска в SQLite
-
             whereConditions.push({
                 OR: [
                     {
@@ -78,6 +105,7 @@ export async function GET(req: NextRequest) {
                     id: true,
                     username: true,
                     role: true,
+                    status: true,
                     enabled: true,
                     confidentialAccess: true,
                     createdAt: true,
@@ -146,6 +174,30 @@ export async function GET(req: NextRequest) {
     }
 }
 
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserSchema'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateUserResponse'
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: User with this name already exists
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -159,8 +211,7 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        const { username, password, role, enabled }: CreateUserData =
-            validation.data;
+        const { username, password, role, enabled, status } = validation.data;
 
         const result = await prisma.$transaction(async tx => {
             const existingUser = await tx.user.findUnique({
@@ -183,12 +234,17 @@ export async function POST(req: NextRequest) {
                     password: hashedPassword,
                     role,
                     enabled,
+                    status,
+                    profile: {
+                        create: {},
+                    },
                 },
                 select: {
                     id: true,
                     username: true,
                     role: true,
-                    enabled, 
+                    enabled: true,
+                    status: true,
                     confidentialAccess: true,
                     createdAt: true,
                     _count: {

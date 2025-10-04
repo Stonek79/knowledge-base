@@ -84,7 +84,7 @@ export function DragDropZone({
             <input
                 ref={fileInputRef}
                 type='file'
-                accept='.docx'
+                accept='.docx,.doc,.pdf'
                 style={{ display: 'none' }}
                 onChange={handleFileChange}
                 disabled={disabled}

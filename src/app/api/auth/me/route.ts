@@ -8,6 +8,24 @@ import { ApiError, handleApiError } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
 import { jwtPayloadSchema } from '@/lib/schemas/user';
 
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get the currently authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: The authenticated user object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized, invalid or missing token
+ */
 export async function GET(req: NextRequest) {
     try {
         const token = req.cookies.get(COOKIE_NAME)?.value;

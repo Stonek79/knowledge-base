@@ -6,6 +6,16 @@ import { handleApiError } from '@/lib/api/apiError';
 import { prisma } from '@/lib/prisma';
 import { createCategorySchema } from '@/lib/schemas/document';
 
+/**
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: Get all categories
+ *     tags: [Categories]
+ *     responses:
+ *       200:
+ *         description: A list of all categories
+ */
 export async function GET(request: NextRequest) {
     try {
         const categories = await prisma.category.findMany({
@@ -26,6 +36,26 @@ export async function GET(request: NextRequest) {
     }
 }
 
+/**
+ * @swagger
+ * /categories:
+ *   post:
+ *     summary: Create a new category
+ *     tags: [Categories]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateCategorySchema'
+ *     responses:
+ *       201:
+ *         description: Category created successfully
+ *       400:
+ *         description: Category with this name already exists
+ *       403:
+ *         description: Forbidden
+ */
 export async function POST(request: NextRequest) {
     try {
         const user = await getCurrentUser(request);
@@ -55,10 +85,13 @@ export async function POST(request: NextRequest) {
             data: validation.data,
         });
 
-        return NextResponse.json({
-            message: 'Категория успешно создана',
-            category,
-        });
+        return NextResponse.json(
+            {
+                message: 'Категория успешно создана',
+                category,
+            },
+            { status: 201 }
+        );
     } catch (error) {
         return handleApiError(error);
     }

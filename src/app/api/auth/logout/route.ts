@@ -4,6 +4,16 @@ import { HOME_PATH } from '@/constants/api';
 import { COOKIE_NAME } from '@/constants/app';
 import { handleApiError } from '@/lib/api';
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Log out a user
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout successful, clears authentication cookie.
+ */
 export async function POST() {
     try {
         // Основная задача logout - это удалить httpOnly cookie с токеном.

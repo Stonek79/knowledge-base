@@ -1,6 +1,13 @@
 'use client';
 
-import { Control, Controller, FieldErrors } from 'react-hook-form';
+import {
+    Control,
+    Controller,
+    FieldErrors,
+    UseFormSetValue,
+} from 'react-hook-form';
+
+import { useMemo } from 'react';
 
 import {
     Box,
@@ -15,50 +22,43 @@ import {
     TextField,
 } from '@mui/material';
 
+import { USER_ROLES } from '@/constants/user';
 import { useCategories } from '@/lib/hooks/documents/useCategories';
 import { useUsers } from '@/lib/hooks/useUsers';
 import { UploadFormInput } from '@/lib/types/document';
 
+import { AuthorAutocomplete } from './AuthorAutocomplete';
+
 interface MetadataFormProps {
     control: Control<UploadFormInput>;
     errors: FieldErrors<UploadFormInput>;
+    setValue: UseFormSetValue<UploadFormInput>;
     disabled?: boolean;
 }
 
 export function MetadataForm({
     control,
     errors,
+    setValue,
     disabled = false,
 }: MetadataFormProps) {
     const { users } = useUsers();
     const { categories, isLoading: categoriesLoading } = useCategories();
 
+    const filteredUsers = useMemo(
+        () => users.filter(u => u.role !== USER_ROLES.ADMIN),
+        [users]
+    );
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid sx={{ xs: 12 }}>
-                <Controller
-                    name='authorId'
+                <AuthorAutocomplete
                     control={control}
-                    render={({ field }) => (
-                        <FormControl fullWidth disabled={disabled}>
-                            <InputLabel>Автор</InputLabel>
-                            <Select
-                                {...field}
-                                value={field.value ?? ''}
-                                label='Автор'
-                                displayEmpty
-                            >
-                                {users.map(u => (
-                                    <MenuItem key={u.id} value={u.id}>
-                                        {u.username}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                            <FormHelperText>
-                                {errors.authorId?.message}
-                            </FormHelperText>
-                        </FormControl>
-                    )}
+                    errors={errors}
+                    setValue={setValue}
+                    users={filteredUsers}
+                    disabled={disabled}
                 />
             </Grid>
             <Grid sx={{ xs: 12 }}>

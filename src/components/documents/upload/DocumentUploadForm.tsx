@@ -22,11 +22,12 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useUsers } from '@/lib/hooks/useUsers';
 import { uploadFormSchema } from '@/lib/schemas/document';
 import { BaseAttachment } from '@/lib/types/attachment';
-import { UploadFormInput } from '@/lib/types/document';
+import { DocumentWithAuthor, UploadFormInput } from '@/lib/types/document';
 import { SupportedMime } from '@/lib/types/mime';
 
 import { ConfidentialAccessControl } from '../access/ConfidentialAccessControl';
 import { AttachmentManager } from '../attachments/AttachmentManager';
+import { DocumentViewer } from '../viewer/DocumentViewer';
 import { DragDropZone } from './DragDropZone';
 import { FilePreview } from './FilePreview';
 import { MetadataForm } from './MetadataForm';
@@ -45,8 +46,15 @@ function getFileId(file: File): string {
 export async function validateDocxFile(
     file: File
 ): Promise<{ valid: boolean; error?: string }> {
-    if (file.type !== MIME.DOCX)
-        return { valid: false, error: 'Поддерживаются только DOCX файлы' };
+    if (
+        file.type !== MIME.DOCX &&
+        file.type !== MIME.DOC &&
+        file.type !== MIME.PDF
+    )
+        return {
+            valid: false,
+            error: 'Поддерживаются только DOCX, DOC и PDF файлы',
+        };
     if (file.size > 2 * 1024 * 1024)
         return { valid: false, error: 'Размер файла не должен превышать 2MB' };
     return { valid: true };
@@ -64,6 +72,7 @@ interface DocumentUploadFormProps {
     initialData?: Omit<UploadFormInput, 'file'>;
     mode?: 'create' | 'edit';
     initialAttachments?: BaseAttachment[];
+    document?: DocumentWithAuthor;
     onRemoveAttachment?(id: string): void;
 }
 
@@ -76,6 +85,7 @@ export function DocumentUploadForm({
     initialAttachments,
     onRemoveAttachment,
     mode,
+    document,
 }: DocumentUploadFormProps) {
     const { user } = useAuth();
     const { users, isLoading: usersLoading } = useUsers();
@@ -84,6 +94,9 @@ export function DocumentUploadForm({
         (BaseAttachment & { file?: File })[]
     >(initialAttachments || []);
     const [mainFile, setMainFile] = useState<File | null>(null);
+    const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+    const isAdmin = user?.role === USER_ROLES.ADMIN;
 
     const {
         control,
@@ -96,7 +109,8 @@ export function DocumentUploadForm({
     } = useForm<UploadFormInput>({
         resolver: zodResolver(uploadFormSchema),
         defaultValues: {
-            authorId: user?.id || '',
+            authorId: isAdmin ? '' : user?.id || '',
+            username: '',
             title: initialData?.title || '',
             description: initialData?.description || '',
             categoryIds: initialData?.categoryIds || [],
@@ -123,7 +137,7 @@ export function DocumentUploadForm({
     }, [mode, usersLoading, users, user, setValue]);
 
     const isUser = user?.role === USER_ROLES.USER;
-    const isAdmin = user?.role === USER_ROLES.ADMIN;
+
     const canUpload = isAdmin || isUser;
     const isUploadingState = isLoading !== undefined ? isLoading : isSubmitting;
 
@@ -178,11 +192,19 @@ export function DocumentUploadForm({
     };
 
     const onSubmitForm = (data: UploadFormInput) => {
+        if (isAdmin && !data.authorId && !data.username) {
+            setError('authorId', {
+                message: 'Администратор должен выбрать автора документа.',
+            });
+            return;
+        }
+
         // Если родитель передал onSubmit, вызываем его с собранным пакетом
         if (onSubmit) {
             const submissionData = {
                 metadata: {
                     authorId: data.authorId,
+                    username: data.username,
                     title: data.title,
                     description: data.description,
                     categoryIds: data.categoryIds,
@@ -269,6 +291,7 @@ export function DocumentUploadForm({
                 <MetadataForm
                     control={control}
                     errors={errors}
+                    setValue={setValue}
                     disabled={isUploadingState}
                 />
 
@@ -316,6 +339,14 @@ export function DocumentUploadForm({
                 <Box
                     sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}
                 >
+                    {mode === 'edit' && (
+                        <Button
+                            variant='contained'
+                            onClick={() => setIsViewerOpen(true)}
+                        >
+                            Открыть документ
+                        </Button>
+                    )}
                     {(onCancel || onClose) && (
                         <Button
                             onClick={handleCancel}
@@ -348,6 +379,14 @@ export function DocumentUploadForm({
                               : 'Загрузить документ'}
                     </Button>
                 </Box>
+                {/* DocumentViewer */}
+                {document?.id && !isLoading && !isSubmitting && (
+                    <DocumentViewer
+                        document={document}
+                        open={isViewerOpen}
+                        onClose={() => setIsViewerOpen(false)}
+                    />
+                )}
             </Stack>
         </Box>
     );

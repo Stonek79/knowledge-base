@@ -125,10 +125,13 @@ export function DocumentCreatePage() {
                 replaceMain: mainFileStaged,
                 addAttachments: attachmentsToAdd,
                 deleteAttachmentIds: [],
-                reorder: attachmentsToAdd.map(({ clientId }, index) => ({
-                    clientId,
-                    order: index,
-                })),
+                reorder: attachmentsWithClientId.map(
+                    ({ clientId, item }, index) => ({
+                        clientId,
+                        attachmentId: 'id' in item ? item.id : undefined,
+                        order: index,
+                    })
+                ),
             };
 
             const result = await commit(null, finalPayload); // `null` id означает создание

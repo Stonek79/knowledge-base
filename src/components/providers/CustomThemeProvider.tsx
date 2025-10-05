@@ -10,8 +10,8 @@ import {
 } from 'react';
 
 import { CssBaseline, type PaletteMode } from '@mui/material';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 
 import { darkTheme, lightTheme } from '@/theme/theme';
 

@@ -1,7 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-
 import { Description as FileIcon } from '@mui/icons-material';
 import {
     Box,
@@ -15,6 +13,7 @@ import {
     ListItemText,
     Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 import { DOCUMENTS_PAGE_PATH } from '@/constants/api';
 import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';

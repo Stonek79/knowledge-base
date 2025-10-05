@@ -1,10 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-
-import { useParams } from 'next/navigation';
-
 import { Add as AddIcon, Save as SaveIcon } from '@mui/icons-material';
 import {
     Alert,
@@ -18,6 +14,8 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { useParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 
 import { useCategories } from '@/lib/hooks/documents/useCategories';
 import { updateCategorySchema } from '@/lib/schemas/document';

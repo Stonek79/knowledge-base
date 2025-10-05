@@ -1,6 +1,7 @@
+import { prisma } from '@/lib/prisma';
+
 import type { Prisma } from '@prisma/client';
 
-import { prisma } from '@/lib/prisma';
 
 /**
  * DocumentRepository инкапсулирует прямой доступ к данным документов и связанных сущностей в БД.

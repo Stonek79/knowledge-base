@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { COOKIE_NAME } from '@/constants/app';

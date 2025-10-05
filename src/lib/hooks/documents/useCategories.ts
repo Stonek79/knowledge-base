@@ -63,18 +63,6 @@ export const useCategories = () => {
         'create' | 'update' | 'delete' | null
     >(null);
 
-    /**
-     * Общая функция для выполнения CRUD операций
-     *
-     * @template T - Тип возвращаемого результата
-     * @param {'create' | 'update' | 'delete'} operation - Тип операции
-     * @param {() => Promise<T>} operationFn - Функция для выполнения операции
-     * @param {string} successMessage - Сообщение об успехе
-     *
-     * @returns {Promise<T>} Результат операции
-     *
-     * @private
-     */
     const executeOperation = useCallback(
         async <T>(
             operation: 'create' | 'update' | 'delete',
@@ -91,13 +79,11 @@ export const useCategories = () => {
                 setSuccess(successMessage);
                 setTimeout(() => setSuccess(null), 3000);
                 return result;
-            } catch (error) {
+            } catch (err) {
                 const errorMessage =
-                    error instanceof Error
-                        ? error.message
-                        : 'Неизвестная ошибка';
+                    err instanceof Error ? err.message : 'Неизвестная ошибка';
                 setError(errorMessage);
-                throw error;
+                throw err;
             } finally {
                 setIsLoading(false);
                 setCurrentOperation(null);
@@ -106,22 +92,7 @@ export const useCategories = () => {
         []
     );
 
-    /**
-     * Создает новую категорию с UI логикой
-     *
-     * @param {CreateCategoryData} data - Данные для создания категории
-     * @returns {Promise<CreateCategoryResult>} Результат создания
-     *
-     * @example
-     * ```tsx
-     * await createCategory({
-     *   name: 'Документы',
-     *   description: 'Общие документы',
-     *   color: '#FF5733'
-     * });
-     * ```
-     */
-    const createCategory = useCallback(
+    const onCreateCategory = useCallback(
         async (data: CreateCategoryData) => {
             return executeOperation(
                 'create',
@@ -129,24 +100,10 @@ export const useCategories = () => {
                 'Категория успешно создана'
             );
         },
-        [api.createCategoryApi, executeOperation]
+        [api, executeOperation]
     );
 
-    /**
-     * Обновляет существующую категорию с UI логикой
-     *
-     * @param {UpdateCategoryData} data - Данные для обновления
-     * @returns {Promise<UpdateCategoryResult>} Результат обновления
-     *
-     * @example
-     * ```tsx
-     * await updateCategory({
-     *   id: 'cat-123',
-     *   name: 'Обновленное название'
-     * });
-     * ```
-     */
-    const updateCategory = useCallback(
+    const onUpdateCategory = useCallback(
         async (data: UpdateCategoryData) => {
             return executeOperation(
                 'update',
@@ -154,21 +111,10 @@ export const useCategories = () => {
                 'Категория успешно обновлена'
             );
         },
-        [api.updateCategoryApi, executeOperation]
+        [api, executeOperation]
     );
 
-    /**
-     * Удаляет категорию с UI логикой
-     *
-     * @param {string} categoryId - ID категории для удаления
-     * @returns {Promise<DeleteCategoryResult>} Результат удаления
-     *
-     * @example
-     * ```tsx
-     * await deleteCategory('cat-123');
-     * ```
-     */
-    const deleteCategory = useCallback(
+    const onDeleteCategory = useCallback(
         async (categoryId: string) => {
             return executeOperation(
                 'delete',
@@ -176,31 +122,29 @@ export const useCategories = () => {
                 'Категория успешно удалена'
             );
         },
-        [api.deleteCategoryApi, executeOperation]
+        [api, executeOperation]
     );
 
-    /**
-     * Очищает сообщения об ошибках и успехе
-     */
+    const createCategory = useCallback(
+        (data: CreateCategoryData) => onCreateCategory(data),
+        [onCreateCategory]
+    );
+
+    const updateCategory = useCallback(
+        (data: UpdateCategoryData) => onUpdateCategory(data),
+        [onUpdateCategory]
+    );
+
+    const deleteCategory = useCallback(
+        (categoryId: string) => onDeleteCategory(categoryId),
+        [onDeleteCategory]
+    );
+
     const clearMessages = useCallback(() => {
         setError(null);
         setSuccess(null);
     }, []);
 
-    /**
-     * Находит категорию по ID
-     *
-     * @param {string} categoryId - ID категории
-     * @returns {CategoryBase | undefined} Найденная категория или undefined
-     *
-     * @example
-     * ```tsx
-     * const category = getCategoryById('cat-123');
-     * if (category) {
-     *   console.log(category.name);
-     * }
-     * ```
-     */
     const getCategoryById = useCallback(
         (categoryId: string): CategoryBase | undefined => {
             return api.categories.find(
@@ -210,18 +154,6 @@ export const useCategories = () => {
         [api.categories]
     );
 
-    /**
-     * Ищет категории по названию или описанию
-     *
-     * @param {string} query - Поисковый запрос
-     * @returns {CategoryBase[]} Массив найденных категорий
-     *
-     * @example
-     * ```tsx
-     * const results = searchCategories('документ');
-     * console.log(`Найдено ${results.length} категорий`);
-     * ```
-     */
     const searchCategories = useCallback(
         (query: string): CategoryBase[] => {
             if (!query.trim()) return api.categories;

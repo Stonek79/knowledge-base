@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { composeChangeSetSchema } from '@/lib/schemas/compose';
-import { UserService } from '@/lib/services/UserService';
 import { DocumentComposeService } from '@/lib/services/documents/DocumentComposeService';
+import { UserService } from '@/lib/services/UserService';
 
 /**
  * @swagger

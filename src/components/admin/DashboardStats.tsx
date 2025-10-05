@@ -1,7 +1,5 @@
 'use client';
 
-import useSWR from 'swr';
-
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PeopleIcon from '@mui/icons-material/People';
@@ -11,6 +9,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
+import useSWR from 'swr';
 
 import { API_DOCUMENTS_PATH, API_USERS_PATH } from '@/constants/api';
 

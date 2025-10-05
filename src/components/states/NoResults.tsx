@@ -1,9 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Box, Button, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 export function NoResults({
     title = 'Нет данных',

@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-import { usePathname, useRouter } from 'next/navigation';
-
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -22,6 +20,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { useTheme } from '@/components/providers/CustomThemeProvider';
 import {

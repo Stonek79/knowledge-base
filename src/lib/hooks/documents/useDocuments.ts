@@ -1,6 +1,6 @@
-import useSWR from 'swr';
-
 import { useCallback, useMemo } from 'react';
+
+import useSWR from 'swr';
 
 import { API_DOCUMENTS_PATH } from '@/constants/api';
 import { makeSWRFetcher } from '@/lib/api/apiHelper';

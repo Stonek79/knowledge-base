@@ -1,11 +1,8 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
-import { useSWRConfig } from 'swr';
-
 import { useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -13,6 +10,8 @@ import { ButtonProps } from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import { Controller, useForm } from 'react-hook-form';
+import { useSWRConfig } from 'swr';
 
 import { API_ME_PATH } from '@/constants/api';
 import { login } from '@/lib/actions/actions';

@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-import { usePathname, useRouter } from 'next/navigation';
-
 import {
     ArrowBack as ArrowBackIcon,
     CheckCircle as CheckCircleIcon,
@@ -16,6 +14,7 @@ import {
     Link,
     Typography,
 } from '@mui/material';
+import { usePathname, useRouter } from 'next/navigation';
 
 import {
     ADMIN_PATH,
@@ -29,6 +28,7 @@ import type { BaseAttachment } from '@/lib/types/attachment';
 import type { ComposeChangeSet } from '@/lib/types/compose';
 import type { UploadFormInput } from '@/lib/types/document';
 
+import { LoadingPage } from '../states/LoadingPage';
 import { DocumentUploadForm } from './upload/DocumentUploadForm';
 
 /**
@@ -45,7 +45,7 @@ import { DocumentUploadForm } from './upload/DocumentUploadForm';
 export function DocumentCreatePage() {
     const router = useRouter();
     const pathname = usePathname();
-    const { user } = useAuth();
+    const { user, isLoading: isAuthLoading } = useAuth();
     const { stageFile, commit, isLoading, error, clearError } =
         useDocumentMutation();
     const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -162,6 +162,10 @@ export function DocumentCreatePage() {
     const handleCancel = () => {
         router.push(DOCUMENTS_PAGE_PATH);
     };
+
+    if (isAuthLoading) {
+        return <LoadingPage />;
+    }
 
     // Проверка прав доступа
     if (!canUpload) {

@@ -73,12 +73,14 @@ export function DragDropZone({
                 backgroundColor: isDragOver ? 'primary.50' : 'background.paper',
                 opacity: disabled ? 0.6 : 1,
                 transition: 'all 0.2s ease-in-out',
-                ...(disabled ? {} : {
-                    '&:hover': {
-                        borderColor: 'primary.main',
-                        backgroundColor: 'primary.50',
-                    },
-                })
+                ...(disabled
+                    ? {}
+                    : {
+                          '&:hover': {
+                              borderColor: 'primary.main',
+                              backgroundColor: 'primary.50',
+                          },
+                      }),
             }}
         >
             <input

@@ -1,9 +1,10 @@
-import Link from 'next/link';
-import { HOME_PATH } from '@/constants/api';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import Link from 'next/link';
+
+import { HOME_PATH } from '@/constants/api';
 
 export default function NotFound() {
     return (

@@ -2,20 +2,19 @@
 
 import { useState } from 'react';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-
 import {
     FilterList as FilterIcon,
     FilterListOff as FilterOffIcon,
 } from '@mui/icons-material';
 import { Box, Button, Container, Grid, Typography } from '@mui/material';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { useDocuments } from '@/lib/hooks/documents/useDocuments';
 import { DocumentFilters } from '@/lib/types/document';
 
 import { SearchBar } from './SearchBar';
-import { SearchFilters } from './SearchFilters';
 import { SearchedDocuments } from './SearchedDocuments';
+import { SearchFilters } from './SearchFilters';
 
 export function SearchPage() {
     const router = useRouter();

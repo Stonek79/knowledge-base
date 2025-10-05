@@ -5,7 +5,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import { type ThemeOptions, createTheme } from '@mui/material/styles';
+import { createTheme,type ThemeOptions } from '@mui/material/styles';
 
 // 1. Определяем структуру наших кастомных цветов.
 interface ChatColors {

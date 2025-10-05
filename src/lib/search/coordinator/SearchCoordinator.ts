@@ -1,5 +1,6 @@
 import { SearchFilters, SearchOptions, SearchResult } from '../../types/search';
 import { SearchEngine } from '../interfaces/SearchEngine';
+
 import { ResultCombiner } from './ResultCombiner';
 
 /**

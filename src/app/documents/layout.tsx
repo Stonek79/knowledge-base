@@ -1,6 +1,7 @@
+import { DocumentsLayout } from '@/components/layout/DocumentsLayout';
+
 import type { Metadata } from 'next';
 
-import { DocumentsLayout } from '@/components/layout/DocumentsLayout';
 
 export const metadata: Metadata = {
     title: 'Документы - Knowledge Base',

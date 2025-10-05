@@ -2,8 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 
-import dynamic from 'next/dynamic';
-
 import {
     Box,
     Button,
@@ -16,6 +14,7 @@ import {
     useMediaQuery,
     useTheme,
 } from '@mui/material';
+import dynamic from 'next/dynamic';
 
 import { DOCUMENT_VIEWER_PATH } from '@/constants/api';
 import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';

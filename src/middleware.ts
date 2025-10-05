@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import {
     ADMIN_PREFIX,

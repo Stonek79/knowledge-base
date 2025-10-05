@@ -1,6 +1,5 @@
-import DOMPurify from 'dompurify';
-
 import { Box, Typography } from '@mui/material';
+import DOMPurify from 'dompurify';
 
 interface SearchHighlightProps {
     text: string;

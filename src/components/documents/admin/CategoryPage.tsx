@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
-import { useParams, useRouter } from 'next/navigation';
-
 import {
     ArrowBack as ArrowBackIcon,
-    ColorLens as ColorIcon,
     CalendarToday as DateIcon,
+    ColorLens as ColorIcon,
     Delete as DeleteIcon,
     Description as DocumentIcon,
     Edit as EditIcon,
@@ -27,14 +25,16 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import { useParams, useRouter } from 'next/navigation';
 
 import { useCategories } from '@/lib/hooks/documents/useCategories';
 import { useDocuments } from '@/lib/hooks/documents/useDocuments';
 import { DocumentFilters as DocumentFiltersType, ViewableDocument } from '@/lib/types/document';
 import { formatDate } from '@/utils/date';
 
-import { DocumentFilters } from './DocumentFilters';
 import { DocumentViewer } from '../viewer/DocumentViewer';
+
+import { DocumentFilters } from './DocumentFilters';
 
 export default function CategoryPage() {
     const params = useParams();

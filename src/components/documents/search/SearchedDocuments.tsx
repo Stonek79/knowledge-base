@@ -23,6 +23,7 @@ import {
 import { DocumentWithAuthor, SearchedDocument } from '@/lib/types/document';
 
 import { DocumentViewer } from '../viewer/DocumentViewer';
+
 import { SearchHighlight } from './SearchHighlight';
 
 type SearchedDocumentsProps = {

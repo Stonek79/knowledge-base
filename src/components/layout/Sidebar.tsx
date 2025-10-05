@@ -1,11 +1,9 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
-
+import CategoryIcon from '@mui/icons-material/Category';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DescriptionIcon from '@mui/icons-material/Description';
-import CategoryIcon from '@mui/icons-material/Category';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useMediaQuery, useTheme } from '@mui/material';
@@ -18,6 +16,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { NAVIGATION } from '@/constants/navigation';
 

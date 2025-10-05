@@ -2,8 +2,6 @@
 
 import { useEffect } from 'react';
 
-import Link from 'next/link';
-
 import {
     Alert,
     Box,
@@ -12,6 +10,7 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
+import Link from 'next/link';
 
 import { HOME_PATH } from '@/constants/api';
 

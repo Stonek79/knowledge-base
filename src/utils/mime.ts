@@ -1,5 +1,5 @@
 import { ALLOWED_UPLOAD_MIME, DOCUMENT_FORMAT, MIME } from '@/constants/mime';
-import { SupportedMime, MimeType } from '@/lib/types/mime';
+import { MimeType, SupportedMime } from '@/lib/types/mime';
 
 /**
  * Узкий guard для строкового MIME → SupportedMime.

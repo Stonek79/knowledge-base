@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import {
     Download as DownloadIcon,
     Edit as EditIcon,
@@ -21,8 +19,9 @@ import {
     Skeleton,
     Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
-import { DOCUMENTS_PAGE_PATH, DOCUMENT_EDIT_PAGE_PATH } from '@/constants/api';
+import { DOCUMENT_EDIT_PAGE_PATH,DOCUMENTS_PAGE_PATH } from '@/constants/api';
 import { USER_ROLES } from '@/constants/user';
 import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete';
 import { useDocuments } from '@/lib/hooks/documents/useDocuments';

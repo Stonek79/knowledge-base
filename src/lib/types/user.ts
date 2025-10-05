@@ -1,4 +1,3 @@
-import type { Prisma, Role, User } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -6,6 +5,8 @@ import {
     updateUserSchema,
     userResponseSchema,
 } from '../schemas/user';
+
+import type { Prisma, Role, User } from '@prisma/client';
 
 // Типы для API запросов
 export type CreateUserData = z.infer<typeof createUserSchema>;

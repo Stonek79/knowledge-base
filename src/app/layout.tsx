@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import './globals.css';
 
 import { RootProvider } from '@/components/providers/RootProvider';
 
-import './globals.css';
+import type { Metadata } from 'next';
+
 
 export const metadata: Metadata = {
     title: 'Knowledge Base',

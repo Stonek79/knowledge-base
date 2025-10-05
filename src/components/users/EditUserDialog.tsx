@@ -1,10 +1,8 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
-
 import { useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
     Alert,
     Button,
@@ -20,6 +18,7 @@ import {
     Switch,
     TextField,
 } from '@mui/material';
+import { Controller, useForm } from 'react-hook-form';
 
 import {
     USER_ROLES,

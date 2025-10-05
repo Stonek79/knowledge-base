@@ -1,10 +1,9 @@
 'use client';
 
-import useSWR from 'swr';
-
 import { useCallback, useEffect } from 'react';
 
 import { usePathname, useRouter } from 'next/navigation';
+import useSWR from 'swr';
 
 import { API_ME_PATH, LOGIN_PAGE_PATH } from '@/constants/api';
 import { logout as logoutAction } from '@/lib/actions/actions';

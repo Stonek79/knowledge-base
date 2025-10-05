@@ -1,1 +1,25 @@
-{}
+{
+    "mcpServers": {
+        "chrome-devtools": {
+            "command": "npx",
+            "args": ["chrome-devtools-mcp@latest"],
+            "alwaysAllow": ["list_console_messages", "emulate_cpu"]
+        },
+        "mui-mcp": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["-y", "@mui/mcp@latest"]
+        },
+        "Prisma-Local": {
+            "command": "npx",
+            "args": ["-y", "prisma", "mcp"]
+        },
+        "inkeepMcp": {
+            "httpUrl": "https://mcp.inkeep.com/zod/mcp",
+            "headers": {
+                "Accept": "text/event-stream"
+            },
+            "timeout": 5000
+        }
+    }
+}

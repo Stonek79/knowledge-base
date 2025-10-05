@@ -3,12 +3,7 @@
 const nextConfig = {
     reactStrictMode: true,
     output: 'standalone',
-    // eslint: {
-    //     ignoreDuringBuilds: true,
-    // },
-    // typescript: {
-    //     ignoreBuildErrors: true,
-    // },
+    typedRoutes: true,
 };
 
 export default nextConfig;

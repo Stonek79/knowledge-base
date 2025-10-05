@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import { Clear, Search } from '@mui/icons-material';
 import {
     Box,
@@ -12,6 +10,7 @@ import {
     InputAdornment,
     TextField,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 import { DOCUMENTS_BASE_PATH, SEARCH_BASE_PATH } from '@/constants/api';
 

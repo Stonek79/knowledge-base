@@ -5,7 +5,7 @@ import type { SupportedMime } from '@/lib/types/mime';
 import type { PdfCombineRequest, PdfCombineResult } from '@/lib/types/pdf';
 
 import { attachmentService } from './AttachmentService';
-import { getFileStorageService, FileStorageService } from './FileStorageService';
+import { FileStorageService,getFileStorageService } from './FileStorageService';
 
 /**
  * Сервис для объединения PDF документов с приложениями

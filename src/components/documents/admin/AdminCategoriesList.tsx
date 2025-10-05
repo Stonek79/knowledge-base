@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import {
-    ColorLens as ColorIcon,
     CalendarToday as DateIcon,
+    ColorLens as ColorIcon,
     Delete as DeleteIcon,
     Description as DocumentIcon,
     Edit as EditIcon,
@@ -30,12 +28,13 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 import {
     ADMIN_PATH,
     API_CATEGORIES_PATH,
-    CATEGORY_PAGE_PATH,
     CATEGORY_EDIT_PAGE_PATH,
+    CATEGORY_PAGE_PATH,
 } from '@/constants/api';
 import { useCategories } from '@/lib/hooks/documents/useCategories';
 import { CategoryBase } from '@/lib/types/document';

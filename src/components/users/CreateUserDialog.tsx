@@ -1,10 +1,8 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-
 import { MouseEvent, useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { VisibilityOff } from '@mui/icons-material';
 import { Visibility } from '@mui/icons-material';
 import {
@@ -24,6 +22,7 @@ import {
     Switch,
     TextField,
 } from '@mui/material';
+import { useForm } from 'react-hook-form';
 
 import {
     USER_ROLES,

@@ -48,67 +48,71 @@ export class DocumentIndexer {
 
     async search(
         query: string,
-        filters?: SearchFilters
+        filters?: SearchFilters,
     ): Promise<SearchResult[]> {
         await this.ready();
         const results: SearchResult[] = [];
+        const lowerCaseQuery = query.toLowerCase();
 
         for (const [documentId, doc] of this.index) {
-            console.log('[DocumentIndexer] doc', doc);
-            console.log('[DocumentIndexer] query', query);
-
-            // Поиск по тексту
+            // 1. Поиск по тексту
             const matchesQuery =
                 query === '' ||
-                doc.title.toLowerCase().includes(query.toLowerCase()) ||
-                doc.content.toLowerCase().includes(query.toLowerCase()) ||
-                doc.keywords.some(k => k.toLowerCase().includes(query.toLowerCase())) ||
-                doc.description?.toLowerCase().includes(query.toLowerCase());
+                doc.title.toLowerCase().includes(lowerCaseQuery) ||
+                doc.content.toLowerCase().includes(lowerCaseQuery) ||
+                (doc.keywords &&
+                    doc.keywords
+                        .some(k => k.trim().toLowerCase().includes(lowerCaseQuery))) ||
+                doc.description?.toLowerCase().includes(lowerCaseQuery);
 
-            if (!matchesQuery) continue;
+            if (!matchesQuery) {
+                continue;
+            }
 
-            // Применение фильтров
-            let matchesFilters = true;
-
+            // 2. Применение фильтров
             if (filters) {
-                // Фильтр по категориям
-
-                if (filters?.categoryIds?.length) {
-                    const has = filters.categoryIds.some(id =>
-                        doc.categoryIds?.includes(id)
-                    );
-                    if (!has) continue;
+                if (
+                    filters.categoryIds &&
+                    filters.categoryIds.length > 0 &&
+                    !filters.categoryIds.some(id => doc.categoryIds?.includes(id))
+                ) {
+                    continue;
                 }
 
-                // Фильтр по автору
-                if (filters.authorId) {
-                    if (doc.authorId !== filters.authorId) continue;
+                if (filters.authorId && doc.authorId !== filters.authorId) {
+                    continue;
                 }
 
-                // Фильтр по датам
-                if (filters.dateFrom) {
-                    if (doc.createdAt < filters.dateFrom) continue;
+                if (
+                    filters.dateFrom &&
+                    new Date(doc.createdAt) < new Date(filters.dateFrom)
+                ) {
+                    continue;
                 }
-                if (filters.dateTo) {
-                    if (doc.createdAt > filters.dateTo) continue;
+
+                if (
+                    filters.dateTo &&
+                    new Date(doc.createdAt) > new Date(filters.dateTo)
+                ) {
+                    continue;
                 }
             }
 
-            if (matchesFilters) {
-                results.push({
-                    id: documentId,
-                    title: doc.title,
-                    content: doc.content,
-                    description: doc.description,
-                    keywords: doc.keywords,
-                    author: doc.author,
-                    createdAt: doc.createdAt,
-                    relevance: 1.0,
-                    highlights: [],
-                });
-            }
+            // Если все проверки пройдены, добавляем документ в результаты
+            results.push({
+                id: documentId,
+                title: doc.title,
+                content: doc.content,
+                description: doc.description,
+                keywords: doc.keywords,
+                author: doc.author,
+                createdAt: doc.createdAt,
+                relevance: 1.0, // Временное значение
+                highlights: [], // Будет заполнено позже
+            });
         }
 
+        // 3. Расчет релевантности и подсветка
         return results.map(result => ({
             ...result,
             relevance: this.calculateRelevance(query, result),

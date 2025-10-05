@@ -1,10 +1,11 @@
 'use client';
 
+import SwaggerUI from 'swagger-ui-react';
+import 'swagger-ui-react/swagger-ui.css';
+
 import { useEffect, useState } from 'react';
 
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-import SwaggerUI from 'swagger-ui-react';
-import 'swagger-ui-react/swagger-ui.css';
 
 import styles from './ApiDocsPage.module.css';
 
@@ -26,7 +27,7 @@ export default function ApiDocsPage() {
 
     return (
         <Box sx={{ p: 4 }}>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant='h4' gutterBottom>
                 API Documentation
             </Typography>
             {spec ? (

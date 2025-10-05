@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { USER_ROLES } from '@/constants/user';
@@ -9,8 +8,8 @@ import { prisma } from '@/lib/prisma';
 import { createUserSchema, usersListSchema } from '@/lib/schemas/user';
 import type {
     CreateUserResponse,
-    UserWhereInput,
     UsersListResponse,
+    UserWhereInput,
 } from '@/lib/types/user';
 
 /**

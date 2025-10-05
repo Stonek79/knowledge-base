@@ -1,5 +1,4 @@
 import { FlatCompat } from '@eslint/eslintrc';
-import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -26,29 +25,51 @@ const eslintConfig = [
     // Блок 2: Наши кастомные правила, применяемые поверх базовых
     {
         files: ['src/**/*.{ts,tsx}'],
-        plugins: {
-            'simple-import-sort': simpleImportSort,
-        },
         rules: {
             // Запрет any типов для безопасности
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/no-unused-vars': 'warn',
             'prefer-const': 'warn',
             '@typescript-eslint/no-empty-object-type': 'warn',
-            'simple-import-sort/imports': [
+
+            // Явная настройка порядка импортов
+            'import/order': [
                 'warn',
                 {
                     groups: [
-                        ['^react', '^next', '^@?\\w'],
-                        ['^@/.*$'],
-                        ['^\\u0000'],
-                        ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
-                        ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
-                        ['^.+\\.s?css$'],
+                        'builtin',
+                        'external',
+                        'internal',
+                        'parent',
+                        'sibling',
+                        'index',
+                        'object',
+                        'type',
                     ],
+                    pathGroups: [
+                        {
+                            pattern: 'react',
+                            group: 'external',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/**',
+                            group: 'internal',
+                        },
+                        {
+                            pattern: '**/*.css',
+                            group: 'index',
+                            position: 'after',
+                        },
+                    ],
+                    pathGroupsExcludedImportTypes: ['react'],
+                    'newlines-between': 'always',
+                    alphabetize: {
+                        order: 'asc',
+                        caseInsensitive: true,
+                    },
                 },
             ],
-            'simple-import-sort/exports': 'error',
         },
     },
 ];

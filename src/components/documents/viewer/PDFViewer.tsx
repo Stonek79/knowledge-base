@@ -1,7 +1,5 @@
 'use client';
 
-import { Document, Page, pdfjs } from 'react-pdf';
-
 import React, { useCallback, useState } from 'react';
 
 import { FitScreen, ZoomIn, ZoomOut } from '@mui/icons-material';
@@ -15,6 +13,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import { Document, Page, pdfjs } from 'react-pdf';
 
 // Настройка worker для PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(

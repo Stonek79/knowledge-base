@@ -1,8 +1,7 @@
 import bcrypt from 'bcryptjs';
-import { SignJWT, jwtVerify } from 'jose';
-import { z } from 'zod';
-
+import { jwtVerify,SignJWT } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { COOKIE_NAME } from '@/constants/app';
 import { JWT_EXPIRES_IN, JWT_SECRET } from '@/constants/auth';

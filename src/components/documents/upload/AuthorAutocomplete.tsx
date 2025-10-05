@@ -1,15 +1,7 @@
 'use client';
 
-import {
-    Control,
-    Controller,
-    FieldErrors,
-    UseFormSetValue,
-    useWatch,
-} from 'react-hook-form';
-
-import { Fragment, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import {
     Alert,
@@ -22,6 +14,13 @@ import {
     DialogTitle,
     TextField,
 } from '@mui/material';
+import {
+    Control,
+    Controller,
+    FieldErrors,
+    UseFormSetValue,
+    useWatch,
+} from 'react-hook-form';
 
 import { USER_ROLES } from '@/constants/user';
 import { UploadFormInput } from '@/lib/types/document';
@@ -158,7 +157,7 @@ export function AuthorAutocomplete({
                             if (params.inputValue !== '' && !isExisting) {
                                 filtered.push({
                                     inputValue: params.inputValue,
-                                    username: `Добавить "${params.inputValue}"`,
+                                    username: `Добавить &quot;${params.inputValue}&quot;`,
                                 });
                             }
 
@@ -211,9 +210,9 @@ export function AuthorAutocomplete({
                             </Alert>
                         )}
                         <DialogContentText>
-                            Вы уверены, что хотите добавить пользователя "
-                            {dialogValue}"? Он будет создан со статусом
-                            "Временный".
+                            Вы уверены, что хотите добавить пользователя &quot;
+                            {dialogValue}&quot;? Он будет создан со статусом
+                            &quot;Временный&quot;.
                         </DialogContentText>
                         <TextField
                             autoFocus

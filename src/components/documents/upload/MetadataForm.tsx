@@ -1,12 +1,5 @@
 'use client';
 
-import {
-    Control,
-    Controller,
-    FieldErrors,
-    UseFormSetValue,
-} from 'react-hook-form';
-
 import { useMemo } from 'react';
 
 import {
@@ -21,6 +14,12 @@ import {
     Select,
     TextField,
 } from '@mui/material';
+import {
+    Control,
+    Controller,
+    FieldErrors,
+    UseFormSetValue,
+} from 'react-hook-form';
 
 import { USER_ROLES } from '@/constants/user';
 import { useCategories } from '@/lib/hooks/documents/useCategories';

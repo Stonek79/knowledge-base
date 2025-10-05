@@ -1,12 +1,5 @@
 'use client';
 
-import {
-    Control,
-    Controller,
-    UseFormSetValue,
-    useWatch,
-} from 'react-hook-form';
-
 import { useEffect, useMemo, useRef } from 'react';
 
 import {
@@ -17,6 +10,12 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import {
+    Control,
+    Controller,
+    UseFormSetValue,
+    useWatch,
+} from 'react-hook-form';
 
 import { USER_ROLES } from '@/constants/user';
 import { UploadFormInput } from '@/lib/types/document';

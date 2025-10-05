@@ -10,6 +10,7 @@ import {
     ListItemIcon,
     Skeleton,
     Typography,
+    useTheme,
 } from '@mui/material';
 
 import { CategoryBase } from '@/lib/types/document';
@@ -25,6 +26,9 @@ export function CategoriesList({
     isLoading,
     onCategoryClick,
 }: CategoriesListProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     if (isLoading) {
         return (
             <Card>
@@ -43,7 +47,14 @@ export function CategoriesList({
     }
 
     return (
-        <Card sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <Card
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
+                minHeight: 0,
+            }}
+        >
             <CardContent
                 sx={{
                     display: 'flex',
@@ -68,7 +79,16 @@ export function CategoriesList({
                 </Typography>
                 <List sx={{ flex: 1, overflow: 'auto', minHeight: 0, pr: 1 }}>
                     {categories.map(category => (
-                        <ListItem key={category.id} disablePadding sx={{ border: '1px solid #e0e0e0', gap: 1, borderRadius: 1 }}>
+                        <ListItem
+                            key={category.id}
+                            disablePadding
+                            sx={{
+                                gap: 1,
+                                borderRadius: 1,
+                                mb: 0.3,
+                                backgroundColor: isDark ? '#1a1a1a' : '#f0f2f5',
+                            }}
+                        >
                             <ListItemButton
                                 onClick={() => onCategoryClick(category.id)}
                             >

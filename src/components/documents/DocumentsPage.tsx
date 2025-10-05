@@ -44,7 +44,7 @@ export function DocumentsPage() {
                     mb: 3,
                     alignItems: 'stretch',
                     minHeight: 0,
-                    height: '15em',
+                    height: '16em',
                 }}
             >
                 {/* Категории */}

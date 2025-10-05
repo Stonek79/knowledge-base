@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { Description as FileIcon } from '@mui/icons-material';
 import {
     Box,
@@ -12,8 +14,8 @@ import {
     ListItemIcon,
     ListItemText,
     Typography,
+    useTheme,
 } from '@mui/material';
-import { useRouter } from 'next/navigation';
 
 import { DOCUMENTS_PAGE_PATH } from '@/constants/api';
 import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
@@ -22,6 +24,9 @@ import { DocumentWithAuthor, SearchResult } from '@/lib/types/document';
 export function RecentDocuments() {
     const { recentDocuments } = useRecentDocuments();
     const router = useRouter();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     const handleDocumentClick = (
         document: DocumentWithAuthor | SearchResult
     ) => {
@@ -30,7 +35,14 @@ export function RecentDocuments() {
 
     if (recentDocuments.length === 0) {
         return (
-            <Card sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+            <Card
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    minHeight: 0,
+                }}
+            >
                 <CardContent
                     sx={{
                         display: 'flex',
@@ -66,21 +78,63 @@ export function RecentDocuments() {
     }
 
     return (
-        <Card sx={{ height: '100%' }}>
-            <CardContent>
-                <Typography variant='h6' gutterBottom>
+        <Card
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
+                minHeight: 0,
+            }}
+        >
+            <CardContent
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    minHeight: 0,
+                    p: 1,
+                }}
+            >
+                <Typography
+                    variant='h6'
+                    gutterBottom
+                    sx={{
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 1,
+                        bgcolor: 'background.paper',
+                        py: 1,
+                    }}
+                >
                     Недавние документы
                 </Typography>
-                <List>
+                <List sx={{ flex: 1, overflow: 'auto', minHeight: 0, pr: 1 }}>
                     {recentDocuments.slice(0, 5).map(document => (
-                        <ListItem key={document?.id} disablePadding>
+                        <ListItem
+                            key={document?.id}
+                            disablePadding
+                            sx={{
+                                gap: 1,
+                                borderRadius: 1,
+                                mb: 0.3,
+                                backgroundColor: isDark ? '#1a1a1a' : '#f0f2f5'
+                            }}
+                        >
                             <ListItemButton
                                 onClick={() => handleDocumentClick(document)}
                             >
                                 <ListItemIcon>
-                                    <FileIcon />
+                                    <FileIcon
+                                        sx={{
+                                            width: 16,
+                                            height: 16,
+                                            borderRadius: '50%',
+                                        }}
+                                    />
                                 </ListItemIcon>
-                                <ListItemText primary={document?.title} />
+                                <Typography variant='body2'>
+                                    {document?.title}
+                                </Typography>
                             </ListItemButton>
                         </ListItem>
                     ))}

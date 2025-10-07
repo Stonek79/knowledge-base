@@ -85,11 +85,13 @@ export class DocumentQueryService {
             throw new ApiError('Доступ запрещен', 403);
         }
 
-        // Увеличение счетчика просмотров
-        await DocumentRepository.update({
-            where: { id },
-            data: { viewCount: { increment: 1 } },
-        });
+        // Увеличение счетчика просмотров (кроме админов)
+        if (user.role !== USER_ROLES.ADMIN) {
+            await DocumentRepository.update({
+                where: { id },
+                data: { viewCount: { increment: 1 } },
+            });
+        }
 
         return document;
     }

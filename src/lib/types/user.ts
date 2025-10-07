@@ -6,6 +6,7 @@ import {
     userResponseSchema,
 } from '../schemas/user';
 
+import type { Profile } from './profile';
 import type { Prisma, Role, User } from '@prisma/client';
 
 // Типы для API запросов
@@ -35,6 +36,10 @@ export type UserWithDocuments = UserResponse & {
         title: string;
         createdAt: Date;
     }>;
+};
+
+export type UserWithProfile = User & {
+    profile: Profile | null;
 };
 
 // Типы для Prisma запросов

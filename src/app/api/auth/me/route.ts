@@ -59,8 +59,6 @@ export async function GET(req: NextRequest) {
 
         const validationResult = jwtPayloadSchema.safeParse(decoded);
 
-        console.log('[me] validationResult', validationResult);
-
         if (!validationResult.success) {
             throw new ApiError('Некорректный формат токена', 401);
         }
@@ -81,6 +79,7 @@ export async function GET(req: NextRequest) {
                 id: true,
                 username: true,
                 role: true,
+                profile: true,
             },
         });
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -29,6 +30,7 @@ import {
     DOCUMENTS_PAGE_PATH,
     HOME_PATH,
     LOGIN_PAGE_PATH,
+    PROFILE_BASE_PATH,
     UPLOAD_PAGE_PATH,
 } from '@/constants/api';
 import { USER_ROLES } from '@/constants/user';
@@ -67,7 +69,10 @@ export function Header({ onSidebarToggle, showSidebar = false }: HeaderProps) {
     };
 
     const handleProfile = () => {
-        // TODO: Добавить страницу профиля
+        console.log('[header] profile, user?.profile', user?.profile);
+
+        router.push(`${PROFILE_BASE_PATH}`);
+
         handleClose();
     };
 

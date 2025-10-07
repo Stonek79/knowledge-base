@@ -14,7 +14,7 @@ export const NAVIGATION = {
         USERS: '/admin/users',
         DOCUMENTS: '/admin/documents',
         SETTINGS: '/admin/settings',
-        CATEGORIES: '/admin/categories'
+        CATEGORIES: '/admin/categories',
     },
 
     // Иконки (для Sidebar)

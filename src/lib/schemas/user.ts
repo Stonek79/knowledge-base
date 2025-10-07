@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { USER_ROLES, USER_STATUSES } from '@/constants/user';
 
+import { profileSchema } from './profile';
+
 export const createUserSchema = z
     .object({
         username: z
@@ -16,22 +18,49 @@ export const createUserSchema = z
                 message:
                     'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
             }),
-        password: z
-            .string()
-            .min(6, { message: 'Пароль должен быть минимум 6 символов' })
-            .max(25, { message: 'Пароль должен быть максимум 25 символов' }),
-        confirmPassword: z
-            .string()
-            .min(6, { message: 'Пароль должен быть минимум 6 символов' })
-            .max(25, { message: 'Пароль должен быть максимум 25 символов' }),
+
         role: z.enum(USER_ROLES).default(USER_ROLES.USER),
         status: z.enum(USER_STATUSES).default(USER_STATUSES.ACTIVE),
         enabled: z.boolean().default(false),
+        password: z.string().optional(),
+        confirmPassword: z.string().optional(),
     })
-    .refine(data => data.password === data.confirmPassword, {
-        message: 'Пароли не совпадают',
-        path: ['confirmPassword'],
-    });
+    .refine(
+        data => {
+            if (data.status === USER_STATUSES.PLACEHOLDER || !data.password) {
+                return true;
+            }
+            return data?.password?.length >= 6;
+        },
+        {
+            message: 'Пароль должен быть минимум 6 символов',
+            path: ['password'],
+        }
+    )
+    .refine(
+        data => {
+            if (data.status === USER_STATUSES.PLACEHOLDER || !data.password) {
+                return true;
+            }
+            return data?.password?.length <= 25;
+        },
+        {
+            message: 'Пароль должен быть максимум 25 символов',
+            path: ['password'],
+        }
+    )
+    .refine(
+        data => {
+            if (data.status === USER_STATUSES.PLACEHOLDER || !data.password) {
+                return true;
+            }
+            return data.password === data.confirmPassword;
+        },
+        {
+            message: 'Пароли не совпадают',
+            path: ['confirmPassword'],
+        }
+    );
 
 export const userResponseSchema = z.object({
     id: z.string(),
@@ -40,6 +69,7 @@ export const userResponseSchema = z.object({
     createdAt: z.union([z.iso.datetime(), z.date()]),
     enabled: z.boolean(),
     status: z.enum(USER_STATUSES).optional(),
+    profile: profileSchema.optional(),
 });
 
 export const jwtPayloadSchema = z.object({
@@ -116,5 +146,3 @@ export const updateUserSchema = z
             path: ['confirmNewPassword'],
         }
     );
-
-    

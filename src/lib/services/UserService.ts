@@ -1,7 +1,8 @@
-import { Role, User, UserStatus } from '@prisma/client';
-
+import { USER_ROLES, USER_STATUSES } from '@/constants/user';
 import { ApiError } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
+import { UserRepository } from '@/lib/repositories/userRepository';
+import { ProfileUpdate } from '@/lib/types/profile';
+import { BaseUser } from '@/lib/types/user';
 
 /**
  * UserService инкапсулирует бизнес-логику для работы с пользователями.
@@ -13,45 +14,47 @@ export class UserService {
      * @param name - Имя пользователя для поиска или создания.
      * @returns - Найденный или созданный объект пользователя.
      */
-    public static async findOrCreateAuthor(name: string): Promise<User> {
+    public static async findOrCreateAuthor(name: string): Promise<BaseUser> {
         const trimmedName = name.trim();
         if (!trimmedName) {
             throw new ApiError('Имя автора не может быть пустым', 400);
         }
 
-        // Поиск существующего пользователя без учета регистра
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                username: {
-                    equals: trimmedName,
-                    mode: 'insensitive',
-                },
-            },
-        });
+        const existingUser = await UserRepository.findByUsername(trimmedName);
 
         if (existingUser) {
             return existingUser;
         }
 
         // Если не найден, создаем нового пользователя-плейсхолдера
-        const newUser = await prisma.user.create({
-            data: {
-                username: trimmedName,
-                password: null, // У плейсхолдера нет пароля
-                role: Role.USER,
-                status: UserStatus.PLACEHOLDER,
-                enabled: false,
-                profile: {
-                    create: {
-                        fullName: trimmedName, // Используем имя как fullName по умолчанию
-                    },
-                },
-            },
+        return UserRepository.createUser({
+            username: trimmedName,
+            password: undefined, // У плейсхолдера нет пароля
+            role: USER_ROLES.USER,
+            status: USER_STATUSES.PLACEHOLDER,
+            enabled: false,
         });
-
-        return newUser;
     }
 
-    // TODO: В будущем сюда можно будет перенести остальную логику управления пользователями
-    // (создание полноценных пользователей, обновление, удаление и т.д.)
+    /**
+     * Получает профиль пользователя.
+     * @param userId - ID пользователя.
+     */
+    public static async getProfile(userId: string) {
+        const userWithProfile =
+            await UserRepository.findUserWithProfile(userId);
+        if (!userWithProfile) {
+            throw new ApiError('Пользователь не найден', 404);
+        }
+        return userWithProfile;
+    }
+
+    /**
+     * Обновляет профиль пользователя.
+     * @param userId - ID пользователя.
+     * @param data - Данные для обновления.
+     */
+    public static async updateProfile(userId: string, data: ProfileUpdate) {
+        return UserRepository.upsertProfile(userId, data);
+    }
 }

@@ -10,6 +10,7 @@ export const USERS_BASE_PATH = '/users';
 export const DOCUMENTS_BASE_PATH = '/documents';
 export const CATEGORIES_BASE_PATH = '/categories';
 export const SEARCH_BASE_PATH = '/search';
+export const PROFILE_BASE_PATH = '/profile';
 
 // === Client-side Pages ===
 export const LOGIN_PAGE_PATH = `${AUTH_BASE_PATH}/login`; // /auth/login
@@ -41,6 +42,8 @@ export const API_USERS_PATH = `${API_PREFIX}${USERS_BASE_PATH}`; // /api/users
 export const API_CREATE_USER_PATH = `${API_USERS_PATH}/create`;
 export const API_UPDATE_USER_PATH = `${API_USERS_PATH}/edit`;
 export const API_DELETE_USER_PATH = `${API_USERS_PATH}/delete`;
+export const API_PROFILE_PATH = `${API_PREFIX}${PROFILE_BASE_PATH}`; // /api/profile
+export const API_PROFILE_UPDATE_PATH = `${API_PROFILE_PATH}/edit`; // /api/profile/edit
 
 // Documents
 export const API_DOCUMENTS_PATH = `${API_PREFIX}${DOCUMENTS_BASE_PATH}`; // /api/documents

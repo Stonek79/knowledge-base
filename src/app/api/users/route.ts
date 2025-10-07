@@ -8,8 +8,8 @@ import { prisma } from '@/lib/prisma';
 import { createUserSchema, usersListSchema } from '@/lib/schemas/user';
 import type {
     CreateUserResponse,
-    UsersListResponse,
     UserWhereInput,
+    UsersListResponse,
 } from '@/lib/types/user';
 
 /**
@@ -225,17 +225,19 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            const hashedPassword = await bcrypt.hash(password, 12);
+            const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
 
             const user = await tx.user.create({
                 data: {
                     username,
-                    password: hashedPassword,
+                    password: hashedPassword ?? null,
                     role,
                     enabled,
                     status,
                     profile: {
-                        create: {},
+                        create: {
+                            fullName: username,
+                        },
                     },
                 },
                 select: {

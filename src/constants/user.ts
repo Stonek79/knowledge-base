@@ -19,3 +19,15 @@ export const USER_STATUSES_LABELS = {
     [USER_STATUSES.ACTIVE]: 'Активный',
     [USER_STATUSES.PLACEHOLDER]: 'Временный',
 };
+
+export const profileVisibilityDefaults = {
+    fullName: true,
+    jobTitle: true,
+    email: true,
+    phoneCity: true,
+    phoneInternal: true,
+    phoneMobile: true,
+    manager: true,
+    birthday: true,
+    aboutMe: true,
+};

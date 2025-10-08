@@ -4,74 +4,37 @@
 
 ---
 
+## Шаг 0: Единое обновление схемы БД
+
+**Цель:** Сгруппировать все изменения в `prisma.schema` в один шаг, чтобы создать единую миграцию и избежать лишних миграций в будущем.
+
+- **Файл:** `prisma/schema.prisma`
+- **Действия:**
+    1.  **Для системы аудита:** Добавить `enum ActionType` и модель `AuditLog`.
+    2.  **Для "мягкого" удаления:** Добавить поле `deletedAt: DateTime?` в модель `Document`.
+    3.  **Создать миграцию:** Выполнить команду `make migrate-dev` с осмысленным названием, например `add_audit_log_and_soft_delete`.
+
+---
+
 ## 1. Задача: Внедрение системы аудита (Логирование действий)
 
 **Цель:** Отслеживать и записывать все ключевые действия пользователей в системе с разделением прав доступа к логам.
 
-### Шаг 1: Модель данных
-- **Файл:** `prisma/schema.prisma`
-- **Действия:**
-    1.  Добавить новый `enum` для типов действий:
-        ```prisma
-        enum ActionType {
-          // Пользователи и Авторизация
-          USER_LOGIN
-          USER_LOGOUT
-          USER_LOGIN_FAILED
-          USER_CREATED
-          USER_UPDATED
-          USER_DELETED
-          USER_PASSWORD_CHANGED
-          PROFILE_UPDATED
+*Предполагается, что Шаг 0 уже выполнен.*
 
-          // Документы
-          DOCUMENT_CREATED
-          DOCUMENT_UPDATED
-          DOCUMENT_VIEWED
-          DOCUMENT_DOWNLOADED
-          DOCUMENT_DELETED_SOFT
-          DOCUMENT_DELETED_HARD
-          DOCUMENT_RESTORED
-
-          // Управление доступом
-          DOCUMENT_ACCESS_GRANTED
-          DOCUMENT_ACCESS_REVOKED
-
-          // Категории и Системные настройки (админ)
-          CATEGORY_CREATED
-          CATEGORY_UPDATED
-          CATEGORY_DELETED
-          SYSTEM_SETTINGS_UPDATED
-        }
-        ```
-    2.  Добавить новую модель `AuditLog`:
-        ```prisma
-        model AuditLog {
-          id         String      @id @default(cuid())
-          timestamp  DateTime    @default(now())
-          userId     String
-          user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-          action     ActionType
-          targetId   String?
-          targetType String?
-          details    Json?
-        }
-        ```
-    3.  Выполнить миграцию базы данных: `make migrate-dev`.
-
-### Шаг 2: Сервис аудита
+### Шаг 1: Сервис аудита
 - **Файл:** `src/lib/services/AuditService.ts` (новый файл)
 - **Действия:**
     1.  Создать класс `AuditService` с одним статическим методом `log`.
 
-### Шаг 3: Интеграция сервиса
+### Шаг 2: Интеграция сервиса
 - **Действия:** Импортировать и вызывать `AuditService.log()` в следующих местах:
     - **`src/lib/auth/AuthService.ts`**: В методе `login` после успешной аутентификации и при неудачной попытке.
     - **`src/lib/services/UserService.ts`**: В методах `createUser`, `updateUser`, `deleteUser`, `updateProfile` и при смене пароля.
-    - **`src/lib/services/DocumentCommandService.ts`**: В методах `createDocument`, `updateDocument`, `softDeleteDocument`, `hardDeleteDocument`, `restoreDocument`.
+    - **`src/lib/services/DocumentCommandService.ts`**: В методах `createDocument`, `updateDocument`, `softDeleteDocument` и `hardDeleteDocument`.
     - **`src/lib/services/DocumentQueryService.ts`**: В методе `getDocumentById` **добавить проверку**: если роль пользователя НЕ `ADMIN`, логировать действие `DOCUMENT_VIEWED`. При скачивании логировать `DOCUMENT_DOWNLOADED`.
 
-### Шаг 4: UI для просмотра логов
+### Шаг 3: UI для просмотра логов
 - **Задача:** Создать страницу в админ-панели для просмотра логов, доступную **только админам**.
 - **Файлы:**
     - `/src/app/api/admin/audit/route.ts` (новый)
@@ -105,34 +68,24 @@
 
 **Цель:** Внедрить "мягкое удаление", прекратить хранение старых PDF, и заложить основу для будущего версионирования.
 
+*Предполагается, что Шаг 0 уже выполнен.*
+
 ### Часть A: "Мягкое" удаление (Soft Delete)
 
-#### Шаг 1: Модель данных
-- **Файл:** `prisma/schema.prisma`
-- **Действия:**
-    1.  Добавить в модель `Document` поле `deletedAt`:
-        ```prisma
-        model Document {
-          // ... все остальные поля
-          deletedAt DateTime?
-        }
-        ```
-    2.  Выполнить миграцию: `make migrate-dev`.
-
-#### Шаг 2: Middleware для Prisma
+#### Шаг 1: Middleware для Prisma
 - **Файл:** `src/lib/prisma/middleware.ts` (новый файл)
 - **Действия:**
     1.  Создать middleware, которое будет автоматически добавлять условие `deletedAt: null` ко всем `find` операциям для модели `Document`. Это скроет "удаленные" документы из всех обычных выборок.
     2.  Подключить middleware при инициализации клиента Prisma.
 
-#### Шаг 3: Обновление сервисов
+#### Шаг 2: Обновление сервисов
 - **Файл:** `src/lib/services/DocumentCommandService.ts`
 - **Действия:**
     1.  Переименовать существующий метод `deleteDocument` в `hardDeleteDocument` (он будет выполнять `prisma.document.delete`).
     2.  Создать новый метод `softDeleteDocument`, который будет устанавливать `deletedAt: new Date()`.
     3.  В API-роуте для удаления документа вызывать `softDeleteDocument`.
 
-#### Шаг 4: UI для администратора
+#### Шаг 3: UI для администратора
 - **Файл:** `/src/components/documents/admin/AdminDocumentsPage.tsx`
 - **Действия:**
     1.  Добавить фильтр для просмотра "удаленных" документов.

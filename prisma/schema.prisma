@@ -23,6 +23,7 @@ model User {
     authoredDocuments  Document[]                   @relation("AuthoredDocuments")
     updatedBy          SystemSettings[] // Настройки системы, которые обновил пользователь
     confidentialAccess ConfidentialDocumentAccess[] // Доступ к конфиденциальным документам
+    auditLogs          AuditLog[] // Логи действий пользователя
 }
 
 // Документы
@@ -84,6 +85,8 @@ model Document {
     @@index([isPublished])
     @@index([documentType])
     @@index([authorId, createdAt])
+
+    deletedAt DateTime? // Для мягкого удаления
 }
 
 // Категории
@@ -207,6 +210,18 @@ model Profile {
     updatedAt DateTime @updatedAt
 }
 
+// Модель для логирования действий
+model AuditLog {
+    id         String     @id @default(cuid())
+    timestamp  DateTime   @default(now())
+    userId     String
+    user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    action     ActionType
+    targetId   String?
+    targetType String?
+    details    Json?
+}
+
 // Роли пользователей
 enum Role {
     ADMIN // Администратор
@@ -244,4 +259,36 @@ enum AttachmentType {
 enum ConversionType {
     PDF // Преобразование в PDF
     DOCX // Преобразование в DOCX
+}
+
+// Типы действий для аудита
+enum ActionType {
+    // Пользователи и Авторизация
+    USER_LOGIN
+    USER_LOGOUT
+    USER_LOGIN_FAILED
+    USER_CREATED
+    USER_UPDATED
+    USER_DELETED
+    USER_PASSWORD_CHANGED
+    PROFILE_UPDATED
+
+    // Документы
+    DOCUMENT_CREATED
+    DOCUMENT_UPDATED
+    DOCUMENT_VIEWED
+    DOCUMENT_DOWNLOADED
+    DOCUMENT_DELETED_SOFT
+    DOCUMENT_DELETED_HARD
+    DOCUMENT_RESTORED
+
+    // Управление доступом
+    DOCUMENT_ACCESS_GRANTED
+    DOCUMENT_ACCESS_REVOKED
+
+    // Категории и Системные настройки (админ)
+    CATEGORY_CREATED
+    CATEGORY_UPDATED
+    CATEGORY_DELETED
+    SYSTEM_SETTINGS_UPDATED
 }

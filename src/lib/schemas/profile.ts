@@ -59,3 +59,26 @@ export const profileUpdateSchema = z.object({
 export const profileUpdateApiScheme = profileUpdateSchema.extend({
     birthday: z.coerce.date().nullable().optional(),
 });
+
+/**
+ * Схема для валидации формы смены пароля.
+ */
+export const changePasswordSchema = z
+    .object({
+        oldPassword: z
+            .string()
+            .min(6, 'Текущий пароль должен быть минимум 6 символов')
+            .max(25, 'Текущий пароль должен быть максимум 25 символов'),
+        newPassword: z
+            .string()
+            .min(6, 'Новый пароль должен быть минимум 6 символов')
+            .max(25, 'Новый пароль должен быть максимум 25 символов'),
+        confirmPassword: z
+            .string()
+            .min(6, 'Подтверждение пароля должно быть минимум 6 символов')
+            .max(25, 'Подтверждение пароля должно быть максимум 25 символов'),
+    })
+    .refine(data => data.newPassword === data.confirmPassword, {
+        message: 'Пароли не совпадают',
+        path: ['confirmPassword'], // Указываем, к какому полю относится ошибка
+    });

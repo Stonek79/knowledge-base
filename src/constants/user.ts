@@ -31,3 +31,19 @@ export const profileVisibilityDefaults = {
     birthday: true,
     aboutMe: true,
 };
+
+export const USER_SORTABLE_FIELDS = {
+    CREATED_AT: 'createdAt',
+    ROLE: 'role',
+    STATUS: 'status',
+    USERNAME: 'username',
+    ACTIONS: 'actions',
+} as const;
+
+export const USER_SORTABLE_FIELDS_LABELS = {
+    [USER_SORTABLE_FIELDS.CREATED_AT]: 'Дата создания',
+    [USER_SORTABLE_FIELDS.ROLE]: 'Роль',
+    [USER_SORTABLE_FIELDS.STATUS]: 'Статус',
+    [USER_SORTABLE_FIELDS.USERNAME]: 'Имя пользователя',
+    [USER_SORTABLE_FIELDS.ACTIONS]: 'Действия',
+};

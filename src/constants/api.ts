@@ -44,7 +44,7 @@ export const API_UPDATE_USER_PATH = `${API_USERS_PATH}/edit`;
 export const API_DELETE_USER_PATH = `${API_USERS_PATH}/delete`;
 export const API_PROFILE_PATH = `${API_PREFIX}${PROFILE_BASE_PATH}`; // /api/profile
 export const API_PROFILE_UPDATE_PATH = `${API_PROFILE_PATH}/edit`; // /api/profile/edit
-
+export const API_PROFILE_CHANGE_PASSWORD_PATH = `${API_PROFILE_PATH}/change-password`; // /api/profile/change-password
 // Documents
 export const API_DOCUMENTS_PATH = `${API_PREFIX}${DOCUMENTS_BASE_PATH}`; // /api/documents
 export const API_DOCUMENT_UPLOAD_PATH = `${API_DOCUMENTS_PATH}/upload`;

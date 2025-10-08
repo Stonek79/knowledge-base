@@ -1,3 +1,5 @@
+import bcrypt from 'bcryptjs';
+
 import { USER_ROLES, USER_STATUSES } from '@/constants/user';
 import { ApiError } from '@/lib/api';
 import { UserRepository } from '@/lib/repositories/userRepository';
@@ -56,5 +58,35 @@ export class UserService {
      */
     public static async updateProfile(userId: string, data: ProfileUpdate) {
         return UserRepository.upsertProfile(userId, data);
+    }
+
+    /**
+     * Изменяет пароль пользователя.
+     * @param userId - ID пользователя.
+     * @param newPassword - Новый пароль.
+     */
+    public static async changePassword(
+        userId: string,
+        oldPassword: string,
+        newPassword: string
+    ) {
+        const user = await UserRepository.findById(userId);
+        if (!user?.password) {
+            // потенциальная, но крайне невероятная ситуация для пользователя со статусом PLACEHOLDER
+            throw new ApiError('Пользователь не имеет пароля', 400);
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(
+            oldPassword,
+            user.password
+        );
+
+        if (!isPasswordCorrect) {
+            throw new ApiError('Неправильный текущий пароль', 400);
+        }
+
+        const newHashedPassword = await bcrypt.hash(newPassword, 12);
+
+        return UserRepository.updatePassword(userId, newHashedPassword);
     }
 }

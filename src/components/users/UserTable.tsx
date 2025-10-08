@@ -13,23 +13,63 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    TableSortLabel,
 } from '@mui/material';
 
-import { USER_ROLES } from '@/constants/user';
-import { UserRole, UserWithDocuments } from '@/lib/types/user';
+import {
+    USER_ROLES,
+    USER_SORTABLE_FIELDS_LABELS,
+    USER_STATUSES,
+} from '@/constants/user';
+import {
+    UserRole,
+    UserSortableFields,
+    UserStatus,
+    UserWithDocuments,
+} from '@/lib/types/user';
 
 interface UserTableProps {
     users: UserWithDocuments[];
     isLoading: boolean;
     onEdit: (user: UserWithDocuments) => void;
     onDelete: (user: UserWithDocuments) => void;
+    sortBy: UserSortableFields;
+    sortOrder: 'asc' | 'desc';
+    onSort: (field: UserSortableFields) => void;
 }
+
+const columns: {
+    id: UserSortableFields;
+    label: string;
+    sortable: boolean;
+}[] = [
+    {
+        id: 'username',
+        label: USER_SORTABLE_FIELDS_LABELS.username,
+        sortable: true,
+    },
+    { id: 'role', label: USER_SORTABLE_FIELDS_LABELS.role, sortable: true },
+    { id: 'status', label: USER_SORTABLE_FIELDS_LABELS.status, sortable: true },
+    {
+        id: 'createdAt',
+        label: USER_SORTABLE_FIELDS_LABELS.createdAt,
+        sortable: true,
+    },
+    {
+        id: 'actions',
+        label: USER_SORTABLE_FIELDS_LABELS.actions,
+        sortable: false,
+    },
+];
 
 export function UserTable({
     users,
     isLoading,
     onEdit,
     onDelete,
+    sortBy,
+    sortOrder,
+    onSort,
 }: UserTableProps) {
     const getRoleLabel = (role: UserRole) => {
         switch (role) {
@@ -57,33 +97,38 @@ export function UserTable({
         }
     };
 
+    const getUserStatusColor = (status: UserStatus) => {
+        switch (status) {
+            case USER_STATUSES.ACTIVE:
+                return 'success';
+            case USER_STATUSES.PLACEHOLDER:
+                return 'default';
+            default:
+                return 'default';
+        }
+    };
+
     if (isLoading) {
         return (
             <TableContainer component={Paper}>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Имя пользователя</TableCell>
-                            <TableCell>Роль</TableCell>
-                            <TableCell>Дата создания</TableCell>
-                            <TableCell>Действия</TableCell>
+                            {columns.map(column => (
+                                <TableCell key={column.id}>
+                                    {column.label}
+                                </TableCell>
+                            ))}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {[1, 2, 3].map(i => (
                             <TableRow key={i}>
-                                <TableCell>
-                                    <Skeleton />
-                                </TableCell>
-                                <TableCell>
-                                    <Skeleton />
-                                </TableCell>
-                                <TableCell>
-                                    <Skeleton />
-                                </TableCell>
-                                <TableCell>
-                                    <Skeleton />
-                                </TableCell>
+                                {columns.map(column => (
+                                    <TableCell key={column.id}>
+                                        <Skeleton />
+                                    </TableCell>
+                                ))}
                             </TableRow>
                         ))}
                     </TableBody>
@@ -101,10 +146,25 @@ export function UserTable({
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Имя пользователя</TableCell>
-                        <TableCell>Роль</TableCell>
-                        <TableCell>Дата создания</TableCell>
-                        <TableCell>Действия</TableCell>
+                        {columns.map(column => (
+                            <TableCell key={column.id}>
+                                {column.sortable ? (
+                                    <TableSortLabel
+                                        active={sortBy === column.id}
+                                        direction={
+                                            sortBy === column.id
+                                                ? sortOrder
+                                                : 'asc'
+                                        }
+                                        onClick={() => onSort(column.id)}
+                                    >
+                                        {column.label}
+                                    </TableSortLabel>
+                                ) : (
+                                    column.label
+                                )}
+                            </TableCell>
+                        ))}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -115,6 +175,15 @@ export function UserTable({
                                 <Chip
                                     label={getRoleLabel(user.role)}
                                     color={getRoleColor(user.role)}
+                                    size='small'
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Chip
+                                    label={user.status}
+                                    color={getUserStatusColor(
+                                        user.status || USER_STATUSES.ACTIVE
+                                    )}
                                     size='small'
                                 />
                             </TableCell>

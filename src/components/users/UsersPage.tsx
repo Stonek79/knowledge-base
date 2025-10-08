@@ -9,12 +9,19 @@ import {
     Button,
     InputAdornment,
     Paper,
+    Tab,
+    Tabs,
     TextField,
     Typography,
 } from '@mui/material';
 
+import { USER_SORTABLE_FIELDS, USER_STATUSES } from '@/constants/user';
 import { useUsers } from '@/lib/hooks/useUsers';
-import { UserWithDocuments } from '@/lib/types/user';
+import {
+    UserSortableFields,
+    UserStatus,
+    UserWithDocuments,
+} from '@/lib/types/user';
 
 import { CreateUserDialog } from './CreateUserDialog';
 import { DeleteUserDialog } from './DeleteUserDialog';
@@ -23,6 +30,12 @@ import { UserTable } from './UserTable';
 
 export function UsersPage() {
     const [searchTerm, setSearchTerm] = useState('');
+    const [status, setStatus] = useState<UserStatus | undefined>(undefined);
+    const [sortBy, setSortBy] = useState<UserSortableFields>(
+        USER_SORTABLE_FIELDS[0]
+    );
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -30,12 +43,18 @@ export function UsersPage() {
         null
     );
 
-    const { users, isLoading, error, mutate } = useUsers();
+    const { users, isLoading, error, mutate } = useUsers({
+        search: searchTerm,
+        status,
+        sortBy,
+        sortOrder,
+    });
 
-    const filteredUsers =
-        users?.filter(user =>
-            user.username.toLowerCase().includes(searchTerm.toLowerCase())
-        ) || [];
+    const handleSort = (field: UserSortableFields) => {
+        const isAsc = sortBy === field && sortOrder === 'asc';
+        setSortOrder(isAsc ? 'desc' : 'asc');
+        setSortBy(field);
+    };
 
     const handleEdit = (user: UserWithDocuments) => {
         setSelectedUser(user);
@@ -110,13 +129,30 @@ export function UsersPage() {
                         },
                     }}
                 />
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
+                    <Tabs
+                        value={status || 'ALL'}
+                        onChange={(_, newValue) => setStatus(newValue)}
+                        aria-label='Фильтр по статусу пользователя'
+                    >
+                        <Tab label='Все' value='ALL' />
+                        <Tab label='Активные' value={USER_STATUSES.ACTIVE} />
+                        <Tab
+                            label='Временные'
+                            value={USER_STATUSES.PLACEHOLDER}
+                        />
+                    </Tabs>
+                </Box>
             </Paper>
 
             <UserTable
-                users={filteredUsers}
+                users={users}
                 isLoading={isLoading}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={handleSort}
             />
 
             <CreateUserDialog

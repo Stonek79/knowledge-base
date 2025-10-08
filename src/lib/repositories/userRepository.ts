@@ -46,6 +46,16 @@ const mapPrismaProfile = (profile: PrismaProfile | null): Profile | null => {
  */
 export class UserRepository {
     /**
+     * Находит пользователя по ID.
+     * @param userId - ID пользователя.
+     */
+    public static async findById(userId: string): Promise<UserResponse | null> {
+        return prisma.user.findUnique({
+            where: { id: userId },
+        });
+    }
+
+    /**
      * Находит пользователя по имени (без учета регистра).
      * @param username - Имя пользователя.
      */
@@ -153,5 +163,17 @@ export class UserRepository {
         }
 
         return mappedProfile;
+    }
+
+    /**
+     * Изменяет пароль пользователя.
+     * @param userId - ID пользователя.
+     * @param password - Новый пароль.
+     */
+    public static async updatePassword(userId: string, hashedPassword: string) {
+        return prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword },
+        });
     }
 }

@@ -157,6 +157,7 @@ export class DocumentService {
                                 keywords?.split(',').filter(Boolean) || [],
                             isPublished: true,
                             authorId: authorId,
+                            creatorId: user.id,
                             categories: {
                                 create: categoryIds.map(
                                     (categoryId: string) => ({ categoryId })

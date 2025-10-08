@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
+
 import { NextRequest, NextResponse } from 'next/server';
 
-import { USER_ROLES } from '@/constants/user';
+import { USER_ROLES, USER_STATUSES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { ApiError, handleApiError } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
@@ -34,6 +35,11 @@ import type {
  *         schema:
  *           type: string
  *         description: Search query for username or id
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: Filter by user status (ACTIVE, PLACEHOLDER)
  *     responses:
  *       200:
  *         description: A list of users
@@ -50,6 +56,7 @@ export async function GET(req: NextRequest) {
         const search = searchParams.get('search') || '';
         const sortBy = searchParams.get('sortBy') || 'createdAt';
         const sortOrder = searchParams.get('sortOrder') || 'desc';
+        const status = searchParams.get('status') || '';
 
         const user = await getCurrentUser(req);
 
@@ -60,6 +67,7 @@ export async function GET(req: NextRequest) {
             search,
             sortBy,
             sortOrder,
+            status,
         });
 
         if (!validation.success) {
@@ -91,6 +99,11 @@ export async function GET(req: NextRequest) {
                     },
                 ],
             });
+        }
+
+        // Добавляем фильтр по статусу, если он валидный
+        if (status && USER_STATUSES[status]) {
+            whereConditions.push({ status: USER_STATUSES[status] });
         }
 
         const where: UserWhereInput =
@@ -225,7 +238,9 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
+            const hashedPassword = password
+                ? await bcrypt.hash(password, 12)
+                : null;
 
             const user = await tx.user.create({
                 data: {

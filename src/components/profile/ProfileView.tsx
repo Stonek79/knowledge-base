@@ -12,19 +12,29 @@ import { UserWithProfile } from '@/lib/types/user';
 interface ProfileViewProps {
     profile: UserWithProfile;
     onEdit: () => void;
+    onChangePassword: () => void;
 }
 
 /**
  * Компонент для отображения данных профиля в режиме просмотра.
  */
-export function ProfileView({ profile, onEdit }: ProfileViewProps) {
+export function ProfileView({ profile, onEdit, onChangePassword }: ProfileViewProps) {
     const visibility = profile.profile?.visibilitySettings;
 
     return (
         <Card>
             <CardHeader
                 title={`Профиль пользователя: ${profile.username}`}
-                action={<Button onClick={onEdit}>Редактировать</Button>}
+                action={
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button onClick={onChangePassword} variant='outlined'>
+                            Сменить пароль
+                        </Button>
+                        <Button onClick={onEdit} variant='contained'>
+                            Редактировать
+                        </Button>
+                    </Box>
+                }
             />
             <CardContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

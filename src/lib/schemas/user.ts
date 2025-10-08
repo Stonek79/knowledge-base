@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import { USER_ROLES, USER_STATUSES } from '@/constants/user';
+import {
+    USER_ROLES,
+    USER_SORTABLE_FIELDS,
+    USER_STATUSES,
+} from '@/constants/user';
 
 import { profileSchema } from './profile';
 
@@ -14,9 +18,9 @@ export const createUserSchema = z
             .max(50, {
                 message: 'Имя пользователя должно быть максимум 50 символов',
             })
-            .regex(/^[a-zA-Z0-9_-]+$/, {
+            .regex(/^[a-zA-Zа-яА-Я0-9_@!?-]+$/, {
                 message:
-                    'Имя пользователя может содержать только буквы, цифры, дефис и подчеркивание',
+                    'Имя пользователя может содержать русские и латинские буквы, цифры и символы _@!?-',
             }),
 
         role: z.enum(USER_ROLES).default(USER_ROLES.USER),
@@ -70,6 +74,7 @@ export const userResponseSchema = z.object({
     enabled: z.boolean(),
     status: z.enum(USER_STATUSES).optional(),
     profile: profileSchema.optional(),
+    password: z.string().nullable().optional(),
 });
 
 export const jwtPayloadSchema = z.object({
@@ -84,8 +89,12 @@ export const usersListSchema = z.object({
     page: z.number().min(1),
     limit: z.number().min(1).max(100),
     search: z.string().optional(),
-    sortBy: z.enum(['username', 'createdAt']).optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional(),
+    sortBy: z
+        .enum(Object.values(USER_SORTABLE_FIELDS))
+        .optional()
+        .default(USER_SORTABLE_FIELDS.CREATED_AT),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+    status: z.string().optional(),
 });
 
 export const updateUserSchema = z

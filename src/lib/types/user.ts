@@ -1,24 +1,33 @@
+import type {
+    Prisma,
+    UserStatus as PrismaUserStatus,
+    Role,
+    User,
+} from '@prisma/client';
 import { z } from 'zod';
+
+import { USER_SORTABLE_FIELDS } from '@/constants/user';
 
 import {
     createUserSchema,
     updateUserSchema,
     userResponseSchema,
 } from '../schemas/user';
-
 import type { Profile } from './profile';
-import type { Prisma, Role, User } from '@prisma/client';
 
 // Типы для API запросов
 export type CreateUserData = z.infer<typeof createUserSchema>;
 export type UpdateUserData = z.infer<typeof updateUserSchema>;
+export type UserSortableFields =
+    (typeof USER_SORTABLE_FIELDS)[keyof typeof USER_SORTABLE_FIELDS];
 export type UsersListParams = {
-    page: number;
-    limit: number;
+    page?: number;
+    limit?: number;
     search?: string;
     role?: Role;
-    sortBy?: keyof User;
+    sortBy?: UserSortableFields;
     sortOrder?: 'asc' | 'desc';
+    status?: string;
 };
 
 // Базовые типы пользователя
@@ -27,6 +36,7 @@ export type BaseUser = Pick<UserResponse, 'id' | 'username' | 'role'>;
 export type UserCheckResponse = Pick<UserResponse, 'id' | 'role'>;
 export type UserLoginInput = Pick<CreateUserData, 'username' | 'password'>;
 export type UserRole = Role;
+export type UserStatus = PrismaUserStatus;
 export type UserWithDocuments = UserResponse & {
     _count: {
         authoredDocuments: number;

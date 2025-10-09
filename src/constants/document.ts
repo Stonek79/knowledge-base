@@ -58,3 +58,8 @@ export const GROUP_BY_FIELDS = {
     MIME_TYPE: 'mimeType',
     CREATED_AT: 'createdAt',
 } as const;
+
+export const DOCUMENT_STATUS = {
+    ACTIVE: 'active',
+    DELETED: 'deleted',
+} as const;

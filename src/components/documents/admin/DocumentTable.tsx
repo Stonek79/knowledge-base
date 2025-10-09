@@ -32,7 +32,11 @@ interface DocumentTableProps {
     onSelectAll: (checked: boolean) => void;
     onView: (document: DocumentWithAuthor) => void;
     onEdit: (document: DocumentWithAuthor) => void;
-    onDelete: (documentId: string) => void;
+    onDelete: (documen: {
+        id: string;
+        title: string;
+        deletedAt: boolean;
+    }) => void;
 }
 
 /**
@@ -124,6 +128,7 @@ export function DocumentTable({
                             <TableCell>Размер</TableCell>
                             <TableCell>Просмотры</TableCell>
                             <TableCell>Создан</TableCell>
+                            <TableCell>Статус</TableCell>
                             <TableCell>Действия</TableCell>
                         </TableRow>
                     </TableHead>
@@ -132,6 +137,9 @@ export function DocumentTable({
                             <TableRow key={i}>
                                 <TableCell padding='checkbox'>
                                     <Skeleton width={20} height={20} />
+                                </TableCell>
+                                <TableCell>
+                                    <Skeleton />
                                 </TableCell>
                                 <TableCell>
                                     <Skeleton />
@@ -199,6 +207,7 @@ export function DocumentTable({
                         <TableCell>Размер</TableCell>
                         <TableCell>Просмотры</TableCell>
                         <TableCell>Создан</TableCell>
+                        <TableCell>Статус</TableCell>
                         <TableCell>Действия</TableCell>
                     </TableRow>
                 </TableHead>
@@ -266,6 +275,21 @@ export function DocumentTable({
                                 ).toLocaleDateString('ru-RU')}
                             </TableCell>
                             <TableCell>
+                                <Chip
+                                    label={
+                                        document?.deletedAt
+                                            ? 'Удален'
+                                            : 'Активен'
+                                    }
+                                    size='small'
+                                    color={
+                                        document?.deletedAt
+                                            ? 'error'
+                                            : 'success'
+                                    }
+                                />
+                            </TableCell>
+                            <TableCell>
                                 <Stack direction='row' spacing={0.5}>
                                     <IconButton
                                         size='small'
@@ -283,7 +307,15 @@ export function DocumentTable({
                                     </IconButton>
                                     <IconButton
                                         size='small'
-                                        onClick={() => onDelete(document.id)}
+                                        onClick={() =>
+                                            onDelete({
+                                                id: document.id,
+                                                title: document.title,
+                                                deletedAt: Boolean(
+                                                    document.deletedAt
+                                                ),
+                                            })
+                                        }
                                         title='Удалить'
                                         color='error'
                                     >

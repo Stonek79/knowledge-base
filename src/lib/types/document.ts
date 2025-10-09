@@ -7,6 +7,8 @@ import {
 } from '@prisma/client';
 import { z } from 'zod';
 
+import { DOCUMENT_STATUS } from '@/constants/document';
+
 import {
     createCategorySchema,
     createDocumentSchema,
@@ -137,3 +139,6 @@ export type DeleteCategoryResult = {
 export type CategoryResponse = {
     categories: CategoryBase[];
 };
+
+export type DocumentStatus =
+    (typeof DOCUMENT_STATUS)[keyof typeof DOCUMENT_STATUS];

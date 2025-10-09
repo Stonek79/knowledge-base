@@ -1,8 +1,10 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+
 import { useEffect, useState } from 'react';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Upload as UploadIcon } from '@mui/icons-material';
 import {
     Alert,
@@ -12,7 +14,6 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
-import { useForm } from 'react-hook-form';
 
 import { ATTACHMENT_TYPE } from '@/constants/document';
 import { MIME } from '@/constants/mime';
@@ -27,7 +28,6 @@ import { SupportedMime } from '@/lib/types/mime';
 import { ConfidentialAccessControl } from '../access/ConfidentialAccessControl';
 import { AttachmentManager } from '../attachments/AttachmentManager';
 import { DocumentViewer } from '../viewer/DocumentViewer';
-
 import { DragDropZone } from './DragDropZone';
 import { FilePreview } from './FilePreview';
 import { MetadataForm } from './MetadataForm';
@@ -109,7 +109,7 @@ export function DocumentUploadForm({
     } = useForm<UploadFormInput>({
         resolver: zodResolver(uploadFormSchema),
         defaultValues: {
-            authorId: isAdmin ? '' : user?.id || '',
+            authorId: initialData?.authorId || (isAdmin ? '' : user?.id || ''),
             username: '',
             title: initialData?.title || '',
             description: initialData?.description || '',
@@ -123,6 +123,10 @@ export function DocumentUploadForm({
                 initialData?.confidentialAccessUserIds || [],
         },
     });
+
+    useEffect(() => {
+        setAttachments(initialAttachments || []);
+    }, [initialAttachments]);
 
     // Устанавливаем дефолтные значения для списка доступа в режиме создания
     useEffect(() => {

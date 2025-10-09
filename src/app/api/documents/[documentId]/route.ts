@@ -4,9 +4,9 @@ import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { updateDocumentSchema } from '@/lib/schemas/document';
+import { UserService } from '@/lib/services/UserService';
 import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
 import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
-import { UserService } from '@/lib/services/UserService';
 
 /**
  * @swagger
@@ -142,6 +142,9 @@ export async function PUT(
  * /documents/{documentId}:
  *   delete:
  *     summary: Delete a document by ID
+ *     description: >
+ *       Performs a soft delete by default.
+ *       Admins can perform a hard delete by adding the `?hard=true` query parameter.
  *     tags: [Documents]
  *     parameters:
  *       - in: path
@@ -150,6 +153,11 @@ export async function PUT(
  *         schema:
  *           type: string
  *         description: The document ID
+ *       - in: query
+ *         name: hard
+ *         schema:
+ *           type: boolean
+ *         description: If true, performs a hard delete (admins only).
  *     responses:
  *       200:
  *         description: Document deleted successfully
@@ -162,19 +170,39 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: { documentId: string } }
 ) {
-    const { documentId } = await params;
+    const { documentId } = params;
+    const { searchParams } = new URL(request.url);
+    const hardDelete = searchParams.get('hard') === 'true';
 
     try {
         const user = await getCurrentUser(request);
-        if (!user || user.role !== USER_ROLES.ADMIN) {
+        // Гости не могут удалять, а остальные пользователи должны существовать
+        if (!user || user.role === USER_ROLES.GUEST) {
             return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
         }
 
-        await DocumentCommandService.deleteDocument(documentId, user);
-
-        return NextResponse.json({
-            message: 'Документ успешно удален',
-        });
+        if (hardDelete) {
+            // Безвозвратное удаление доступно только администраторам
+            if (user.role !== USER_ROLES.ADMIN) {
+                return NextResponse.json(
+                    {
+                        message:
+                            'Только администраторы могут безвозвратно удалять документы',
+                    },
+                    { status: 403 }
+                );
+            }
+            await DocumentCommandService.hardDeleteDocument(documentId, user);
+            return NextResponse.json({
+                message: 'Документ безвозвратно удален',
+            });
+        } else {
+            // Мягкое удаление доступно авторизованным пользователям (с проверкой прав внутри сервиса)
+            await DocumentCommandService.softDeleteDocument(documentId, user);
+            return NextResponse.json({
+                message: 'Документ успешно удален',
+            });
+        }
     } catch (error) {
         return handleApiError(error);
     }

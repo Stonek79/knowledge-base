@@ -21,6 +21,7 @@ export const useDocuments = (filters: DocumentFilters) => {
             ...(filters?.sortBy && { sortBy: filters.sortBy }),
             ...(filters?.sortOrder && { sortOrder: filters.sortOrder }),
             ...(filters?.authorId && { authorId: filters.authorId }),
+            ...(filters?.status && { status: filters.status }),
         });
         return params.toString();
     }, [
@@ -31,6 +32,7 @@ export const useDocuments = (filters: DocumentFilters) => {
         filters?.sortBy,
         filters?.sortOrder,
         filters?.authorId,
+        filters?.status,
     ]);
 
     // Создаем стабильный ключ для SWR

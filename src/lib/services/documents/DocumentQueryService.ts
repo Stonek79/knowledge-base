@@ -106,8 +106,16 @@ export class DocumentQueryService {
         params: DocumentFilters,
         user: UserResponse
     ) {
-        const { q, page, limit, categoryIds, authorId, dateFrom, dateTo } =
-            await params;
+        const {
+            q,
+            page,
+            limit,
+            categoryIds,
+            authorId,
+            dateFrom,
+            dateTo,
+            status,
+        } = await params;
 
         // 1. Условия доступа и базовые фильтры
         const whereConditions = this.buildAccessConditions(user);
@@ -162,6 +170,7 @@ export class DocumentQueryService {
                 ...(dateTo && {
                     dateTo: new Date(dateTo),
                 }),
+                ...(status && { status }),
             };
 
             // Получаем все релевантные документы из FlexSearch
@@ -257,7 +266,8 @@ export class DocumentQueryService {
         params: DocumentFilters,
         user: UserResponse
     ) {
-        const validation = documentListSchema.safeParse(params);
+        const data = await params;
+        const validation = documentListSchema.safeParse(data);
         if (!validation.success) {
             throw new ApiError(
                 'Invalid parameters',
@@ -275,7 +285,10 @@ export class DocumentQueryService {
             authorId,
             dateFrom,
             dateTo,
+            status,
         } = validation.data;
+
+        console.log('[data]', validation.data);
 
         // 1. Формирование условий доступа
         const whereConditions: WhereDocumentInput[] =
@@ -293,6 +306,16 @@ export class DocumentQueryService {
                     },
                 },
             });
+        }
+
+        if (status && status === 'deleted' && user.role === USER_ROLES.ADMIN) {
+            whereConditions.push({ deletedAt: { not: null } });
+        } else if (
+            status &&
+            status === 'active' &&
+            user.role === USER_ROLES.ADMIN
+        ) {
+            whereConditions.push({ deletedAt: null });
         }
 
         const where: WhereDocumentInput = { AND: whereConditions };

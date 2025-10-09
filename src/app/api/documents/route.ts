@@ -1,12 +1,11 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document';
+import { UserService } from '@/lib/services/UserService';
 import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
 import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
-import { UserService } from '@/lib/services/UserService';
 
 /**
  * @swagger
@@ -73,6 +72,9 @@ export async function GET(request: NextRequest) {
             q: searchParams.get('q') || '',
             dateFrom: searchParams.get('dateFrom') || '',
             dateTo: searchParams.get('dateTo') || '',
+            status: searchParams.get('status')
+                ? searchParams.get('status')
+                : undefined,
         });
 
         if (!validation.success) {
@@ -83,6 +85,7 @@ export async function GET(request: NextRequest) {
             validation?.data,
             user
         );
+
         return NextResponse.json(result);
     } catch (error) {
         return handleApiError(error);

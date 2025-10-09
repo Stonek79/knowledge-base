@@ -12,12 +12,15 @@ import {
     Paper,
     Select,
     Stack,
+    Tab,
+    Tabs,
 } from '@mui/material';
 
 import { useUsers } from '@/lib/hooks/useUsers';
 import type {
     CategoryBase,
     DocumentFilters as DocumentFiltersType,
+    DocumentStatus,
 } from '@/lib/types/document';
 
 import { SearchField } from './SearchField';
@@ -92,6 +95,16 @@ export function DocumentFilters({
                 ...filters,
                 sortOrder,
                 page: 1,
+            });
+        },
+        [filters, onFiltersChange]
+    );
+
+    const handleStatusChange = useCallback(
+        (status: DocumentStatus | undefined) => {
+            onFiltersChange({
+                ...filters,
+                status,
             });
         },
         [filters, onFiltersChange]
@@ -201,6 +214,20 @@ export function DocumentFilters({
                     Сбросить
                 </Button>
             </Stack>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
+                <Tabs
+                    value={filters.status || ''}
+                    onChange={(_, newValue) => {
+                        console.log('newValue', newValue);
+                        handleStatusChange(newValue);
+                    }}
+                    aria-label='Фильтр по статусу документа'
+                >
+                    <Tab label='Все' value='' />
+                    <Tab label='Активные' value='active' />
+                    <Tab label='Корзина' value='deleted' />
+                </Tabs>
+            </Box>
         </Paper>
     );
 }

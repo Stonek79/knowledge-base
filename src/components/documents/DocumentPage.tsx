@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+
 import {
     Archive as ArchiveIcon,
     ArrowBack as ArrowBackIcon,
@@ -22,9 +24,8 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
-import { DOCUMENT_EDIT_PAGE_PATH,DOCUMENTS_BASE_PATH } from '@/constants/api';
+import { DOCUMENTS_BASE_PATH, DOCUMENT_EDIT_PAGE_PATH } from '@/constants/api';
 import { USER_ROLES } from '@/constants/user';
 import { useDocument } from '@/lib/hooks/documents/useDocument';
 import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete';
@@ -33,7 +34,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { formatDate } from '@/utils/date';
 import { formatFileSize } from '@/utils/formatFileSize';
 
-import { DeleteDocumentDialog } from './admin/DeleteDocumentDialog';
+import { DeleteDocumentDialog } from './delete/DeleteDocumentDialog';
 import { DownloadButtons } from './download/DownloadButtons';
 import { DocumentViewer } from './viewer/DocumentViewer';
 
@@ -366,11 +367,16 @@ export function DocumentPage() {
 
             <DeleteDocumentDialog
                 open={deleteDialogOpen}
-                document={document || null}
+                view='active'
+                document={{
+                    id: document.id,
+                    title: document.title,
+                    deletedAt: false,
+                }}
                 onClose={() => {
                     setDeleteDialogOpen(false);
                 }}
-                onConfirm={confirmDelete}
+                onSoftDelete={confirmDelete}
             />
         </Container>
     );

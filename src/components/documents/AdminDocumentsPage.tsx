@@ -1,6 +1,9 @@
 'use client';
 
-import { useMemo,useState } from 'react';
+import { useMemo, useState } from 'react';
+
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 
 import { Add as AddIcon } from '@mui/icons-material';
 import {
@@ -12,8 +15,6 @@ import {
     TablePagination,
     Typography,
 } from '@mui/material';
-import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
 
 import {
     ADMIN_PATH,
@@ -22,6 +23,7 @@ import {
 } from '@/constants/api';
 import { useCategories } from '@/lib/hooks/documents/useCategories';
 import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete';
+import { useDocumentRestore } from '@/lib/hooks/documents/useDocumentRestore';
 import { useDocuments } from '@/lib/hooks/documents/useDocuments';
 import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
 import {
@@ -30,9 +32,9 @@ import {
     SearchResult,
 } from '@/lib/types/document';
 
-import { DeleteDocumentDialog } from './admin/DeleteDocumentDialog';
 import { DocumentFilters } from './admin/DocumentFilters';
 import { DocumentTable } from './admin/DocumentTable';
+import { DeleteDocumentDialog } from './delete/DeleteDocumentDialog';
 
 const DocumentViewer = dynamic(
     () => import('./viewer/DocumentViewer').then(m => m.DocumentViewer),
@@ -53,6 +55,7 @@ export function AdminDocumentsPage() {
     const router = useRouter();
     const { deleteDocument } = useDocumentDelete();
     const { removeRecentDocument } = useRecentDocuments();
+    const { restoreDocument } = useDocumentRestore();
 
     const [filters, setFilters] = useState<DocumentFiltersType>({
         page: 1,
@@ -62,6 +65,7 @@ export function AdminDocumentsPage() {
         q: undefined,
         categoryIds: undefined,
         authorId: undefined,
+        status: undefined,
     });
 
     const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
@@ -70,9 +74,11 @@ export function AdminDocumentsPage() {
         SearchResult | DocumentWithAuthor | null
     >(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [documentToDelete, setDocumentToDelete] = useState<string | null>(
-        null
-    );
+    const [documentToDelete, setDocumentToDelete] = useState<{
+        id: string;
+        title: string;
+        deletedAt: boolean;
+    } | null>(null);
 
     const query = useMemo(() => {
         return filters.q;
@@ -95,6 +101,7 @@ export function AdminDocumentsPage() {
             sortOrder: 'desc',
             q: undefined,
             categoryIds: undefined,
+            status: undefined,
         });
         setSelectedDocuments([]);
     };
@@ -120,20 +127,49 @@ export function AdminDocumentsPage() {
         router.push(`${ADMIN_PATH}${DOCUMENT_EDIT_PAGE_PATH(document.id)}`);
     };
 
-    const handleDelete = (documentId: string) => {
-        setDocumentToDelete(documentId);
+    const handleDelete = (document: {
+        id: string;
+        title: string;
+        deletedAt: boolean;
+    }) => {
+        setDocumentToDelete(document);
         setDeleteDialogOpen(true);
     };
 
-    const confirmDelete = async (documentId: string) => {
+    const confirmSoftDelete = async (documentId: string) => {
         try {
+            // `deleteDocument` без опций по умолчанию выполняет мягкое удаление
             await deleteDocument(documentId);
-            await mutate(); // Обновляем список документов
+            await mutate();
             removeRecentDocument(documentId);
             setDeleteDialogOpen(false);
             setDocumentToDelete(null);
         } catch (err) {
-            console.error('Ошибка удаления:', err);
+            console.error('Ошибка мягкого удаления:', err);
+        }
+    };
+
+    const handleRestore = async (documentId: string) => {
+        try {
+            await restoreDocument(documentId);
+            await mutate();
+            setDeleteDialogOpen(false);
+            setDocumentToDelete(null);
+        } catch (err) {
+            console.error('Ошибка восстановления документа:', err);
+        }
+    };
+
+    const handleHardDelete = async (documentId: string) => {
+        try {
+            // Вызываем хук с опцией hard: true для безвозвратного удаления
+            await deleteDocument(documentId, { hard: true });
+            await mutate();
+            removeRecentDocument(documentId);
+            setDeleteDialogOpen(false);
+            setDocumentToDelete(null);
+        } catch (err) {
+            console.error('Ошибка безвозвратного удаления:', err);
         }
     };
 
@@ -269,14 +305,16 @@ export function AdminDocumentsPage() {
 
             <DeleteDocumentDialog
                 open={deleteDialogOpen}
-                document={
-                    documents.find(d => d.id === documentToDelete) || null
-                }
+                document={documentToDelete}
+                view={documentToDelete?.deletedAt ? 'deleted' : 'active'}
                 onClose={() => {
                     setDeleteDialogOpen(false);
                     setDocumentToDelete(null);
                 }}
-                onConfirm={confirmDelete}
+                onSoftDelete={confirmSoftDelete}
+                onRestore={handleRestore}
+                onHardDelete={handleHardDelete}
+                isAdmin={true}
             />
         </Container>
     );

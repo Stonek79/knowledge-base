@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
             user,
             authorId
         );
+
         return NextResponse.json({ status: 'ok', ...result });
     } catch (error) {
         return handleApiError(error);

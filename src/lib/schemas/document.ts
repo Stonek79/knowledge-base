@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { DOCUMENT_STATUS } from '@/constants/document';
+
 import { attachmentMetadataSchema, baseAttachmentSchema } from './attachment';
 
 export const createDocumentSchema = z.object({
@@ -47,6 +49,7 @@ export const documentListSchema = z.object({
         .default('createdAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
     q: z.string().optional(),
+    status: z.enum(DOCUMENT_STATUS).optional(),
 });
 
 export const createCategorySchema = z.object({
@@ -79,6 +82,7 @@ export const searchSchema = z.object({
     dateTo: z.string().nullable().optional(),
     sortBy: z.string().nullable().optional(),
     sortOrder: z.string().nullable().optional(),
+    status: z.enum(DOCUMENT_STATUS).optional(),
 });
 
 export const uploadFormSchema = z

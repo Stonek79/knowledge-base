@@ -7,12 +7,19 @@ export const useDocumentDelete = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
-    const deleteDocument = async (documentId: string) => {
+    const deleteDocument = async (
+        documentId: string,
+        options?: { hard?: boolean }
+    ) => {
         setIsDeleting(true);
         setDeleteError(null);
 
+        const url = options?.hard
+            ? `${API_DOCUMENTS_PATH}/${documentId}?hard=true`
+            : `${API_DOCUMENTS_PATH}/${documentId}`;
+
         try {
-            return await api.del(`${API_DOCUMENTS_PATH}/${documentId}`);
+            return await api.del(url);
         } catch (error) {
             const message =
                 error instanceof Error ? error.message : 'Неизвестная ошибка';

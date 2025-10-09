@@ -1,3 +1,5 @@
+'use server';
+
 import { NextRequest } from 'next/server';
 
 import { API_USERS_PATH } from '@/constants/api';

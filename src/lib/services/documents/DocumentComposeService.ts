@@ -302,7 +302,7 @@ export class DocumentComposeService {
         const cleanupOnSuccess: string[] = []; // старые ключи, которые надо удалить после успешного коммита
 
         try {
-            const result = DocumentRepository.interactiveTransaction(
+            const result = await DocumentRepository.interactiveTransaction(
                 async tx => {
                     // 0) загрузить документ и проверить права
                     const existing = await tx.document.findUnique({
@@ -407,11 +407,6 @@ export class DocumentComposeService {
                             );
                         promoted.push(promotedMain.key);
 
-                        // пометим старый mainPdf на удаление после успеха
-                        if (existing.mainPdf?.filePath) {
-                            cleanupOnSuccess.push(existing.mainPdf.filePath);
-                        }
-
                         // обновить поля документа (оригинал)
                         await tx.document.update({
                             where: { id: documentId },
@@ -464,6 +459,10 @@ export class DocumentComposeService {
 
                     // 4) deleteAttachmentIds (опционально)
                     if (data.deleteAttachmentIds?.length) {
+                        console.log(
+                            '[DEBUG] Attachment Deletion: Received IDs to delete:',
+                            data.deleteAttachmentIds
+                        );
                         const toDelete = await tx.attachment.findMany({
                             where: {
                                 id: { in: data.deleteAttachmentIds },
@@ -471,6 +470,10 @@ export class DocumentComposeService {
                             },
                             select: { id: true, filePath: true },
                         });
+                        console.log(
+                            '[DEBUG] Attachment Deletion: Found attachments in DB:',
+                            toDelete
+                        );
                         for (const a of toDelete) {
                             if (a.filePath) cleanupOnSuccess.push(a.filePath);
                         }
@@ -595,13 +598,14 @@ export class DocumentComposeService {
                         where: { id: doc.id },
                         data: { mainPdfId: conv.id },
                     });
-                    if (doc.mainPdf?.id) {
+                    // Используем `existing` для получения информации о старом PDF
+                    if (existing.mainPdf?.id) {
                         await tx.convertedDocument.delete({
-                            where: { id: doc.mainPdf.id },
+                            where: { id: existing.mainPdf.id },
                         });
                     }
-                    if (doc.mainPdf?.filePath) {
-                        cleanupOnSuccess.push(doc.mainPdf.filePath);
+                    if (existing.mainPdf?.filePath) {
+                        cleanupOnSuccess.push(existing.mainPdf.filePath);
                     }
 
                     // ===== ИНДЕКСАЦИЯ (в фоне) =====
@@ -649,10 +653,9 @@ export class DocumentComposeService {
                 await getFileStorageService().safeDelete(t);
             }
 
-            return { docId: (await result).id };
+            return { docId: result.id };
         } catch (error) {
             // компенсации: удалить все продвинутые ключи
-
             console.warn(
                 '[compose/update] rolling back promoted files due to error'
             );

@@ -268,11 +268,49 @@ export class DocumentCommandService {
     }
 
     /**
-     * Удаляет документ и все связанные с ним данные и файлы.
+     * "Мягко" удаляет документ, устанавливая флаг deletedAt.
+     * Файлы при этом не удаляются. Документ исключается из поискового индекса.
+     * @param id - ID документа.
+     * @param user - Текущий пользователь.
+     */
+    public static async softDeleteDocument(id: string, user: UserResponse) {
+        // Сначала мы должны найти документ, чтобы проверить права доступа.
+        // Наш Prisma-клиент расширен, поэтому findUnique не вернет уже "удаленные" документы.
+        const document = await DocumentRepository.findUnique({
+            where: { id },
+            select: { authorId: true, creatorId: true },
+        });
+
+        if (!document) {
+            throw new ApiError('Документ не найден', 404);
+        }
+
+        if (
+            document.authorId !== user.id &&
+            document.creatorId !== user.id &&
+            user.role !== USER_ROLES.ADMIN
+        ) {
+            throw new ApiError('Вы можете удалять только свои документы', 403);
+        }
+
+        // Выполняем "мягкое" удаление через update
+        await DocumentRepository.update({
+            where: { id },
+            data: {
+                deletedAt: new Date(),
+            },
+        });
+
+        // Удаляем документ из поискового индекса
+        await indexingQueue.add('remove-from-index', { documentId: id });
+    }
+
+    /**
+     * **Безвозвратно** удаляет документ и все связанные с ним данные и файлы.
      * @param id - ID документа.
      * @param user - Текущий пользователь (должен быть ADMIN или создатель документа).
      */
-    public static async deleteDocument(id: string, user: UserResponse) {
+    public static async hardDeleteDocument(id: string, user: UserResponse) {
         const fileKeys: string[] = [];
         await DocumentRepository.interactiveTransaction(async tx => {
             const snapshot = await tx.document.findUnique({
@@ -323,7 +361,9 @@ export class DocumentCommandService {
             await tx.documentCategory.deleteMany({
                 where: { documentId: snapshot.id },
             });
-            await tx.attachment.deleteMany({ where: { documentId: snapshot.id } });
+            await tx.attachment.deleteMany({
+                where: { documentId: snapshot.id },
+            });
             await tx.document.delete({ where: { id: snapshot.id } });
         });
 
@@ -340,5 +380,36 @@ export class DocumentCommandService {
         }
 
         await indexingQueue.add('remove-from-index', { documentId: id });
+    }
+
+    /**
+     * Восстанавливает "мягко" удаленный документ.
+     * @param documentId - ID документа для восстановления.
+     */
+    public static async restoreDocument(documentId: string) {
+        // Проверяем, что документ существует и действительно удален
+        const existingDocument = await DocumentRepository.findUnique({
+            where: { id: documentId, deletedAt: { not: null } },
+            select: { id: true }, // выбираем только id для эффективности
+        });
+
+        if (!existingDocument) {
+            throw new ApiError(
+                'Удаленный документ для восстановления не найден',
+                404
+            );
+        }
+
+        const restoredDocument = await DocumentRepository.update({
+            where: { id: documentId },
+            data: {
+                deletedAt: null,
+            },
+        });
+
+        // Ставим в очередь на переиндексацию, чтобы он снова появился в поиске
+        await indexingQueue.add('index-document', { documentId });
+
+        return restoredDocument;
     }
 }

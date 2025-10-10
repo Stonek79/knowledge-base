@@ -1,11 +1,8 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
-
 import { useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
     Alert,
     Box,
@@ -16,6 +13,10 @@ import {
     DialogTitle,
     TextField,
 } from '@mui/material';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+
 
 import { useChangePassword } from '@/lib/hooks/useChangePassword';
 import { changePasswordSchema } from '@/lib/schemas/profile';

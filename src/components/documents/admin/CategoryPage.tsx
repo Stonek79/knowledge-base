@@ -61,7 +61,6 @@ export default function CategoryPage() {
     const {
         documents,
         pagination,
-        isLoading: documentsLoading,
         error: documentsError,
     } = useDocuments(filters);
 

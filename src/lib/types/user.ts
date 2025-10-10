@@ -1,9 +1,3 @@
-import type {
-    Prisma,
-    UserStatus as PrismaUserStatus,
-    Role,
-    User,
-} from '@prisma/client';
 import { z } from 'zod';
 
 import { USER_SORTABLE_FIELDS } from '@/constants/user';
@@ -13,7 +7,14 @@ import {
     updateUserSchema,
     userResponseSchema,
 } from '../schemas/user';
+
 import type { Profile } from './profile';
+import type {
+    Prisma,
+    UserStatus as PrismaUserStatus,
+    Role,
+    User,
+} from '@prisma/client';
 
 // Типы для API запросов
 export type CreateUserData = z.infer<typeof createUserSchema>;

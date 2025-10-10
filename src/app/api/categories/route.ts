@@ -16,7 +16,7 @@ import { createCategorySchema } from '@/lib/schemas/document';
  *       200:
  *         description: A list of all categories
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const categories = await prisma.category.findMany({
             orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],

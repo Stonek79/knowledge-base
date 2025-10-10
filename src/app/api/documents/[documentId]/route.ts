@@ -4,9 +4,9 @@ import { USER_ROLES } from '@/constants/user';
 import { getCurrentUser } from '@/lib/actions/users';
 import { handleApiError } from '@/lib/api/apiError';
 import { updateDocumentSchema } from '@/lib/schemas/document';
-import { UserService } from '@/lib/services/UserService';
 import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
 import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
+import { UserService } from '@/lib/services/UserService';
 
 /**
  * @swagger

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import {
     Archive as ArchiveIcon,
@@ -24,6 +23,7 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { DOCUMENTS_BASE_PATH, DOCUMENT_EDIT_PAGE_PATH } from '@/constants/api';
 import { USER_ROLES } from '@/constants/user';
@@ -77,7 +77,7 @@ export function DocumentPage() {
         router.push(DOCUMENT_EDIT_PAGE_PATH(docId));
     };
 
-    const handleDelete = (documentId: string) => {
+    const handleDelete = () => {
         setDeleteDialogOpen(true);
     };
 
@@ -333,7 +333,7 @@ export function DocumentPage() {
                     <Button
                         variant='outlined'
                         color='error'
-                        onClick={() => handleDelete(document.id)}
+                        onClick={() => handleDelete()}
                     >
                         Удалить
                     </Button>

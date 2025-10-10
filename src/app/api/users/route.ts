@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { USER_ROLES, USER_STATUSES } from '@/constants/user';

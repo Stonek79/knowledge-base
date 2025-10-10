@@ -1,4 +1,3 @@
-import type { Profile as ProfilePrisma } from '@prisma/client';
 import z from 'zod';
 
 import {
@@ -6,6 +5,8 @@ import {
     profileSchema,
     profileUpdateSchema,
 } from '@/lib/schemas/profile';
+
+import type { Profile as ProfilePrisma } from '@prisma/client';
 
 export type Profile = z.infer<typeof profileSchema>;
 export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;

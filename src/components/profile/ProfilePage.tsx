@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import {
     Alert,
     AlertColor,
@@ -12,6 +10,8 @@ import {
     Container,
     Snackbar,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
+
 
 import { ApiHttpError } from '@/lib/api/apiHelper';
 import { useProfile } from '@/lib/hooks/useProfile';

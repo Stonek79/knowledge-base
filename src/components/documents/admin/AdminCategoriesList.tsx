@@ -2,20 +2,16 @@
 
 import { useState } from 'react';
 
+
 import {
-    CalendarToday as DateIcon,
-    ColorLens as ColorIcon,
     Delete as DeleteIcon,
-    Description as DocumentIcon,
     Edit as EditIcon,
     Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import {
     Box,
-    Button,
     Card,
     CardContent,
-    Chip,
     IconButton,
     Paper,
     Skeleton,
@@ -32,7 +28,6 @@ import { useRouter } from 'next/navigation';
 
 import {
     ADMIN_PATH,
-    API_CATEGORIES_PATH,
     CATEGORY_EDIT_PAGE_PATH,
     CATEGORY_PAGE_PATH,
 } from '@/constants/api';
@@ -52,7 +47,7 @@ export function AdminCategoriesList() {
 
     const handleEdit = (category: CategoryBase) => {
         router.push(`${ADMIN_PATH}${CATEGORY_EDIT_PAGE_PATH(category.id)}`);
-        };
+    };
 
     const handleDelete = async (categoryId: string) => {
         try {

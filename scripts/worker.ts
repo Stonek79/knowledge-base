@@ -51,6 +51,7 @@ const indexingJobProcessor = async (job: Job) => {
                             select: { id: true, username: true, role: true },
                         },
                         categories: { include: { category: true } },
+                        confidentialAccessUsers: true,
                     },
                 });
 

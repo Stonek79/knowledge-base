@@ -19,6 +19,7 @@ export type TextItem = {
     /**
      * - Transformation matrix.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     transform: Array<any>;
     /**
      * - Width in device space.

@@ -34,12 +34,39 @@ dev-logs:
 # Сборка прод-образа для linux/amd64
 prod-build:
 	docker buildx build \
+		--platform linux/amd64 \
+		--build-arg NODE_ENV=production \
+		-t $(IMAGE_NAME):$(APP_VERSION) \
+		--push \
+		.
+
+# Полная пересборка без кэша (только когда реально нужно)
+prod-build-clean:
+	docker buildx build \
 		--no-cache \
 		--platform linux/amd64 \
 		--build-arg NODE_ENV=production \
 		-t $(IMAGE_NAME):$(APP_VERSION) \
 		--push \
 		.
+
+# Локальная сборка для тестирования (без push)
+prod-build-local:
+	docker buildx build \
+		--platform linux/amd64 \
+		--build-arg NODE_ENV=production \
+		--load \
+		-t $(IMAGE_NAME):$(APP_VERSION) \
+		.
+
+# Очистка старых образов
+docker-prune:
+	docker system prune -af --filter "until=24h"
+	docker builder prune -af --filter "until=24h"
+
+# Очистка buildx кэшей
+docker-clean-buildx:
+	docker buildx prune -af
 
 # Отправка уже собранного образа в Docker Hub
 prod-push:

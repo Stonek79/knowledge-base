@@ -1,5 +1,5 @@
 import esbuild from 'esbuild';
-import { tsconfigPathsPlugin } from 'esbuild-plugin-tsconfig-paths';
+// import { tsconfigPathsPlugin } from 'esbuild-plugin-tsconfig-paths';
 import fs from 'node:fs/promises';
 
 // Read package.json to make all dependencies external
@@ -19,9 +19,15 @@ const options = {
   format: 'cjs',
   target: 'node18',
   sourcemap: true,
-  plugins: [
-    tsconfigPathsPlugin({ tsconfig: './tsconfig.worker.json' }),
-  ],
+  // _plugins: [
+  //   tsconfigPathsPlugin({ tsconfig: './tsconfig.worker.json' }),
+  // ],
+  // get plugins() {
+  //   return this._plugins;
+  // },
+  // set plugins(value) {
+  //   this._plugins = value;
+  // },
   external,
 };
 

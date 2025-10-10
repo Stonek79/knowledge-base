@@ -11,7 +11,12 @@ import {
 import { SearchFactory } from '../src/lib/search/factory.js';
 
 // Используем тот же URL, что и в основном приложении
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const redisUrl = process.env.REDIS_URL;
+
+if (!redisUrl) {
+    console.error('[Worker] REDIS_URL не задан! Worker не может запуститься.');
+    process.exit(1);
+}
 
 // Создаем отдельное соединение для воркера
 const redisConnection = new Redis(redisUrl, { maxRetriesPerRequest: null });

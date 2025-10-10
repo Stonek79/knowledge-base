@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 FROM node:18-alpine AS base
 
 # Установка зависимостей
@@ -8,7 +9,9 @@ WORKDIR /app
 # Копирование package файлов
 COPY package.json pnpm-lock.yaml* ./
 RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile --ignore-scripts
+
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # Сборка приложения
 FROM base AS builder
@@ -20,8 +23,13 @@ COPY . .
 # Генерация Prisma клиента
 RUN npx prisma generate
 
+# Отключить telemetry Next.js
+ENV NEXT_TELEMETRY_DISABLED=1
+
 # Сборка Next.js и Воркера
-RUN npm run build
+RUN --mount=type=cache,id=nextjs,target=/app/.next/cache \
+    npm run build:docker
+
 RUN pnpm build:worker
 
 # Production образ

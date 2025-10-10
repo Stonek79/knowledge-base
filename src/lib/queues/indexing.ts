@@ -6,18 +6,58 @@ import Redis from 'ioredis';
  */
 export const INDEXING_QUEUE_NAME = 'indexing-queue';
 
+
 /**
- * URL для подключения к Redis.
- * В Docker-окружении `redis` - это имя сервиса.
- * @default 'redis://localhost:6379'
+ * Создает Redis подключение или Mock для сборки
  */
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+function createRedisConnection(): Redis {
+    const redisUrl = process.env.REDIS_URL;
+    
+    // Если нет REDIS_URL (во время сборки) - возвращаем mock
+    if (!redisUrl) {
+        console.warn('>>> Build environment detected or REDIS_URL is not set. Using MOCK Redis for indexing queue.');
+        
+        const mockRedis = {
+            options: { keyPrefix: '' },  // 👈 ВАЖНО! BullMQ читает это свойство
+            on: () => mockRedis,
+            connect: async () => 'OK',
+            disconnect: async () => {},
+            duplicate: () => mockRedis,
+            ping: async () => 'PONG',
+            quit: async () => 'OK',
+        } as unknown as Redis;
+        
+        return mockRedis;
+    }
+    
+    // Production подключение - maxRetriesPerRequest: null важно для BullMQ!
+    return new Redis(redisUrl, { maxRetriesPerRequest: null });
+}
 
 /**
  * Создаем переиспользуемое соединение с Redis.
- * `maxRetriesPerRequest: null` важно для корректной работы BullMQ.
  */
-const redisConnection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+const redisConnection = createRedisConnection();
+
+// Обработчик ошибок только если реальный Redis
+if (process.env.REDIS_URL) {
+    redisConnection.on('error', err => {
+        console.error('[Redis Connection Error]', err);
+    });
+}
+// 
+// /**
+//  * URL для подключения к Redis.
+//  * В Docker-окружении `redis` - это имя сервиса.
+//  * @default 'redis://localhost:6379'
+//  */
+// const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+
+// /**
+//  * Создаем переиспользуемое соединение с Redis.
+//  * `maxRetriesPerRequest: null` важно для корректной работы BullMQ.
+//  */
+// const redisConnection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 
 /**
  * Синглтон очереди для задач индексации документов.
@@ -40,6 +80,6 @@ export const indexingQueue = new Queue(INDEXING_QUEUE_NAME, {
 });
 
 // Обработчик ошибок на уровне соединения, чтобы логировать проблемы с Redis
-redisConnection.on('error', err => {
-    console.error('[Redis Connection Error]', err);
-});
+// redisConnection.on('error', err => {
+//     console.error('[Redis Connection Error]', err);
+// });

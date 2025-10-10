@@ -33,7 +33,7 @@ export const softDeleteExtension = Prisma.defineExtension({
                 };
                 return query(modifiedArgs);
             },
-            async findMany({ args, query }) {
+            async findMany({ args, query }) { 
                 const modifiedArgs = {
                     ...args,
                     where: { ...args.where, deletedAt: null },

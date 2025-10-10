@@ -298,6 +298,8 @@ export class DocumentCommandService {
             where: { id },
             data: {
                 deletedAt: new Date(),
+                viewCount: 0,
+                isPublished: false,
             },
         });
 
@@ -404,6 +406,7 @@ export class DocumentCommandService {
             where: { id: documentId },
             data: {
                 deletedAt: null,
+                isPublished: true,
             },
         });
 

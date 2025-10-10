@@ -64,6 +64,10 @@ export class DocumentQueryService {
             throw new ApiError('Документ не найден', 404);
         }
 
+        if (user.role !== USER_ROLES.ADMIN && document?.deletedAt) {
+            return null;
+        }
+
         // Проверка доступа
         if (document.isConfidential) {
             const isAuthor = user.id === document.authorId;
@@ -126,6 +130,11 @@ export class DocumentQueryService {
             whereConditions.push({
                 categories: { some: { categoryId: { in: categoryIds } } },
             });
+        }
+
+        // Явно управляем статусом документов
+        if (user.role !== USER_ROLES.ADMIN) {
+            whereConditions.push({ deletedAt: null });
         }
 
         const baseWhere: WhereDocumentInput = { AND: whereConditions };
@@ -316,6 +325,8 @@ export class DocumentQueryService {
             user.role === USER_ROLES.ADMIN
         ) {
             whereConditions.push({ deletedAt: null });
+        } else if (!status && user.role !== USER_ROLES.ADMIN) {
+            whereConditions.push({ deletedAt: { not: null } });
         }
 
         const where: WhereDocumentInput = { AND: whereConditions };

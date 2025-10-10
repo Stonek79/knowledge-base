@@ -95,6 +95,7 @@ export type SearchResult = {
     createdAt: Date;
     relevance: number;
     highlights: string[];
+    deletedAt?: Date | null;
 };
 
 export type SearchDocument = {
@@ -108,6 +109,7 @@ export type SearchDocument = {
     author: string;
     authorId: string;
     createdAt: Date;
+    deletedAt?: Date | null;
 };
 
 export type SearchFilters = {

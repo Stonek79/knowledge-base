@@ -37,7 +37,7 @@ export const useRecentDocuments = () => {
         const current = getRecentDocuments();
 
         // Убираем документ если уже есть
-        const filtered = current.filter(d => d.id !== document.id);
+        const filtered = current.filter(d => d.id !== document.id && !d?.deletedAt);
 
         // Добавляем новый документ в начало с текущим временем
         const updated = [
@@ -67,7 +67,7 @@ export const useRecentDocuments = () => {
     const removeRecentDocument = (documentId: string) => {
         // Читаем свежие данные прямо из localStorage
         const current = getRecentDocuments();
-        const updated = current.filter(doc => doc.id !== documentId);
+        const updated = current.filter(doc => doc.id !== documentId && !doc?.deletedAt);
 
         if (typeof window !== 'undefined') {
             try {

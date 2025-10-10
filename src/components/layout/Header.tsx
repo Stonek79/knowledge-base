@@ -139,7 +139,7 @@ export function Header({ onSidebarToggle, showSidebar = false }: HeaderProps) {
                     }}
                     onClick={navigateToHome}
                 >
-                    База знаний
+                    База документов
                 </Typography>
 
                 {/* Навигационные кнопки (только если НЕ показываем сайдбар) */}

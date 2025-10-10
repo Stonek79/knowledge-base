@@ -28,7 +28,7 @@ export const WelcomePageContent = () => {
                     gutterBottom
                     sx={{ fontWeight: 'bold' }}
                 >
-                    Добро пожаловать в нашу базу знаний!
+                    Добро пожаловать в нашу базу заключений!
                 </Typography>
                 <Typography variant='h5' color='text.secondary' sx={{ mb: 4 }}>
                     Здесь вы можете попробоавть найти необходимые вам документы

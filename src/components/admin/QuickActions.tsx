@@ -25,7 +25,7 @@ export function QuickActions() {
         },
         {
             title: 'Загрузить документ',
-            description: 'Добавить новый документ в базу знаний',
+            description: 'Добавить новый документ в базу',
             icon: <UploadIcon />,
             color: 'secondary',
             onClick: () => router.push('/admin/documents/upload'),

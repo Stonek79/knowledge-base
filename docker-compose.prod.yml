@@ -1,35 +1,65 @@
-name: knowledge-base
+name: knowledge-base-prod
 
 services:
-    app:
-        image: stonek79/knowledge-base:${APP_VERSION:-latest}
-        container_name: kb-app
-        env_file: .env.prod
+    # Worker в Docker (локальная сборка)
+    worker:
+        build:
+            context: .
+            dockerfile: docker/worker/Dockerfile
+        container_name: kb-worker
         restart: unless-stopped
-        ports:
-            - "3000:3000"
+        env_file: .env.prod
+        environment:
+            # Worker использует внутренние имена сервисов Docker
+            DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-knowledge_base}
+            REDIS_URL: redis://:${REDIS_PASSWORD:-kb_redis_password}@redis:6379
+            MINIO_ENDPOINT: minio
+            MINIO_PORT: 9000
+            MINIO_USE_SSL: false
+            GOTENBERG_URL: http://gotenberg:3000
+            NODE_ENV: production
         depends_on:
             postgres:
                 condition: service_healthy
             redis:
                 condition: service_healthy
             minio:
-                condition: service_healthy
+                condition: service_started
             gotenberg:
-                condition: service_healthy
+                condition: service_started
         networks:
             - kb-network
 
-    worker:
-        image: stonek79/knowledge-base:${APP_VERSION:-latest}
-        container_name: kb-worker
+    # Переиспользуем сервисы из базового файла
+    postgres:
+        extends:
+            file: docker-compose.yml
+            service: postgres
         env_file: .env.prod
-        restart: unless-stopped
-        command: pnpm start:prod:worker
-        depends_on:
-            postgres:
-                condition: service_healthy
-            redis:
-                condition: service_healthy
-        networks:
-            - kb-network
+
+    redis:
+        extends:
+            file: docker-compose.yml
+            service: redis
+        env_file: .env.prod
+
+    minio:
+        extends:
+            file: docker-compose.yml
+            service: minio
+        env_file: .env.prod
+
+    gotenberg:
+        extends:
+            file: docker-compose.yml
+            service: gotenberg
+
+# Volumes и networks наследуются из базового файла автоматически
+networks:
+    kb-network:
+        driver: bridge
+
+volumes:
+    postgres_data:
+    redis_data:
+    minio_data:

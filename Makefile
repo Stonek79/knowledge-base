@@ -104,3 +104,67 @@ stop:
 
 restart:
 	docker compose restart
+
+# ======================
+# HYBRID PROD (Next.js на хосте + Worker в Docker)
+# ======================
+
+# Деплой гибридной архитектуры
+prod-deploy:
+	./scripts/deploy-prod.sh
+
+prod-deploy-migrate:
+	./scripts/deploy-prod.sh --migrate
+
+prod-deploy-seed:
+	./scripts/deploy-prod.sh --seed
+
+prod-deploy-migrate-seed:
+	./scripts/deploy-prod.sh --migrate --seed
+
+
+# Запуск только Docker сервисов (без Next.js)
+prod-services-up:
+	docker compose --env-file $(ENV_FILE_PROD) \
+		-f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Остановка всех сервисов
+prod-services-down:
+	docker compose --env-file $(ENV_FILE_PROD) \
+		-f docker-compose.yml -f docker-compose.prod.yml down
+
+# Логи worker
+prod-worker-logs:
+	docker compose --env-file $(ENV_FILE_PROD) \
+		-f docker-compose.yml -f docker-compose.prod.yml logs -f worker
+
+# Перезапуск только Next.js
+prod-web-restart:
+	pm2 restart knowledge-base
+
+# Логи Next.js
+prod-web-logs:
+	pm2 logs knowledge-base
+
+# Полная остановка (Docker + PM2)
+prod-stop-all:
+	pm2 stop knowledge-base
+	docker compose --env-file $(ENV_FILE_PROD) \
+		-f docker-compose.yml -f docker-compose.prod.yml down
+
+# Статус всех сервисов
+prod-status:
+	@echo "=== Docker Services ==="
+	@docker compose --env-file $(ENV_FILE_PROD) \
+		-f docker-compose.yml -f docker-compose.prod.yml ps
+	@echo ""
+	@echo "=== PM2 Processes ==="
+	@pm2 status
+
+# Быстрый деплой (без зависимостей)
+prod-quick-deploy:
+	git pull origin main
+	pnpm build
+	pnpm build:worker
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build worker
+	pm2 restart knowledge-base

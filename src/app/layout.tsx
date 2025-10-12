@@ -6,8 +6,8 @@ import type { Metadata } from 'next';
 
 
 export const metadata: Metadata = {
-    title: 'Knowledge Base',
-    description: 'Knowledge Base',
+    title: 'База заключений',
+    description: 'Хранилище заключений ДПО',
 };
 
 export default function RootLayout({
@@ -16,8 +16,8 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang='ru'>
-            <body>
+        <html lang='ru' suppressHydrationWarning>
+            <body suppressHydrationWarning>
                 <RootProvider>{children}</RootProvider>
             </body>
         </html>

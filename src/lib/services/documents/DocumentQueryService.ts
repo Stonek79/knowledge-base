@@ -332,7 +332,7 @@ export class DocumentQueryService {
         ) {
             whereConditions.push({ deletedAt: null });
         } else if (!status && user.role !== USER_ROLES.ADMIN) {
-            whereConditions.push({ deletedAt: { not: null } });
+            whereConditions.push({ deletedAt: null });
         }
 
         const where: WhereDocumentInput = { AND: whereConditions };

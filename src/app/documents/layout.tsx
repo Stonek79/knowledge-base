@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 
 
 export const metadata: Metadata = {
-    title: 'Документы - Knowledge Base',
+    title: 'Главная страница заключений',
     description: 'Управление и просмотр документов',
 };
 

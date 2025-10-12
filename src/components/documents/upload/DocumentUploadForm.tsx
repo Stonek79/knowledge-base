@@ -260,7 +260,6 @@ export function DocumentUploadForm({
                 <DragDropZone
                     key={mainFile ? 'has-file' : 'no-file'}
                     onFileSelect={handleFileSelect}
-                    onError={error => console.error(error)}
                     disabled={isUploadingState}
                 />
 
@@ -301,7 +300,6 @@ export function DocumentUploadForm({
                 />
 
                 <AttachmentManager
-                    mode={mode ?? 'create'}
                     attachments={attachments}
                     onAdd={file => {
                         const newAttachment: BaseAttachment & { file: File } = {

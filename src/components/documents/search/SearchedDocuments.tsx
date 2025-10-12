@@ -255,7 +255,6 @@ export function SearchedDocuments({
                     document={selectedDocument}
                     open={viewerOpen}
                     onClose={handleViewerClose}
-                    searchQuery={query}
                 />
             )}
         </Box>

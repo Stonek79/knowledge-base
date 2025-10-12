@@ -72,10 +72,6 @@ docker-clean-buildx:
 prod-push:
 	docker push $(IMAGE_NAME):$(APP_VERSION)
 
-# Проверить место на диске
-space: 
-	df -h
-
 # ======================
 # MIGRATIONS & SEED
 # ======================

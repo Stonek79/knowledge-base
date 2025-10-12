@@ -7,13 +7,6 @@ import { getFileStorageService } from '@/lib/services/FileStorageService';
 
 export const runtime = 'nodejs';
 
-function safeFileName(name: string): string {
-    // минимальная экранизация для заголовка
-    return name
-        .replace(/[^\u0000-\u007F]/g, '') // Убираем спецсимволы, оставляем ASCII
-        .replace(/\s+/g, ' ') // Нормализуем пробелы
-        .trim();
-}
 
 async function resolveFile(request: NextRequest, documentId: string) {
     const allowedTypes = ['original', 'pdf', 'converted'];
@@ -177,7 +170,7 @@ export async function GET(
 
         const body = new Uint8Array(fileBuffer);
 
-        const contentDispositionFilename = `filename*=UTF-8''${encodeURIComponent(resolved.fileName)}; filename="${safeFileName(resolved.fileName)}"`;
+        // const contentDispositionFilename = `filename*=UTF-8''${encodeURIComponent(resolved.fileName)}; filename="${safeFileName(resolved.fileName)}"`;
         return new NextResponse(body, {
             headers: {
                 'Content-Type': resolved.contentType,

@@ -2,9 +2,10 @@
 
 import TextField, { TextFieldProps } from '@mui/material/TextField';
 
-interface UsernameFieldProps
-    extends Omit<TextFieldProps, 'name' | 'label' | 'autoComplete' | 'type'> {
-}
+type UsernameFieldProps = Omit<
+    TextFieldProps,
+    'name' | 'label' | 'autoComplete' | 'type'
+>;
 
 export function UsernameField(props: UsernameFieldProps) {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,7 +25,6 @@ export function UsernameField(props: UsernameFieldProps) {
             autoComplete='username'
             {...props}
             onChange={handleChange}
-            // error={props.error !== undefined ? props.error : !!auth.authError}
         />
     );
 }

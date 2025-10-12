@@ -11,12 +11,16 @@ import TextField, { TextFieldProps } from '@mui/material/TextField';
 interface PasswordFieldProps
     extends Omit<TextFieldProps, 'name' | 'type' | 'variant' | 'margin' | 'fullWidth'> {
     autoCompletePolicy?: string; // 'current-password' или 'new-password'
+    name?: string;
+    required?: boolean;
 }
 
 export function PasswordField({
     id,
     label = 'Пароль',
     autoCompletePolicy = 'current-password',
+    name = 'password',
+    required = true,
     ...props
 }: PasswordFieldProps) {
     const [showPassword, setShowPassword] = useState(false);
@@ -29,9 +33,9 @@ export function PasswordField({
     return (
         <TextField
             margin="normal"
-            required
+            required={required}
             fullWidth
-            name="password"
+            name={name}
             label={label}
             type={showPassword ? 'text' : 'password'}
             id={id}

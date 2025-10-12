@@ -13,7 +13,7 @@ import { SearchEngine } from '../../interfaces/SearchEngine';
 /**
  * Конфигурация FlexSearch
  */
-export interface FlexSearchConfig extends SearchEngineConfig {}
+export type FlexSearchConfig = SearchEngineConfig;
 
 /**
  * Реализация поискового движка на основе FlexSearch
@@ -29,7 +29,7 @@ export class FlexSearchEngine implements SearchEngine {
             resolution: config.resolution || 7,
             tokenize: config.tokenize || 'full',
             cache: config.cache ?? true,
-            language: config.language || 'en',
+            language: config.language || 'ru',
             threshold: config.threshold || 0.1,
         };
 

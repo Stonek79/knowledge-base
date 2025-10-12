@@ -58,7 +58,6 @@ export function DocumentTable({
     onEdit,
     onDelete,
 }: DocumentTableProps) {
-    console.log('documents', documents);
     function safeCreateHighlightRegex(searchTerm) {
         // Проверяем входные данные
         if (
@@ -104,8 +103,6 @@ export function DocumentTable({
         )
         .filter(Boolean)
         .flat();
-
-    console.log('highlightedWords', highlightedWords);
 
     if (isLoading) {
         return (

@@ -86,13 +86,6 @@ export const useCategoriesApi = () => {
             data
         );
 
-        // if (!response.ok) {
-        //     const errorData = await response.json();
-        //     throw new Error(errorData.message || 'Ошибка создания категории');
-        // }
-
-        // const result: CreateCategoryResult = await response.json();
-
         // Оптимистично обновляем кэш
         await mutate((currentData: CategoryResponse | undefined) => {
             if (!currentData) return currentData;

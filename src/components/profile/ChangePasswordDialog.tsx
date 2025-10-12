@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     Alert,
@@ -11,17 +9,15 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    TextField,
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
-
 
 
 import { useChangePassword } from '@/lib/hooks/useChangePassword';
 import { changePasswordSchema } from '@/lib/schemas/profile';
 import { ChangePasswordFormData } from '@/lib/types/profile';
 
+import { PasswordField } from '../auth/PasswordField';
 
 interface ChangePasswordDialogProps {
     open: boolean;
@@ -35,7 +31,6 @@ export function ChangePasswordDialog({
     onSuccess,
 }: ChangePasswordDialogProps) {
     const { isLoading, error, changePassword } = useChangePassword();
-
 
     const {
         control,
@@ -83,13 +78,12 @@ export function ChangePasswordDialog({
                             name='oldPassword'
                             control={control}
                             render={({ field }) => (
-                                <TextField
+                                <PasswordField
                                     {...field}
-                                    type='password'
+                                    value={field.value ?? ''}
                                     label='Текущий пароль'
                                     error={!!errors.oldPassword}
                                     helperText={errors.oldPassword?.message}
-                                    fullWidth
                                 />
                             )}
                         />
@@ -97,13 +91,12 @@ export function ChangePasswordDialog({
                             name='newPassword'
                             control={control}
                             render={({ field }) => (
-                                <TextField
+                                <PasswordField
                                     {...field}
-                                    type='password'
+                                    value={field.value ?? ''}
                                     label='Новый пароль'
                                     error={!!errors.newPassword}
                                     helperText={errors.newPassword?.message}
-                                    fullWidth
                                 />
                             )}
                         />
@@ -111,13 +104,12 @@ export function ChangePasswordDialog({
                             name='confirmPassword'
                             control={control}
                             render={({ field }) => (
-                                <TextField
+                                <PasswordField
                                     {...field}
-                                    type='password'
+                                    value={field.value ?? ''}
                                     label='Повторите новый пароль'
                                     error={!!errors.confirmPassword}
                                     helperText={errors.confirmPassword?.message}
-                                    fullWidth
                                 />
                             )}
                         />

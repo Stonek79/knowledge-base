@@ -76,7 +76,7 @@ export function FilteredList({ categoryId }: { categoryId: string }) {
                 await deleteDocument(selectedDocument.id);
 
                 removeRecentDocument(selectedDocument.id);
-                !isDeleting && !deleteError && handleMenuClose();
+                if(!isDeleting && !deleteError) handleMenuClose();
             } catch (e) {
                 console.log(e);
                 if (e instanceof Error) throw Error(e.message);

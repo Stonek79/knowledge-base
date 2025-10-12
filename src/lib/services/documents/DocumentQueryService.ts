@@ -297,8 +297,6 @@ export class DocumentQueryService {
             status,
         } = validation.data;
 
-        console.log('[data]', validation.data);
-
         // 1. Формирование условий доступа
         const whereConditions: WhereDocumentInput[] =
             this.buildAccessConditions(user);
@@ -315,6 +313,14 @@ export class DocumentQueryService {
                     },
                 },
             });
+        }
+
+        if (dateFrom) {
+            whereConditions.push({ createdAt: { gte: new Date(dateFrom) } });
+        }
+
+        if (dateTo) {
+            whereConditions.push({ createdAt: { lte: new Date(dateTo) } });
         }
 
         if (status && status === 'deleted' && user.role === USER_ROLES.ADMIN) {

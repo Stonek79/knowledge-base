@@ -24,8 +24,6 @@ import {
 import type { BaseAttachment } from '@/lib/types/attachment';
 
 export type AttachmentManagerProps = {
-    /** Режим работы: создание или редактирование */
-    mode: 'create' | 'edit';
     /** Текущий список приложений (в нужном порядке) */
     attachments: BaseAttachment[];
     /** Добавить одно приложение */
@@ -42,7 +40,6 @@ export type AttachmentManagerProps = {
 };
 
 export function AttachmentManager({
-    mode,
     onMoveUp,
     onMoveDown,
     attachments,

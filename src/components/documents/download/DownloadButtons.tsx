@@ -24,7 +24,7 @@ export function DownloadButtons({
                 startIcon={<FileIcon />}
                 onClick={() => {
                     downloadArchive(documentId);
-                    !downloadError && setOpen?.(false);
+                    if (!downloadError) setOpen?.(false);
                 }}
                 disabled={isDownloading}
                 fullWidth
@@ -38,7 +38,7 @@ export function DownloadButtons({
                 startIcon={<PdfIcon />}
                 onClick={() => {
                     downloadDocument(documentId, 'pdf');
-                    !downloadError && setOpen?.(false);
+                    if (!downloadError) setOpen?.(false);
                 }}
                 disabled={isDownloading}
                 fullWidth

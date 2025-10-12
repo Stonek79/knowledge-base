@@ -7,13 +7,11 @@ import { Paper, Typography } from '@mui/material';
 
 interface DragDropZoneProps {
     onFileSelect: (file: File) => void;
-    onError: (error: string) => void;
     disabled?: boolean;
 }
 
 export function DragDropZone({
     onFileSelect,
-    onError,
     disabled = false,
 }: DragDropZoneProps) {
     const [isDragOver, setIsDragOver] = useState(false);

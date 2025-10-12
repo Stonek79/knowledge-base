@@ -20,7 +20,9 @@ class CacheService {
         const redisUrl = process.env.REDIS_URL;
 
         if (!redisUrl) {
-            console.warn('>>> Build environment detected or REDIS_URL is not set. Using MOCK Redis client.');
+            console.warn(
+                '>>> Build environment detected or REDIS_URL is not set. Using MOCK Redis client.'
+            );
             const mockClient = {
                 get: async () => null,
                 setex: async () => 'OK',
@@ -143,18 +145,31 @@ class CacheService {
     async getStats(): Promise<CacheStats> {
         try {
             const client = this.getClient();
-            const info = await client.info('memory');
+            const [memoryInfo, statsInfo] = await Promise.all([
+                client.info('memory'),
+                client.info('stats'),
+            ]);
             const keys = await client.dbsize();
 
-            const hitRate = 0.8;
+            // Парсинг всех метрик одним регулярным выражением
+            const parseInfo = (info: string, key: string): number => {
+                const match = info.match(new RegExp(`${key}:(\\d+)`));
+                return match?.[1] ? parseInt(match[1], 10) : 0;
+            };
+
+            const memoryUsage = parseInfo(memoryInfo, 'used_memory');
+            const hits = parseInfo(statsInfo, 'keyspace_hits');
+            const misses = parseInfo(statsInfo, 'keyspace_misses');
+            const total = hits + misses;
 
             return {
                 totalKeys: keys,
-                memoryUsage: 0,
-                hitRate,
+                memoryUsage,
+                hitRate: total > 0 ? hits / total : 0,
                 lastCleanup: new Date(),
             };
         } catch (error) {
+            console.error(`Ошибка получения статистики кэша: ${error}`);
             return {
                 totalKeys: 0,
                 memoryUsage: 0,

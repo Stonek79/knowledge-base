@@ -20,6 +20,8 @@ import {
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
 
+
+
 import {
     USER_ROLES,
     USER_ROLES_LABELS,
@@ -29,6 +31,8 @@ import {
 import { updateUser } from '@/lib/actions/users';
 import { updateUserSchema } from '@/lib/schemas/user';
 import { UpdateUserData, UserWithDocuments } from '@/lib/types/user';
+
+import { PasswordField } from '../auth/PasswordField';
 
 interface EditUserDialogProps {
     open: boolean;
@@ -44,8 +48,6 @@ export function EditUserDialog({
     onSuccess,
 }: EditUserDialogProps) {
     const [error, setError] = useState<string | null>(null);
-
-    console.log('[EditUserDialog] user', user);
 
     const {
         register,
@@ -73,8 +75,6 @@ export function EditUserDialog({
 
     const onSubmit = async (data: UpdateUserData) => {
         setError(null);
-
-        console.log('[EditUserDialog] onSubmit', data);
 
         try {
             await updateUser(user.id, data);
@@ -109,25 +109,40 @@ export function EditUserDialog({
                         error={!!errors.username}
                         helperText={errors.username?.message}
                     />
-                    <TextField
-                        {...register('newPassword')}
-                        label='Новый пароль'
-                        type='password'
-                        fullWidth
-                        margin='normal'
-                        error={!!errors.newPassword}
-                        helperText={errors.newPassword?.message}
-                    />
-                    <TextField
-                        {...register('confirmNewPassword')}
-                        label='Подтверждение пароля'
-                        type='password'
-                        fullWidth
-                        margin='normal'
-                        error={!!errors.confirmNewPassword}
-                        helperText={errors.confirmNewPassword?.message}
+
+                    <Controller
+                        name='newPassword'
+                        control={control}
+                        render={({ field }) => (
+                            <PasswordField
+                                {...field}
+                                value={field.value ?? ''}
+                                id='newPassword'
+                                name='newPassword'
+                                label='Новый пароль'
+                                autoCompletePolicy='new-password'
+                                error={!!errors.newPassword}
+                                helperText={errors.newPassword?.message}
+                            />
+                        )}
                     />
 
+                    <Controller
+                        name='confirmNewPassword'
+                        control={control}
+                        render={({ field }) => (
+                            <PasswordField
+                                {...field}
+                                value={field.value ?? ''}
+                                id='confirmNewPassword'
+                                name='confirmNewPassword'
+                                label='Подтверждение пароля'
+                                autoCompletePolicy='new-password'
+                                error={!!errors.confirmNewPassword}
+                                helperText={errors.confirmNewPassword?.message}
+                            />
+                        )}
+                    />
                     <Controller
                         name='role'
                         control={control}

@@ -207,6 +207,7 @@ export class FileStorageService {
                 metadata: stat.metaData,
             };
         } catch (error) {
+            console.error(`Ошибка получения информации о файле: ${error}`);
             throw new Error(`Файл не найден: ${key}`);
         }
     }

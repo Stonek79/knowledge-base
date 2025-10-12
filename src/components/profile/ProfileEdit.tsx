@@ -19,7 +19,11 @@ import { profileVisibilityDefaults } from '@/constants/user';
 import { profileUpdateSchema } from '@/lib/schemas/profile';
 import { ProfileUpdate } from '@/lib/types/profile';
 import { UserWithProfile } from '@/lib/types/user';
-import { formatCityPhone, formatInternalPhone, formatPhoneNumber } from '@/utils/phoneFormatter';
+import {
+    formatCityPhone,
+    formatInternalPhone,
+    formatPhoneNumber,
+} from '@/utils/phoneFormatter';
 
 interface ProfileEditProps {
     profile: UserWithProfile;
@@ -37,11 +41,7 @@ export function ProfileEditForm({
     onCancel,
     serverError,
 }: ProfileEditProps) {
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<ProfileUpdate>({
+    const { control, handleSubmit } = useForm<ProfileUpdate>({
         resolver: zodResolver(profileUpdateSchema),
         defaultValues: {
             fullName: profile.profile?.fullName || '',
@@ -241,9 +241,13 @@ export function ProfileEditForm({
                                         {...field}
                                         label='Мобильный телефон'
                                         fullWidth
-                                        onChange={(e) => {
+                                        onChange={e => {
                                             //функция форматирования сама обрабатывает неполный ввод
-                                            field.onChange(formatPhoneNumber(e.target.value));
+                                            field.onChange(
+                                                formatPhoneNumber(
+                                                    e.target.value
+                                                )
+                                            );
                                         }}
                                         placeholder='Ввести 11 цифр без пробелов и других символов'
                                     />
@@ -279,8 +283,10 @@ export function ProfileEditForm({
                                         {...field}
                                         label='Городской телефон'
                                         fullWidth
-                                        onChange={(e) => {
-                                            field.onChange(formatCityPhone(e.target.value));
+                                        onChange={e => {
+                                            field.onChange(
+                                                formatCityPhone(e.target.value)
+                                            );
                                         }}
                                         placeholder='Ввести 10 цифр без пробелов и других символов'
                                     />
@@ -316,8 +322,12 @@ export function ProfileEditForm({
                                         {...field}
                                         label='Внутренний телефон'
                                         fullWidth
-                                        onChange={(e) => {
-                                            field.onChange(formatInternalPhone(e.target.value));
+                                        onChange={e => {
+                                            field.onChange(
+                                                formatInternalPhone(
+                                                    e.target.value
+                                                )
+                                            );
                                         }}
                                         placeholder='Ввести 4 или 7 цифр без пробелов и других символов'
                                     />

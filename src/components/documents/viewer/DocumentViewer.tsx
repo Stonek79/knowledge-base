@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 
+
 import { DOCUMENT_VIEWER_PATH } from '@/constants/api';
 import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
 import { DocumentWithAuthor, SearchResult } from '@/lib/types/document';
@@ -30,7 +31,6 @@ interface DocumentViewerProps {
     document: SearchResult | DocumentWithAuthor;
     open: boolean;
     onClose: () => void;
-    searchQuery?: string;
 }
 
 /**
@@ -49,7 +49,6 @@ export function DocumentViewer({
     document,
     open,
     onClose,
-    searchQuery,
 }: DocumentViewerProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));

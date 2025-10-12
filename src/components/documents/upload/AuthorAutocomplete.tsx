@@ -1,5 +1,6 @@
 'use client';
 
+
 import type { FormEvent } from 'react';
 import { Fragment, useMemo, useState } from 'react';
 
@@ -113,7 +114,7 @@ export function AuthorAutocomplete({
             <Controller<UploadFormInput>
                 name='authorId' // Attach controller to the primary field for error display
                 control={control}
-                render={({ field }) => (
+                render={() => (
                     <Autocomplete<AuthorOption, false, false, true>
                         value={autocompleteValue}
                         onChange={(event, newValue) => {

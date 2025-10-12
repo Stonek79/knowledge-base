@@ -45,10 +45,7 @@ export async function PUT(
         const body = await req.json();
 
         // Валидация входных данных
-        const validation = updateUserSchema.safeParse({
-            id: userId,
-            ...body,
-        });
+        const validation = updateUserSchema.safeParse(body);
 
         if (!validation.success) {
             return handleApiError(validation.error, {

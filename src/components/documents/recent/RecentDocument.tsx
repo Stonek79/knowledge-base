@@ -6,12 +6,10 @@ import {
     Box,
     Card,
     CardContent,
-    Chip,
     List,
     ListItem,
     ListItemButton,
     ListItemIcon,
-    ListItemText,
     Typography,
     useTheme,
 } from '@mui/material';
@@ -117,7 +115,7 @@ export function RecentDocuments() {
                                 gap: 1,
                                 borderRadius: 1,
                                 mb: 0.3,
-                                backgroundColor: isDark ? '#1a1a1a' : '#f0f2f5'
+                                backgroundColor: isDark ? '#1a1a1a' : '#f0f2f5',
                             }}
                         >
                             <ListItemButton

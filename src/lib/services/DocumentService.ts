@@ -265,6 +265,18 @@ export class DocumentService {
             });
         }
 
+        if (dateFrom) {
+            whereConditions.push({
+                createdAt: { gte: new Date(dateFrom) },
+            });
+        }
+        
+        if (dateTo) {
+            whereConditions.push({
+                createdAt: { lte: new Date(dateTo) },
+            });
+        }
+
         const where: WhereDocumentInput = { AND: whereConditions };
 
         // 3. Получение данных из репозитория

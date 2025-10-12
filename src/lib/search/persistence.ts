@@ -12,7 +12,11 @@ type DocsDump = Record<string, SearchDocument>;
 async function saveObjectToMinio(key: string, data: object): Promise<void> {
     try {
         const buffer = Buffer.from(JSON.stringify(data));
-        await getFileStorageService().uploadByKey(key, buffer, 'application/json');
+        await getFileStorageService().uploadByKey(
+            key,
+            buffer,
+            'application/json'
+        );
     } catch (error) {
         console.error(
             `Failed to upload object to MinIO with key ${key}:`,
@@ -48,9 +52,8 @@ export const saveIndexDump = async (dump: IndexDump): Promise<void> => {
 
 export async function loadIndexDump(): Promise<Record<string, string>> {
     return (
-        ((await loadObjectFromMinio(
-            'search-indexes/flexsearch-index.json'
-        )) as Record<string, string>) ?? {}
+        ((await loadObjectFromMinio(FLEXSEARCH_INDEX_DUMP_KEY)) as IndexDump) ??
+        {}
     );
 }
 
@@ -62,9 +65,8 @@ export const saveDocs = async (
 
 export async function loadDocs(): Promise<Record<string, unknown>> {
     return (
-        ((await loadObjectFromMinio(
-            'search-indexes/flexsearch-docs.json'
-        )) as Record<string, unknown>) ?? {}
+        ((await loadObjectFromMinio(FLEXSEARCH_DOCS_DUMP_KEY)) as DocsDump) ??
+        {}
     );
 }
 

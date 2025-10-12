@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
         try {
             decoded = jwt.verify(token, jwtSecret);
         } catch (error) {
+            console.log('[GET] /auth/me error', error);
+
             const errResponse = NextResponse.json(
                 {
                     message: 'Невалидный или истекший токен',

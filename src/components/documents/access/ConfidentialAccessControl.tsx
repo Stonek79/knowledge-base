@@ -1,11 +1,5 @@
 'use client';
 
-import {
-    Control,
-    Controller,
-    UseFormSetValue,
-    useWatch,
-} from 'react-hook-form';
 
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -17,10 +11,18 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import {
+    Control,
+    Controller,
+    UseFormSetValue,
+    useWatch,
+} from 'react-hook-form';
 
 import { USER_ROLES } from '@/constants/user';
 import { UploadFormInput } from '@/lib/types/document';
 import { UserResponse, UserWithDocuments } from '@/lib/types/user';
+
+const EMPTY_ARRAY: string[] = [];
 
 interface ConfidentialAccessControlProps {
     control: Control<UploadFormInput>;
@@ -43,7 +45,7 @@ export function ConfidentialAccessControl({
     const autoFilledRef = useRef(false);
 
     const selectedIds =
-        useWatch({ control, name: 'confidentialAccessUserIds' }) ?? [];
+        useWatch({ control, name: 'confidentialAccessUserIds' }) ?? EMPTY_ARRAY;
 
     // Guard against non-array users prop and memoize options for performance
     const options = useMemo(() => {

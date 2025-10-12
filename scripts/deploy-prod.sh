@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Загружаем переменные из .env.prod для процесса сборки
+if [ -f .env.prod ]; then
+  echo "Found .env.prod, loading variables for build..."
+  export $(grep -v '^#' .env.prod | xargs)
+fi
+
 MIGRATE=false
 SEED=false
 
@@ -40,7 +46,7 @@ npx prisma generate
 
 # 4. Сборка Next.js (standalone)
 echo -e "${BLUE}🏗️  Building Next.js...${NC}"
-pnpm build
+NODE_OPTIONS="--max-old-space-size=1536" pnpm build
 
 # 5. Сборка Worker
 echo -e "${BLUE}⚙️  Building Worker...${NC}"

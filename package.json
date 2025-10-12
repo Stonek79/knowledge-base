@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "next dev --turbo",
-        "build": "tsc && next build --experimental-cpus 1 --debug",
+        "build": "tsc && next build",
         "build:docker": "next build",
         "start": "next start",
         "start:prod:server": "node server.js",

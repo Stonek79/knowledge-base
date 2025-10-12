@@ -4,13 +4,15 @@ const nextConfig = {
     reactStrictMode: true,
     output: 'standalone',
     typedRoutes: true,
-    productionBrowserSourceMaps: false,
+    swcMinify: true,
+    optimizeFonts: false,
     experimental: {
         optimizePackageImports: ['@mui/material', '@mui/icons-material'],
         webpackBuildWorker: true,
     },
     eslint: {
         ignoreDuringBuilds: true,
+
     },
     webpack: (config, { isServer }) => {
         // Полностью исключаем canvas из webpack resolution

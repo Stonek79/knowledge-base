@@ -32,7 +32,7 @@ git pull origin main
 
 # 2. Установка зависимостей
 echo -e "${BLUE}📚 Installing dependencies...${NC}"
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile --child-concurrency=1
 
 # 3. Генерация Prisma клиента
 echo -e "${BLUE}🔧 Generating Prisma client...${NC}"

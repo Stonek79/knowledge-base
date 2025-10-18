@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import { SWRConfig } from 'swr';
+import { SWRConfig } from 'swr'
 
-import { CustomThemeProvider } from './CustomThemeProvider';
+import { CustomThemeProvider } from './CustomThemeProvider'
 
 export function RootProvider({ children }: { children: React.ReactNode }) {
     return (
@@ -17,5 +17,5 @@ export function RootProvider({ children }: { children: React.ReactNode }) {
                 <main className='h-screen'>{children}</main>
             </CustomThemeProvider>
         </SWRConfig>
-    );
+    )
 }

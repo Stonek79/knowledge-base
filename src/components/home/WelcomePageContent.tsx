@@ -1,11 +1,11 @@
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import NextLink from 'next/link';
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Container from '@mui/material/Container'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import NextLink from 'next/link'
 
-import { LOGIN_PAGE_PATH } from '@/constants/api';
+import { LOGIN_PAGE_PATH } from '@/constants/api'
 
 export const WelcomePageContent = () => {
     return (
@@ -54,5 +54,5 @@ export const WelcomePageContent = () => {
                 </Stack>
             </Box>
         </Container>
-    );
-};
+    )
+}

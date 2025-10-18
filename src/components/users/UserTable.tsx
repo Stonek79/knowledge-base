@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material'
 import {
     Alert,
     Chip,
@@ -14,34 +14,34 @@ import {
     TableHead,
     TableRow,
     TableSortLabel,
-} from '@mui/material';
+} from '@mui/material'
 
 import {
     USER_ROLES,
     USER_SORTABLE_FIELDS_LABELS,
     USER_STATUSES,
-} from '@/constants/user';
-import {
+} from '@/constants/user'
+import type {
     UserRole,
     UserSortableFields,
     UserStatus,
     UserWithDocuments,
-} from '@/lib/types/user';
+} from '@/lib/types/user'
 
 interface UserTableProps {
-    users: UserWithDocuments[];
-    isLoading: boolean;
-    onEdit: (user: UserWithDocuments) => void;
-    onDelete: (user: UserWithDocuments) => void;
-    sortBy: UserSortableFields;
-    sortOrder: 'asc' | 'desc';
-    onSort: (field: UserSortableFields) => void;
+    users: UserWithDocuments[]
+    isLoading: boolean
+    onEdit: (user: UserWithDocuments) => void
+    onDelete: (user: UserWithDocuments) => void
+    sortBy: UserSortableFields
+    sortOrder: 'asc' | 'desc'
+    onSort: (field: UserSortableFields) => void
 }
 
 const columns: {
-    id: UserSortableFields;
-    label: string;
-    sortable: boolean;
+    id: UserSortableFields
+    label: string
+    sortable: boolean
 }[] = [
     {
         id: 'username',
@@ -60,7 +60,7 @@ const columns: {
         label: USER_SORTABLE_FIELDS_LABELS.actions,
         sortable: false,
     },
-];
+]
 
 export function UserTable({
     users,
@@ -74,39 +74,39 @@ export function UserTable({
     const getRoleLabel = (role: UserRole) => {
         switch (role) {
             case USER_ROLES.ADMIN:
-                return 'Администратор';
+                return 'Администратор'
             case USER_ROLES.USER:
-                return 'Пользователь';
+                return 'Пользователь'
             case USER_ROLES.GUEST:
-                return 'Гость';
+                return 'Гость'
             default:
-                return role;
+                return role
         }
-    };
+    }
 
     const getRoleColor = (role: string) => {
         switch (role) {
             case USER_ROLES.ADMIN:
-                return 'error';
+                return 'error'
             case USER_ROLES.USER:
-                return 'primary';
+                return 'primary'
             case USER_ROLES.GUEST:
-                return 'default';
+                return 'default'
             default:
-                return 'default';
+                return 'default'
         }
-    };
+    }
 
     const getUserStatusColor = (status: UserStatus) => {
         switch (status) {
             case USER_STATUSES.ACTIVE:
-                return 'success';
+                return 'success'
             case USER_STATUSES.PLACEHOLDER:
-                return 'default';
+                return 'default'
             default:
-                return 'default';
+                return 'default'
         }
-    };
+    }
 
     if (isLoading) {
         return (
@@ -134,11 +134,11 @@ export function UserTable({
                     </TableBody>
                 </Table>
             </TableContainer>
-        );
+        )
     }
 
     if (users.length === 0) {
-        return <Alert severity='info'>Пользователи не найдены</Alert>;
+        return <Alert severity='info'>Пользователи не найдены</Alert>
     }
 
     return (
@@ -213,5 +213,5 @@ export function UserTable({
                 </TableBody>
             </Table>
         </TableContainer>
-    );
+    )
 }

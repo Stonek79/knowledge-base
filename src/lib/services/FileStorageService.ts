@@ -1,14 +1,14 @@
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto'
 
-import { Client as MinioClient } from 'minio';
+import { Client as MinioClient } from 'minio'
 
 import {
     MINIO_CONFIG,
     STORAGE_BASE_PATHS,
     STORAGE_PATHS,
-} from '@/constants/app';
+} from '@/constants/app'
 
-import {
+import type {
     FileInfo,
     FileMetadata,
     FileUploadResult,
@@ -16,53 +16,59 @@ import {
     StorageBasePath,
     StorageOperationResult,
     UploadOptions,
-} from '../types/storage';
+} from '../types/storage'
 
 interface CodedError extends Error {
-    code?: string;
+    code?: string
 }
 
 export class FileStorageService {
-    private client: MinioClient | null = null;
-    private bucket: string;
-    private bucketChecked = false;
+    private client: MinioClient | null = null
+    private bucket: string
+    private bucketChecked = false
 
     constructor() {
-        this.bucket = MINIO_CONFIG.bucket;
+        this.bucket = MINIO_CONFIG.bucket
     }
 
     private async getClient(): Promise<MinioClient> {
         if (this.client) {
-            return this.client;
+            return this.client
         }
 
         if (!process.env.MINIO_ENDPOINT) {
-            console.warn('>>> Build environment detected or MINIO_ENDPOINT is not set. Using MOCK Minio client.');
+            console.warn(
+                '>>> Build environment detected or MINIO_ENDPOINT is not set. Using MOCK Minio client.'
+            )
             const mockClient = {
                 putObject: async () => ({ etag: '', versionId: '' }),
                 getObject: async () => null,
                 removeObject: async () => {},
-                statObject: async () => ({ size: 0, lastModified: new Date(), etag: '' }),
+                statObject: async () => ({
+                    size: 0,
+                    lastModified: new Date(),
+                    etag: '',
+                }),
                 presignedGetObject: async () => 'http://mock-url',
                 bucketExists: async () => true,
                 makeBucket: async () => {},
                 copyObject: async () => ({ etag: '', versionId: '' }),
-            } as unknown as MinioClient;
-            return mockClient;
+            } as unknown as MinioClient
+            return mockClient
         }
 
         const config: MinioConfig = {
             endPoint: process.env.MINIO_ENDPOINT,
-            port: parseInt(process.env.MINIO_PORT || '9000'),
+            port: parseInt(process.env.MINIO_PORT || '9000', 10),
             useSSL: MINIO_CONFIG.useSSL,
             accessKey: process.env.MINIO_ROOT_USER || 'kb_admin',
             secretKey: process.env.MINIO_ROOT_PASSWORD || 'kb_minio_password',
             region: MINIO_CONFIG.region,
-        };
+        }
 
-        this.client = new MinioClient(config);
-        await this.ensureBucketExists(this.client);
-        return this.client;
+        this.client = new MinioClient(config)
+        await this.ensureBucketExists(this.client)
+        return this.client
     }
 
     async uploadDocument(
@@ -70,20 +76,20 @@ export class FileStorageService {
         metadata: FileMetadata,
         options: UploadOptions = {}
     ): Promise<FileUploadResult> {
-        const client = await this.getClient();
-        const hash = this.generateHash(file);
-        const basePath = options.basePath ?? STORAGE_BASE_PATHS.ORIGINAL;
+        const client = await this.getClient()
+        const hash = this.generateHash(file)
+        const basePath = options.basePath ?? STORAGE_BASE_PATHS.ORIGINAL
         const key = this.generateStorageKey(
             metadata.originalName,
             hash,
             basePath
-        );
+        )
 
         try {
             const toAscii = (val: unknown) =>
                 encodeURIComponent(String(val))
                     .replace(/%0A|%0D/gi, '')
-                    .slice(0, 200);
+                    .slice(0, 200)
 
             const metaData = {
                 'Content-Type': metadata.mimeType,
@@ -99,7 +105,7 @@ export class FileStorageService {
                             ([k, v]) => [`x-amz-meta-${toAscii(k)}`, toAscii(v)]
                         )
                     )),
-            };
+            }
 
             await client.putObject(
                 this.bucket,
@@ -107,9 +113,9 @@ export class FileStorageService {
                 file,
                 file.length,
                 metaData
-            );
+            )
 
-            const url = await this.getFileUrl(key, options.presignedExpiry);
+            const url = await this.getFileUrl(key, options.presignedExpiry)
 
             return {
                 key,
@@ -118,11 +124,11 @@ export class FileStorageService {
                 hash,
                 mimeType: metadata.mimeType,
                 storagePath: key,
-            };
+            }
         } catch (error) {
             throw new Error(
                 `Ошибка загрузки файла: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
-            );
+            )
         }
     }
 
@@ -132,35 +138,35 @@ export class FileStorageService {
         contentType: string = 'application/json'
     ): Promise<void> {
         try {
-            const client = await this.getClient();
+            const client = await this.getClient()
             const metaData = {
                 'Content-Type': contentType,
-            };
+            }
             await client.putObject(
                 this.bucket,
                 key,
                 buffer,
                 buffer.length,
                 metaData
-            );
+            )
         } catch (error) {
             throw new Error(
                 `Ошибка загрузки файла по ключу "${key}": ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
-            );
+            )
         }
     }
 
     async downloadDocument(key: string): Promise<Buffer> {
         try {
-            const client = await this.getClient();
-            const stream = await client.getObject(this.bucket, key);
-            const chunks: Buffer[] = [];
+            const client = await this.getClient()
+            const stream = await client.getObject(this.bucket, key)
+            const chunks: Buffer[] = []
 
             return new Promise((resolve, reject) => {
-                stream.on('data', chunk => chunks.push(chunk));
-                stream.on('end', () => resolve(Buffer.concat(chunks)));
-                stream.on('error', reject);
-            });
+                stream.on('data', chunk => chunks.push(chunk))
+                stream.on('end', () => resolve(Buffer.concat(chunks)))
+                stream.on('error', reject)
+            })
         } catch (error) {
             if (
                 typeof error === 'object' &&
@@ -168,36 +174,34 @@ export class FileStorageService {
                 'code' in error &&
                 (error as { code: unknown }).code === 'NoSuchKey'
             ) {
-                const notFound: CodedError = new Error(
-                    `Файл не найден: ${key}`
-                );
-                notFound.code = 'NoSuchKey';
-                throw notFound;
+                const notFound: CodedError = new Error(`Файл не найден: ${key}`)
+                notFound.code = 'NoSuchKey'
+                throw notFound
             }
             if (error instanceof Error) {
-                throw error;
+                throw error
             }
-            throw new Error(String(error));
+            throw new Error(String(error))
         }
     }
 
     async deleteDocument(key: string): Promise<StorageOperationResult> {
         try {
-            const client = await this.getClient();
-            await client.removeObject(this.bucket, key);
-            return { success: true };
+            const client = await this.getClient()
+            await client.removeObject(this.bucket, key)
+            return { success: true }
         } catch (error) {
             return {
                 success: false,
                 error: `Ошибка удаления файла: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
-            };
+            }
         }
     }
 
     async getFileInfo(key: string): Promise<FileInfo> {
         try {
-            const client = await this.getClient();
-            const stat = await client.statObject(this.bucket, key);
+            const client = await this.getClient()
+            const stat = await client.statObject(this.bucket, key)
             return {
                 key,
                 size: stat.size,
@@ -205,10 +209,10 @@ export class FileStorageService {
                 etag: stat.etag,
                 mimeType: stat.metaData?.['content-type'],
                 metadata: stat.metaData,
-            };
+            }
         } catch (error) {
-            console.error(`Ошибка получения информации о файле: ${error}`);
-            throw new Error(`Файл не найден: ${key}`);
+            console.error(`Ошибка получения информации о файле: ${error}`)
+            throw new Error(`Файл не найден: ${key}`)
         }
     }
 
@@ -217,16 +221,16 @@ export class FileStorageService {
         expirySeconds: number = 86400
     ): Promise<string> {
         try {
-            const client = await this.getClient();
+            const client = await this.getClient()
             return await client.presignedGetObject(
                 this.bucket,
                 key,
                 expirySeconds
-            );
+            )
         } catch (error) {
             throw new Error(
                 `Ошибка получения URL: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
-            );
+            )
         }
     }
 
@@ -235,30 +239,30 @@ export class FileStorageService {
         hash: string,
         basePath: StorageBasePath = STORAGE_BASE_PATHS.ORIGINAL
     ): string {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const extension = originalName.split('.').pop() || '';
-        const fileName = hash.substring(0, 8);
+        const date = new Date()
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const extension = originalName.split('.').pop() || ''
+        const fileName = hash.substring(0, 8)
 
-        return `${STORAGE_PATHS[basePath]}/${year}/${month}/${fileName}.${extension}`;
+        return `${STORAGE_PATHS[basePath]}/${year}/${month}/${fileName}.${extension}`
     }
 
     private generateHash(buffer: Buffer): string {
-        return createHash('sha256').update(buffer).digest('hex');
+        return createHash('sha256').update(buffer).digest('hex')
     }
 
     private async ensureBucketExists(client: MinioClient): Promise<void> {
-        if (this.bucketChecked) return;
+        if (this.bucketChecked) return
         try {
-            const exists = await client.bucketExists(this.bucket);
+            const exists = await client.bucketExists(this.bucket)
             if (!exists) {
-                await client.makeBucket(this.bucket, MINIO_CONFIG.region);
-                console.log(`Bucket ${this.bucket} создан`);
+                await client.makeBucket(this.bucket, MINIO_CONFIG.region)
+                console.log(`Bucket ${this.bucket} создан`)
             }
-            this.bucketChecked = true;
+            this.bucketChecked = true
         } catch (error) {
-            console.error(`Ошибка создания bucket: ${error}`);
+            console.error(`Ошибка создания bucket: ${error}`)
         }
     }
 
@@ -266,42 +270,42 @@ export class FileStorageService {
         tempKey: string,
         basePath: StorageBasePath
     ): Promise<{ key: string; size: number; mimeType: string }> {
-        const fileName = tempKey.split('/').pop() || `file-${Date.now()}`;
-        const destKey = `${STORAGE_PATHS[basePath]}/${fileName}`;
-        await this.copyObject(tempKey, destKey);
-        await this.safeDelete(tempKey);
-        const info = await this.getFileInfo(destKey);
+        const fileName = tempKey.split('/').pop() || `file-${Date.now()}`
+        const destKey = `${STORAGE_PATHS[basePath]}/${fileName}`
+        await this.copyObject(tempKey, destKey)
+        await this.safeDelete(tempKey)
+        const info = await this.getFileInfo(destKey)
         return {
             key: destKey,
             size: info.size,
             mimeType: info.mimeType ?? 'application/octet-stream',
-        };
+        }
     }
 
     private async copyObject(srcKey: string, destKey: string): Promise<void> {
-        const client = await this.getClient();
+        const client = await this.getClient()
         await client.copyObject(
             this.bucket,
             destKey,
             `/${this.bucket}/${srcKey}`
-        );
+        )
     }
 
     async safeDelete(key: string): Promise<void> {
         try {
-            const client = await this.getClient();
-            await client.removeObject(this.bucket, key);
+            const client = await this.getClient()
+            await client.removeObject(this.bucket, key)
         } catch {
-            console.log(`[safeDelete] Файл не найден: ${key}`);
+            console.log(`[safeDelete] Файл не найден: ${key}`)
         }
     }
 }
 
-let fileStorageServiceInstance: FileStorageService | null = null;
+let fileStorageServiceInstance: FileStorageService | null = null
 
 export const getFileStorageService = (): FileStorageService => {
     if (!fileStorageServiceInstance) {
-        fileStorageServiceInstance = new FileStorageService();
+        fileStorageServiceInstance = new FileStorageService()
     }
-    return fileStorageServiceInstance;
-};
+    return fileStorageServiceInstance
+}

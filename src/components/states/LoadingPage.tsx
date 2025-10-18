@@ -1,11 +1,11 @@
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material'
 
 export function LoadingPage({
     title = 'Загрузка...',
     message,
 }: {
-    title?: string;
-    message?: string;
+    title?: string
+    message?: string
 }) {
     return (
         <Box
@@ -32,5 +32,5 @@ export function LoadingPage({
                 </Typography>
             )}
         </Box>
-    );
+    )
 }

@@ -1,59 +1,58 @@
-'use client';
+'use client'
 
-import { useRef, useState } from 'react';
-
-import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
-import { Paper, Typography } from '@mui/material';
+import { CloudUpload as CloudUploadIcon } from '@mui/icons-material'
+import { Paper, Typography } from '@mui/material'
+import { useRef, useState } from 'react'
 
 interface DragDropZoneProps {
-    onFileSelect: (file: File) => void;
-    disabled?: boolean;
+    onFileSelect: (file: File) => void
+    disabled?: boolean
 }
 
 export function DragDropZone({
     onFileSelect,
     disabled = false,
 }: DragDropZoneProps) {
-    const [isDragOver, setIsDragOver] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isDragOver, setIsDragOver] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        if (!disabled) setIsDragOver(true);
-    };
+        e.preventDefault()
+        if (!disabled) setIsDragOver(true)
+    }
 
     const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
-    };
+        e.preventDefault()
+        setIsDragOver(false)
+    }
 
     const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
+        e.preventDefault()
+        setIsDragOver(false)
 
-        if (disabled) return;
+        if (disabled) return
 
-        const files = Array.from(e.dataTransfer.files);
+        const files = Array.from(e.dataTransfer.files)
         if (files.length > 0) {
-            const file = files[0];
+            const file = files[0]
             if (file) {
-                onFileSelect(file);
+                onFileSelect(file)
             }
         }
-    };
+    }
 
     const handleClick = () => {
         if (!disabled) {
-            fileInputRef.current?.click();
+            fileInputRef.current?.click()
         }
-    };
+    }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+        const file = e.target.files?.[0]
         if (file) {
-            onFileSelect(file);
+            onFileSelect(file)
         }
-    };
+    }
 
     return (
         <Paper
@@ -116,5 +115,5 @@ export function DragDropZone({
                 Максимальный размер: 2MB
             </Typography>
         </Paper>
-    );
+    )
 }

@@ -2,20 +2,20 @@ export const DOCUMENT_FORMAT = {
     DOCX: 'DOCX',
     DOC: 'DOC',
     PDF: 'PDF',
-} as const;
+} as const
 
 export const MIME = {
     DOCX: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     DOC: 'application/msword',
     PDF: 'application/pdf',
-} as const;
+} as const
 
 // Разрешённые для загрузки типы (строгий readonly)
 export const ALLOWED_UPLOAD_MIME: ReadonlyArray<string> = [
     MIME.DOCX,
     MIME.DOC,
     MIME.PDF,
-];
+]
 
 // Сигнатуры (магические байты) для первичной проверки
 export const MAGIC_SIGNATURES = {
@@ -24,4 +24,4 @@ export const MAGIC_SIGNATURES = {
         PDF_PREFIX_STR: '%PDF', // PDF
         DOC_PREFIX_HEX: 'd0cf11e0', // legacy DOC (CFB)
     },
-} as const;
+} as const

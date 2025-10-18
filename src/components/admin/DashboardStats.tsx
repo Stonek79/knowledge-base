@@ -1,28 +1,28 @@
-'use client';
+'use client'
 
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DescriptionIcon from '@mui/icons-material/Description';
-import PeopleIcon from '@mui/icons-material/People';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import useSWR from 'swr';
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import DescriptionIcon from '@mui/icons-material/Description'
+import PeopleIcon from '@mui/icons-material/People'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Grid from '@mui/material/Grid'
+import Typography from '@mui/material/Typography'
+import useSWR from 'swr'
 
-import { API_DOCUMENTS_PATH, API_USERS_PATH } from '@/constants/api';
+import { API_DOCUMENTS_PATH, API_USERS_PATH } from '@/constants/api'
 
 interface StatsData {
-    totalUsers: number;
-    totalDocuments: number;
-    activeUsers: number;
-    recentActivity: number;
+    totalUsers: number
+    totalDocuments: number
+    activeUsers: number
+    recentActivity: number
 }
 
 export function DashboardStats() {
-    const { data: usersData } = useSWR(API_USERS_PATH);
-    const { data: documentsData } = useSWR(API_DOCUMENTS_PATH);
+    const { data: usersData } = useSWR(API_USERS_PATH)
+    const { data: documentsData } = useSWR(API_DOCUMENTS_PATH)
 
     // Временные данные (потом заменим на реальные API)
     const stats: StatsData = {
@@ -30,7 +30,7 @@ export function DashboardStats() {
         totalDocuments: documentsData?.length || 0,
         activeUsers: 5, // TODO: Реальная статистика
         recentActivity: 12, // TODO: Реальная статистика
-    };
+    }
 
     const statCards = [
         {
@@ -65,7 +65,7 @@ export function DashboardStats() {
             ),
             color: 'warning.main',
         },
-    ];
+    ]
 
     return (
         <Grid container spacing={3}>
@@ -101,5 +101,5 @@ export function DashboardStats() {
                 </Grid>
             ))}
         </Grid>
-    );
+    )
 }

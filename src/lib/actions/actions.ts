@@ -1,12 +1,12 @@
-import { type KeyedMutator } from 'swr';
+import type { KeyedMutator } from 'swr'
 
 import {
     API_LOGIN_PATH,
     API_LOGOUT_PATH,
     API_REGISTER_PATH,
-} from '@/constants/api';
-import { api } from '@/lib/api/apiHelper';
-import { UserLoginInput, UserResponse } from '@/lib/types/user';
+} from '@/constants/api'
+import { api } from '@/lib/api/apiHelper'
+import type { UserLoginInput, UserResponse } from '@/lib/types/user'
 
 /**
  * Выполняет вход пользователя в систему.
@@ -18,9 +18,9 @@ export async function login(
     const { user } = await api.post<{ user: UserResponse }>(
         API_LOGIN_PATH,
         credentials
-    );
+    )
 
-    return user;
+    return user
 }
 
 /**
@@ -35,15 +35,15 @@ export async function logout(
             await fetch(API_LOGOUT_PATH, {
                 method: 'POST',
                 credentials: 'include',
-            });
-            return null;
+            })
+            return null
         },
         {
             optimisticData: null,
             populateCache: true,
             revalidate: false,
         }
-    );
+    )
 }
 
 /**
@@ -55,10 +55,10 @@ export async function register(credentials: UserLoginInput): Promise<void> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
-    });
+    })
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Internal server error');
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Internal server error')
     }
 }

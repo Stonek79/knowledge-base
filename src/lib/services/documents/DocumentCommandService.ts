@@ -1,23 +1,23 @@
-import { unlink } from 'fs/promises';
-import { isAbsolute } from 'path';
+import { unlink } from 'node:fs/promises'
+import { isAbsolute } from 'node:path'
 
-import { GOTENBERG_URL } from '@/constants/app';
-import { USER_ROLES } from '@/constants/user';
-import { DocumentProcessor } from '@/core/documents/DocumentProcessor';
-import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter';
-import { ApiError } from '@/lib/api';
-import { indexingQueue } from '@/lib/queues/indexing';
-import { DocumentRepository } from '@/lib/repositories/documentRepository';
-import { getFileStorageService } from '@/lib/services/FileStorageService';
-import { settingsService } from '@/lib/services/SettingsService';
-import {
+import { GOTENBERG_URL } from '@/constants/app'
+import { USER_ROLES } from '@/constants/user'
+import { DocumentProcessor } from '@/core/documents/DocumentProcessor'
+import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter'
+import { ApiError } from '@/lib/api'
+import { indexingQueue } from '@/lib/queues/indexing'
+import { DocumentRepository } from '@/lib/repositories/documentRepository'
+import { getFileStorageService } from '@/lib/services/FileStorageService'
+import { settingsService } from '@/lib/services/SettingsService'
+import type {
     CreateDocumentServiceData,
     UpdateDocumentData,
-} from '@/lib/types/document';
-import { SupportedMime } from '@/lib/types/mime';
-import { UserResponse } from '@/lib/types/user';
-import { FileUtils } from '@/utils/files';
-import { isSupportedMime, mimeMapper } from '@/utils/mime';
+} from '@/lib/types/document'
+import type { SupportedMime } from '@/lib/types/mime'
+import type { UserResponse } from '@/lib/types/user'
+import { FileUtils } from '@/utils/files'
+import { isSupportedMime, mimeMapper } from '@/utils/mime'
 
 /**
  * DocumentCommandService инкапсулирует логику для изменения (создания, обновления, удаления) документов.
@@ -33,12 +33,12 @@ export class DocumentCommandService {
         data: CreateDocumentServiceData,
         user: UserResponse
     ) {
-        let createdFileKey: string | null = null;
-        let createdPdfKey: string | null = null;
+        let createdFileKey: string | null = null
+        let createdPdfKey: string | null = null
 
         try {
             if (user.role === USER_ROLES.GUEST) {
-                throw new ApiError('Forbidden', 403);
+                throw new ApiError('Forbidden', 403)
             }
 
             const {
@@ -49,7 +49,7 @@ export class DocumentCommandService {
                 description,
                 categoryIds,
                 keywords,
-            } = data;
+            } = data
 
             if (
                 !authorId ||
@@ -58,58 +58,58 @@ export class DocumentCommandService {
                 throw new ApiError(
                     'Вы можете загружать документы только для себя',
                     403
-                );
+                )
             }
 
             const [maxFileSize, allowedMimeTypes] = await Promise.all([
                 settingsService.getMaxFileSize(),
                 settingsService.getAllowedMimeTypes(),
-            ]);
+            ])
 
             if (!file || !(file instanceof File)) {
-                throw new ApiError('Файл не найден', 400);
+                throw new ApiError('Файл не найден', 400)
             }
 
             if (
                 !allowedMimeTypes.includes(file.type) ||
                 !isSupportedMime(file.type)
             ) {
-                throw new ApiError('Unsupported file type', 415);
+                throw new ApiError('Unsupported file type', 415)
             }
-            const mime: SupportedMime = file.type;
+            const mime: SupportedMime = file.type
 
-            const buffer = Buffer.from(await file.arrayBuffer());
+            const buffer = Buffer.from(await file.arrayBuffer())
             if (buffer.byteLength > maxFileSize) {
                 throw new ApiError(
                     `Файл слишком большой. Макс. ${Math.round(
                         maxFileSize / (1024 * 1024)
                     )}MB`,
                     413
-                );
+                )
             }
 
-            const fileValidation = await FileUtils.validateFile(buffer, mime);
+            const fileValidation = await FileUtils.validateFile(buffer, mime)
             if (!fileValidation.valid) {
                 throw new ApiError(
                     fileValidation.error || 'Ошибка валидации данных',
                     400
-                );
+                )
             }
 
-            const hash = await FileUtils.generateFileHash(buffer);
+            const hash = await FileUtils.generateFileHash(buffer)
             const existingDocument = await DocumentRepository.findUnique({
                 where: { hash },
-            });
+            })
             if (existingDocument) {
                 throw new ApiError(
                     'Документ с таким содержимым уже существует',
                     409
-                );
+                )
             }
 
-            const gotenbergUrl = process.env.GOTENBERG_URL || GOTENBERG_URL;
-            const adapter = new GotenbergAdapter(gotenbergUrl);
-            const processor = new DocumentProcessor(adapter);
+            const gotenbergUrl = process.env.GOTENBERG_URL || GOTENBERG_URL
+            const adapter = new GotenbergAdapter(gotenbergUrl)
+            const processor = new DocumentProcessor(adapter)
             const processed = await processor.processUpload(
                 buffer,
                 mime,
@@ -117,12 +117,12 @@ export class DocumentCommandService {
                 {
                     enableOcr: true,
                 }
-            );
+            )
 
             const filePath =
-                processed.storage?.originalKey ?? processed.original.path;
-            createdFileKey = processed.storage?.originalKey ?? null;
-            createdPdfKey = processed.storage?.pdfKey ?? null;
+                processed.storage?.originalKey ?? processed.original.path
+            createdFileKey = processed.storage?.originalKey ?? null
+            createdPdfKey = processed.storage?.pdfKey ?? null
 
             const newDocument = await DocumentRepository.interactiveTransaction(
                 async tx => {
@@ -158,7 +158,7 @@ export class DocumentCommandService {
                             },
                             categories: { include: { category: true } },
                         },
-                    });
+                    })
 
                     if (processed.storage?.pdfKey) {
                         const conv = await tx.convertedDocument.create({
@@ -173,31 +173,31 @@ export class DocumentCommandService {
                                 ).size,
                                 originalFile: filePath,
                             },
-                        });
+                        })
                         await tx.document.update({
                             where: { id: doc.id },
                             data: { mainPdfId: conv.id },
-                        });
+                        })
                     }
 
-                    return doc;
+                    return doc
                 }
-            );
+            )
 
             await indexingQueue.add('index-document', {
                 documentId: newDocument.id,
-            });
+            })
 
-            return newDocument;
+            return newDocument
         } catch (error) {
             // Rollback: удаляем загруженные файлы в случае ошибки
             if (createdPdfKey) {
-                void getFileStorageService().deleteDocument(createdPdfKey);
+                void getFileStorageService().deleteDocument(createdPdfKey)
             }
             if (createdFileKey) {
-                void getFileStorageService().deleteDocument(createdFileKey);
+                void getFileStorageService().deleteDocument(createdFileKey)
             }
-            throw error; // Пробрасываем ошибку дальше для обработки в API роуте
+            throw error // Пробрасываем ошибку дальше для обработки в API роуте
         }
     }
 
@@ -216,9 +216,9 @@ export class DocumentCommandService {
     ) {
         const document = await DocumentRepository.findUnique({
             where: { id },
-        });
+        })
         if (!document) {
-            throw new ApiError('Документ не найден', 404);
+            throw new ApiError('Документ не найден', 404)
         }
 
         if (
@@ -227,10 +227,7 @@ export class DocumentCommandService {
             document.authorId !== user.id &&
             document.creatorId !== user.id
         ) {
-            throw new ApiError(
-                'Можно редактировать только свои документы',
-                403
-            );
+            throw new ApiError('Можно редактировать только свои документы', 403)
         }
 
         const updatedDocument = await DocumentRepository.update({
@@ -258,13 +255,13 @@ export class DocumentCommandService {
                 creator: true,
                 categories: { include: { category: true } },
             },
-        });
+        })
 
         await indexingQueue.add('index-document', {
             documentId: updatedDocument.id,
-        });
+        })
 
-        return updatedDocument;
+        return updatedDocument
     }
 
     /**
@@ -279,10 +276,10 @@ export class DocumentCommandService {
         const document = await DocumentRepository.findUnique({
             where: { id },
             select: { authorId: true, creatorId: true },
-        });
+        })
 
         if (!document) {
-            throw new ApiError('Документ не найден', 404);
+            throw new ApiError('Документ не найден', 404)
         }
 
         if (
@@ -290,7 +287,7 @@ export class DocumentCommandService {
             document.creatorId !== user.id &&
             user.role !== USER_ROLES.ADMIN
         ) {
-            throw new ApiError('Вы можете удалять только свои документы', 403);
+            throw new ApiError('Вы можете удалять только свои документы', 403)
         }
 
         // Выполняем "мягкое" удаление через update
@@ -301,10 +298,10 @@ export class DocumentCommandService {
                 viewCount: 0,
                 isPublished: false,
             },
-        });
+        })
 
         // Удаляем документ из поискового индекса
-        await indexingQueue.add('remove-from-index', { documentId: id });
+        await indexingQueue.add('remove-from-index', { documentId: id })
     }
 
     /**
@@ -313,7 +310,7 @@ export class DocumentCommandService {
      * @param user - Текущий пользователь (должен быть ADMIN или создатель документа).
      */
     public static async hardDeleteDocument(id: string, user: UserResponse) {
-        const fileKeys: string[] = [];
+        const fileKeys: string[] = []
         await DocumentRepository.interactiveTransaction(async tx => {
             const snapshot = await tx.document.findUnique({
                 where: { id },
@@ -325,10 +322,10 @@ export class DocumentCommandService {
                     attachments: { select: { filePath: true } },
                     convertedVersions: { select: { filePath: true } },
                 },
-            });
+            })
 
             if (!snapshot) {
-                throw new ApiError('Документ не найден', 404);
+                throw new ApiError('Документ не найден', 404)
             }
 
             if (
@@ -339,49 +336,49 @@ export class DocumentCommandService {
                 throw new ApiError(
                     'Вы можете удалять только свои документы',
                     403
-                );
+                )
             }
 
             const converted = await tx.convertedDocument.findMany({
                 where: { id: snapshot.id },
                 select: { filePath: true },
-            });
+            })
 
-            for (const it of converted) fileKeys.push(it.filePath);
+            for (const it of converted) fileKeys.push(it.filePath)
 
-            if (snapshot.filePath) fileKeys.push(snapshot.filePath);
+            if (snapshot.filePath) fileKeys.push(snapshot.filePath)
             if (snapshot.mainPdf?.filePath)
-                fileKeys.push(snapshot.mainPdf.filePath);
+                fileKeys.push(snapshot.mainPdf.filePath)
             for (const a of snapshot.attachments ?? [])
-                fileKeys.push(a.filePath);
+                fileKeys.push(a.filePath)
             for (const c of snapshot.convertedVersions ?? [])
-                fileKeys.push(c.filePath);
+                fileKeys.push(c.filePath)
 
             await tx.convertedDocument.deleteMany({
                 where: { id: snapshot.id },
-            });
+            })
             await tx.documentCategory.deleteMany({
                 where: { documentId: snapshot.id },
-            });
+            })
             await tx.attachment.deleteMany({
                 where: { documentId: snapshot.id },
-            });
-            await tx.document.delete({ where: { id: snapshot.id } });
-        });
+            })
+            await tx.document.delete({ where: { id: snapshot.id } })
+        })
 
         for (const key of fileKeys) {
             try {
                 if (isAbsolute(key)) {
-                    await unlink(key);
+                    await unlink(key)
                 } else {
-                    await getFileStorageService().deleteDocument(key);
+                    await getFileStorageService().deleteDocument(key)
                 }
             } catch (e) {
-                console.error(`Не удалось удалить файл ${key}`, e);
+                console.error(`Не удалось удалить файл ${key}`, e)
             }
         }
 
-        await indexingQueue.add('remove-from-index', { documentId: id });
+        await indexingQueue.add('remove-from-index', { documentId: id })
     }
 
     /**
@@ -393,13 +390,13 @@ export class DocumentCommandService {
         const existingDocument = await DocumentRepository.findUnique({
             where: { id: documentId, deletedAt: { not: null } },
             select: { id: true }, // выбираем только id для эффективности
-        });
+        })
 
         if (!existingDocument) {
             throw new ApiError(
                 'Удаленный документ для восстановления не найден',
                 404
-            );
+            )
         }
 
         const restoredDocument = await DocumentRepository.update({
@@ -408,11 +405,11 @@ export class DocumentCommandService {
                 deletedAt: null,
                 isPublished: true,
             },
-        });
+        })
 
         // Ставим в очередь на переиндексацию, чтобы он снова появился в поиске
-        await indexingQueue.add('index-document', { documentId });
+        await indexingQueue.add('index-document', { documentId })
 
-        return restoredDocument;
+        return restoredDocument
     }
 }

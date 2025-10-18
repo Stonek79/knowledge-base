@@ -1,8 +1,4 @@
-'use client';
-
-
-import type { FormEvent } from 'react';
-import { Fragment, useMemo, useState } from 'react';
+'use client'
 
 import {
     Alert,
@@ -14,23 +10,23 @@ import {
     DialogContentText,
     DialogTitle,
     TextField,
-} from '@mui/material';
+} from '@mui/material'
+import type { FormEvent } from 'react'
+import { Fragment, useId, useMemo, useState } from 'react'
 import {
-    Control,
+    type Control,
     Controller,
-    FieldErrors,
-    UseFormSetValue,
+    type FieldErrors,
+    type UseFormSetValue,
     useWatch,
-} from 'react-hook-form';
+} from 'react-hook-form'
 
-import { USER_ROLES } from '@/constants/user';
-import { UploadFormInput } from '@/lib/types/document';
-import { UserWithDocuments } from '@/lib/types/user';
+import { USER_ROLES } from '@/constants/user'
+import type { UploadFormInput } from '@/lib/types/document'
+import type { UserWithDocuments } from '@/lib/types/user'
 
 // Define a union type for the options to ensure type safety
-type AuthorOption =
-    | UserWithDocuments
-    | { inputValue: string; username: string };
+type AuthorOption = UserWithDocuments | { inputValue: string; username: string }
 
 // Type guard to check if an option is the special "Add..." option
 function isNewUserOption(
@@ -41,15 +37,15 @@ function isNewUserOption(
         option !== null &&
         'inputValue' in option &&
         'username' in option
-    );
+    )
 }
 
 interface AuthorAutocompleteProps {
-    control: Control<UploadFormInput>;
-    errors: FieldErrors<UploadFormInput>;
-    setValue: UseFormSetValue<UploadFormInput>;
-    users: UserWithDocuments[];
-    disabled?: boolean;
+    control: Control<UploadFormInput>
+    errors: FieldErrors<UploadFormInput>
+    setValue: UseFormSetValue<UploadFormInput>
+    users: UserWithDocuments[]
+    disabled?: boolean
 }
 
 export function AuthorAutocomplete({
@@ -59,55 +55,56 @@ export function AuthorAutocomplete({
     users,
     disabled,
 }: AuthorAutocompleteProps) {
-    const [openDialog, setOpenDialog] = useState(false);
-    const [dialogValue, setDialogValue] = useState('');
-    const [dialogError, setDialogError] = useState<string | null>(null);
+    const [openDialog, setOpenDialog] = useState(false)
+    const [dialogValue, setDialogValue] = useState('')
+    const [dialogError, setDialogError] = useState<string | null>(null)
 
-    const authorId = useWatch({ control, name: 'authorId' });
-    const username = useWatch({ control, name: 'username' });
+    const authorId = useWatch({ control, name: 'authorId' })
+    const username = useWatch({ control, name: 'username' })
+    const textfieldId = useId()
 
     const handleCloseDialog = () => {
-        setDialogValue('');
-        setDialogError(null);
-        setOpenDialog(false);
-    };
+        setDialogValue('')
+        setDialogError(null)
+        setOpenDialog(false)
+    }
 
     const handleDialogSubmit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const newName = dialogValue.trim();
+        event.preventDefault()
+        const newName = dialogValue.trim()
 
         if (!newName) {
-            setDialogError('Имя автора не может быть пустым.');
-            return;
+            setDialogError('Имя автора не может быть пустым.')
+            return
         }
 
         const isAdminName = users.some(
             u =>
                 u.username.toLowerCase() === newName.toLowerCase() &&
                 u.role === USER_ROLES.ADMIN
-        );
+        )
 
         if (isAdminName) {
             setDialogError(
                 'Это имя принадлежит администратору. Выберите другое имя.'
-            );
-            return;
+            )
+            return
         }
 
-        setValue('username', newName, { shouldValidate: true });
-        setValue('authorId', undefined);
-        handleCloseDialog();
-    };
+        setValue('username', newName, { shouldValidate: true })
+        setValue('authorId', undefined)
+        handleCloseDialog()
+    }
 
     const autocompleteValue = useMemo(() => {
         if (authorId) {
-            return users.find(u => u.id === authorId) || null;
+            return users.find(u => u.id === authorId) || null
         }
         if (username) {
-            return username;
+            return username
         }
-        return null;
-    }, [authorId, username, users]);
+        return null
+    }, [authorId, username, users])
 
     return (
         <Fragment>
@@ -117,26 +114,26 @@ export function AuthorAutocomplete({
                 render={() => (
                     <Autocomplete<AuthorOption, false, false, true>
                         value={autocompleteValue}
-                        onChange={(event, newValue) => {
+                        onChange={(_, newValue) => {
                             if (!newValue) {
-                                setValue('authorId', undefined);
-                                setValue('username', undefined);
-                                return;
+                                setValue('authorId', undefined)
+                                setValue('username', undefined)
+                                return
                             }
 
                             if (typeof newValue === 'string') {
                                 setTimeout(() => {
-                                    setOpenDialog(true);
-                                    setDialogValue(newValue);
-                                });
+                                    setOpenDialog(true)
+                                    setDialogValue(newValue)
+                                })
                             } else if (isNewUserOption(newValue)) {
-                                setOpenDialog(true);
-                                setDialogValue(newValue.inputValue);
+                                setOpenDialog(true)
+                                setDialogValue(newValue.inputValue)
                             } else {
                                 setValue('authorId', newValue.id, {
                                     shouldValidate: true,
-                                });
-                                setValue('username', undefined);
+                                })
+                                setValue('username', undefined)
                             }
                         }}
                         filterOptions={(options, params) => {
@@ -147,27 +144,27 @@ export function AuthorAutocomplete({
                                         .includes(
                                             params.inputValue.toLowerCase()
                                         )
-                            );
+                            )
 
                             const isExisting = options.some(
                                 option =>
                                     option.username.toLowerCase() ===
                                     params.inputValue.toLowerCase()
-                            );
+                            )
 
                             if (params.inputValue !== '' && !isExisting) {
                                 filtered.push({
                                     inputValue: params.inputValue,
                                     username: `Добавить &quot;${params.inputValue}&quot;`,
-                                });
+                                })
                             }
 
-                            return filtered;
+                            return filtered
                         }}
                         options={users}
                         getOptionLabel={option => {
-                            if (typeof option === 'string') return option;
-                            return option.username;
+                            if (typeof option === 'string') return option
+                            return option.username
                         }}
                         selectOnFocus
                         clearOnBlur
@@ -218,7 +215,7 @@ export function AuthorAutocomplete({
                         <TextField
                             autoFocus
                             margin='dense'
-                            id='name'
+                            id={textfieldId}
                             value={dialogValue}
                             onChange={event =>
                                 setDialogValue(event.target.value)
@@ -235,5 +232,5 @@ export function AuthorAutocomplete({
                 </form>
             </Dialog>
         </Fragment>
-    );
+    )
 }

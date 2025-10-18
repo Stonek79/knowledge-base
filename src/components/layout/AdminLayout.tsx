@@ -1,25 +1,24 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
+import Box from '@mui/material/Box'
+import CssBaseline from '@mui/material/CssBaseline'
+import { useState } from 'react'
 
-import Box from '@mui/material/Box';
-import CssBaseline from '@mui/material/CssBaseline';
+import { Header } from './Header'
+import { Sidebar } from './Sidebar'
 
-import { Header } from './Header';
-import { Sidebar } from './Sidebar';
-
-const DRAWER_WIDTH = 240;
+const DRAWER_WIDTH = 240
 
 interface AdminLayoutProps {
-    children: React.ReactNode;
+    children: React.ReactNode
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(true)
 
     const handleSidebarToggle = () => {
-        setSidebarOpen(!sidebarOpen);
-    };
+        setSidebarOpen(!sidebarOpen)
+    }
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -53,5 +52,5 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 {children}
             </Box>
         </Box>
-    );
+    )
 }

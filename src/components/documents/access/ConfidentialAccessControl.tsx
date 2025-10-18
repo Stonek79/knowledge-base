@@ -1,7 +1,4 @@
-'use client';
-
-
-import { useEffect, useMemo, useRef } from 'react';
+'use client'
 
 import {
     Autocomplete,
@@ -10,27 +7,28 @@ import {
     FormControlLabel,
     TextField,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
+import { useEffect, useMemo, useRef } from 'react'
 import {
-    Control,
+    type Control,
     Controller,
-    UseFormSetValue,
+    type UseFormSetValue,
     useWatch,
-} from 'react-hook-form';
+} from 'react-hook-form'
 
-import { USER_ROLES } from '@/constants/user';
-import { UploadFormInput } from '@/lib/types/document';
-import { UserResponse, UserWithDocuments } from '@/lib/types/user';
+import { USER_ROLES } from '@/constants/user'
+import type { UploadFormInput } from '@/lib/types/document'
+import type { UserResponse, UserWithDocuments } from '@/lib/types/user'
 
-const EMPTY_ARRAY: string[] = [];
+const EMPTY_ARRAY: string[] = []
 
 interface ConfidentialAccessControlProps {
-    control: Control<UploadFormInput>;
-    disabled?: boolean;
-    setValue: UseFormSetValue<UploadFormInput>;
-    currentUser: UserResponse | null;
-    users: UserWithDocuments[];
-    usersLoading: boolean;
+    control: Control<UploadFormInput>
+    disabled?: boolean
+    setValue: UseFormSetValue<UploadFormInput>
+    currentUser: UserResponse | null
+    users: UserWithDocuments[]
+    usersLoading: boolean
 }
 
 export function ConfidentialAccessControl({
@@ -41,25 +39,22 @@ export function ConfidentialAccessControl({
     users,
     usersLoading,
 }: ConfidentialAccessControlProps) {
-    const isConfidential = useWatch({ control, name: 'isConfidential' });
-    const autoFilledRef = useRef(false);
+    const isConfidential = useWatch({ control, name: 'isConfidential' })
+    const autoFilledRef = useRef(false)
 
     const selectedIds =
-        useWatch({ control, name: 'confidentialAccessUserIds' }) ?? EMPTY_ARRAY;
+        useWatch({ control, name: 'confidentialAccessUserIds' }) ?? EMPTY_ARRAY
 
     // Guard against non-array users prop and memoize options for performance
     const options = useMemo(() => {
         const validUsers = Array.isArray(users)
             ? users.filter(u => u.role !== USER_ROLES.ADMIN)
-            : [];
+            : []
         if (!currentUser || currentUser.role === USER_ROLES.ADMIN) {
-            return validUsers;
+            return validUsers
         }
-        return [
-            currentUser,
-            ...validUsers.filter(u => u.id !== currentUser.id),
-        ];
-    }, [currentUser, users]);
+        return [currentUser, ...validUsers.filter(u => u.id !== currentUser.id)]
+    }, [currentUser, users])
 
     useEffect(() => {
         // Guard against invalid props
@@ -68,12 +63,12 @@ export function ConfidentialAccessControl({
             !Array.isArray(users) ||
             currentUser.role === USER_ROLES.ADMIN
         )
-            return;
+            return
 
         if (isConfidential === false) {
-            setValue('confidentialAccessUserIds', []);
-            autoFilledRef.current = false;
-            return;
+            setValue('confidentialAccessUserIds', [])
+            autoFilledRef.current = false
+            return
         }
 
         // Автозаполнение один раз: текущий пользователь + все enabled
@@ -84,15 +79,15 @@ export function ConfidentialAccessControl({
         ) {
             const enabledIds = users
                 .filter(u => u.enabled && u.role !== USER_ROLES.ADMIN)
-                .map(u => u.id);
+                .map(u => u.id)
             const preselected = Array.from(
                 new Set([currentUser.id, ...enabledIds])
-            );
+            )
             setValue('confidentialAccessUserIds', preselected, {
                 shouldDirty: true,
-            });
-            autoFilledRef.current = true;
-            return;
+            })
+            autoFilledRef.current = true
+            return
         }
 
         // Гарантируем, что текущий пользователь всегда выбран
@@ -101,9 +96,9 @@ export function ConfidentialAccessControl({
                 'confidentialAccessUserIds',
                 [...selectedIds, currentUser.id],
                 { shouldDirty: true }
-            );
+            )
         }
-    }, [isConfidential, selectedIds, currentUser, users, setValue]);
+    }, [isConfidential, selectedIds, currentUser, users, setValue])
 
     return (
         <Box
@@ -163,8 +158,8 @@ export function ConfidentialAccessControl({
                                           u => u.id !== currentUser.id
                                       ),
                                   ]
-                                : newValue;
-                            field.onChange(ensured.map(u => u.id));
+                                : newValue
+                            field.onChange(ensured.map(u => u.id))
                         }}
                         renderInput={params => (
                             <TextField
@@ -178,5 +173,5 @@ export function ConfidentialAccessControl({
                 )}
             />
         </Box>
-    );
+    )
 }

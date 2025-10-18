@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 
-import { ATTACHMENT_TYPE, DOCUMENT_FORMAT } from '@/constants/document';
-import { USER_ROLES } from '@/constants/user';
-import { getCurrentUser } from '@/lib/actions/users';
-import { prisma } from '@/lib/prisma';
-import { attachmentMetadataSchema } from '@/lib/schemas/attachment';
-import { attachmentService } from '@/lib/services/AttachmentService';
-import { getFileStorageService } from '@/lib/services/FileStorageService';
-import { pdfCombiner } from '@/lib/services/PDFCombiner';
-import { settingsService } from '@/lib/services/SettingsService';
-import { CreateAttachmentData } from '@/lib/types/attachment';
-import type { SupportedMime } from '@/lib/types/mime';
-import { isSupportedMime } from '@/utils/mime';
+import { ATTACHMENT_TYPE, DOCUMENT_FORMAT } from '@/constants/document'
+import { USER_ROLES } from '@/constants/user'
+import { getCurrentUser } from '@/lib/actions/users'
+import { prisma } from '@/lib/prisma'
+import { attachmentMetadataSchema } from '@/lib/schemas/attachment'
+import { attachmentService } from '@/lib/services/AttachmentService'
+import { getFileStorageService } from '@/lib/services/FileStorageService'
+import { pdfCombiner } from '@/lib/services/PDFCombiner'
+import { settingsService } from '@/lib/services/SettingsService'
+import type { CreateAttachmentData } from '@/lib/types/attachment'
+import type { SupportedMime } from '@/lib/types/mime'
+import { isSupportedMime } from '@/utils/mime'
 
 /**
  * @swagger
@@ -56,41 +56,41 @@ export async function POST(
     { params }: { params: Promise<{ documentId: string }> }
 ) {
     try {
-        const user = await getCurrentUser(request);
-        const { documentId } = await params;
+        const user = await getCurrentUser(request)
+        const { documentId } = await params
 
         if (!user) {
             return NextResponse.json(
                 { message: 'Unauthorized' },
                 { status: 401 }
-            );
+            )
         }
 
         // Проверяем права на документ
         const document = await prisma.document.findUnique({
             where: { id: documentId },
             select: { authorId: true, isPublished: true },
-        });
+        })
 
         if (!document) {
             return NextResponse.json(
                 { message: 'Document not found' },
                 { status: 404 }
-            );
+            )
         }
 
         if (document.authorId !== user.id && user.role !== USER_ROLES.ADMIN) {
-            return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
-        const formData = await request.formData();
-        const file = formData.get('file') as File;
-        const metadata = formData.get('metadata') as string;
+        const formData = await request.formData()
+        const file = formData.get('file') as File
+        const metadata = formData.get('metadata') as string
 
         const [maxFileSize, allowedMimeTypes] = await Promise.all([
             settingsService.getMaxFileSize(),
             settingsService.getAllowedMimeTypes(),
-        ]);
+        ])
 
         if (
             !allowedMimeTypes.includes(file.type) ||
@@ -99,38 +99,38 @@ export async function POST(
             return NextResponse.json(
                 { message: 'Unsupported file type' },
                 { status: 415 }
-            );
+            )
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
+        const buffer = Buffer.from(await file.arrayBuffer())
         if (buffer.byteLength > maxFileSize) {
             return NextResponse.json(
                 { message: 'File too large' },
                 { status: 413 }
-            );
+            )
         }
 
         if (!file || !metadata) {
             return NextResponse.json(
                 { message: 'Missing file or metadata' },
                 { status: 400 }
-            );
+            )
         }
 
         const parsedMetadata = attachmentMetadataSchema.parse(
             JSON.parse(metadata)
-        );
+        )
 
         const result = await attachmentService.uploadAttachment(buffer, {
             ...parsedMetadata,
             fileSize: buffer.byteLength,
             mimeType: file.type,
-        });
+        })
 
         // Создаём запись в БД
-        let createdAttachmentId: string | null = null;
+        let createdAttachmentId: string | null = null
 
-        let attachment: CreateAttachmentData | null = null;
+        let attachment: CreateAttachmentData | null = null
         try {
             await prisma.$transaction(
                 async tx => {
@@ -146,19 +146,19 @@ export async function POST(
                                 ATTACHMENT_TYPE.ATTACHMENT,
                             order: -1,
                         },
-                    });
-                    createdAttachmentId = created.id;
-                    attachment = created;
+                    })
+                    createdAttachmentId = created.id
+                    attachment = created
                 },
                 {
                     timeout: 60000,
                     maxWait: 30000,
                 }
-            );
+            )
         } catch (err) {
             // транзакция по БД упала — чистим загруженный файл
-            await getFileStorageService().deleteDocument(result.key);
-            throw err;
+            await getFileStorageService().deleteDocument(result.key)
+            throw err
         }
 
         try {
@@ -171,10 +171,10 @@ export async function POST(
                     fileName: true,
                     mainPdf: { select: { id: true, filePath: true } },
                 },
-            });
+            })
 
             if (!doc || !isSupportedMime(doc.mimeType)) {
-                return NextResponse.json(attachment);
+                return NextResponse.json(attachment)
             }
 
             const list = await prisma.attachment.findMany({
@@ -186,9 +186,9 @@ export async function POST(
                     fileName: true,
                     mimeType: true,
                 },
-            });
+            })
 
-            const valid = list.filter(a => isSupportedMime(a.mimeType));
+            const valid = list.filter(a => isSupportedMime(a.mimeType))
             const pdfResult = await pdfCombiner.combineWithAttachments(
                 {
                     mainDocumentPath: doc.filePath,
@@ -202,36 +202,36 @@ export async function POST(
                     })),
                 },
                 doc.fileName
-            );
+            )
 
             if (!pdfResult.success) {
                 // компенсация: откатить добавленное приложение и удалить файл
                 if (createdAttachmentId) {
                     await prisma.attachment.delete({
                         where: { id: createdAttachmentId },
-                    });
+                    })
                 }
-                await getFileStorageService().deleteDocument(result.key);
+                await getFileStorageService().deleteDocument(result.key)
 
                 if (doc.mainPdf?.filePath) {
                     void getFileStorageService().deleteDocument(
                         doc.mainPdf.filePath
-                    );
+                    )
                 }
                 if (doc.mainPdf?.id) {
                     await prisma.convertedDocument.delete({
                         where: { id: doc.mainPdf.id },
-                    });
+                    })
                 }
                 await prisma.document.update({
                     where: { id: doc.id },
                     data: { mainPdfId: null },
-                });
+                })
 
                 return NextResponse.json(
                     { message: 'Failed to rebuild PDF' },
                     { status: 500 }
-                );
+                )
             }
 
             if (pdfResult.success && pdfResult.combinedPdfKey) {
@@ -239,7 +239,7 @@ export async function POST(
                 if (doc.mainPdf?.filePath) {
                     void getFileStorageService().deleteDocument(
                         doc.mainPdf.filePath
-                    );
+                    )
                 }
                 const conv = await prisma.convertedDocument.create({
                     data: {
@@ -249,30 +249,30 @@ export async function POST(
                         fileSize: pdfResult.fileSize ?? 0,
                         originalFile: doc.filePath,
                     },
-                });
+                })
                 await prisma.document.update({
                     where: { id: doc.id },
                     data: { mainPdfId: conv.id },
-                });
+                })
 
                 if (doc.mainPdf?.id) {
                     // удаляем СТАРУЮ запись о конвертации
                     await prisma.convertedDocument.delete({
                         where: { id: doc.mainPdf.id },
-                    });
+                    })
                 }
             }
         } catch (e) {
-            console.warn('Rebuild combined PDF failed:', e);
+            console.warn('Rebuild combined PDF failed:', e)
         }
 
-        return NextResponse.json(attachment);
+        return NextResponse.json(attachment)
     } catch (error) {
-        console.error('Error adding attachment:', error);
+        console.error('Error adding attachment:', error)
         return NextResponse.json(
             { message: 'Internal server error' },
             { status: 500 }
-        );
+        )
     }
 }
 
@@ -299,15 +299,15 @@ export async function GET(
     { params }: { params: Promise<{ documentId: string }> }
 ) {
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
         if (!user) {
             return NextResponse.json(
                 { message: 'Unauthorized' },
                 { status: 401 }
-            );
+            )
         }
 
-        const { documentId } = await params;
+        const { documentId } = await params
 
         const attachments = await prisma.attachment.findMany({
             where: { documentId },
@@ -320,14 +320,14 @@ export async function GET(
                     },
                 },
             },
-        });
+        })
 
-        return NextResponse.json(attachments);
+        return NextResponse.json(attachments)
     } catch (error) {
-        console.error('Error getting attachments:', error);
+        console.error('Error getting attachments:', error)
         return NextResponse.json(
             { message: 'Internal server error' },
             { status: 500 }
-        );
+        )
     }
 }

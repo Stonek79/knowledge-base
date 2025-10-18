@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import type { z } from 'zod'
 
-import {
+import type {
     pdfCombineRequestSchema,
     pdfCombineResultSchema,
-} from '../schemas/pdf';
+} from '../schemas/pdf'
 
-export type PdfCombineRequest = z.infer<typeof pdfCombineRequestSchema>;
-export type PdfCombineResult = z.infer<typeof pdfCombineResultSchema>;
+export type PdfCombineRequest = z.infer<typeof pdfCombineRequestSchema>
+export type PdfCombineResult = z.infer<typeof pdfCombineResultSchema>

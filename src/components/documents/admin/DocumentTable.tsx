@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
 import {
     Delete as DeleteIcon,
     Edit as EditIcon,
     Visibility as VisibilityIcon,
-} from '@mui/icons-material';
+} from '@mui/icons-material'
 import {
     Checkbox,
     Chip,
@@ -18,25 +18,25 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-} from '@mui/material';
+} from '@mui/material'
 
-import { DocumentWithAuthor, SearchedDocument } from '@/lib/types/document';
-import { formatFileSize } from '@/utils/formatFileSize';
+import type { DocumentWithAuthor, SearchedDocument } from '@/lib/types/document'
+import { formatFileSize } from '@/utils/formatFileSize'
 
 interface DocumentTableProps {
-    documents: SearchedDocument[];
-    query: string | undefined;
-    isLoading: boolean;
-    selectedDocuments: string[];
-    onSelectDocument: (documentId: string) => void;
-    onSelectAll: (checked: boolean) => void;
-    onView: (document: DocumentWithAuthor) => void;
-    onEdit: (document: DocumentWithAuthor) => void;
+    documents: SearchedDocument[]
+    query: string | undefined
+    isLoading: boolean
+    selectedDocuments: string[]
+    onSelectDocument: (documentId: string) => void
+    onSelectAll: (checked: boolean) => void
+    onView: (document: DocumentWithAuthor) => void
+    onEdit: (document: DocumentWithAuthor) => void
     onDelete: (documen: {
-        id: string;
-        title: string;
-        deletedAt: boolean;
-    }) => void;
+        id: string
+        title: string
+        deletedAt: boolean
+    }) => void
 }
 
 /**
@@ -65,44 +65,41 @@ export function DocumentTable({
             typeof searchTerm !== 'string' ||
             !searchTerm.trim()
         ) {
-            return null;
+            return null
         }
 
         try {
-            const cleanTerm = searchTerm.trim();
-            const escapedTerm = cleanTerm.replace(
-                /[.*+?^${}()|[\]\\]/g,
-                '\\$&'
-            );
+            const cleanTerm = searchTerm.trim()
+            const escapedTerm = cleanTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
             // Простая версия без \b для кириллицы
-            return new RegExp(`[а-яёa-z0-9]*${escapedTerm}[а-яёa-z0-9]*`, 'gi');
+            return new RegExp(`[а-яёa-z0-9]*${escapedTerm}[а-яёa-z0-9]*`, 'gi')
         } catch (error) {
-            console.error('Regex creation failed:', error);
-            return null;
+            console.error('Regex creation failed:', error)
+            return null
         }
     }
 
     function safeHighlight(text, searchTerm) {
-        const regex = safeCreateHighlightRegex(searchTerm);
-        if (!regex) return text;
+        const regex = safeCreateHighlightRegex(searchTerm)
+        if (!regex) return text
 
-        const matches = text.match(regex);
-        if (!matches) return text;
+        const matches = text.match(regex)
+        if (!matches) return text
 
-        return matches;
+        return matches
     }
 
     const highlightedWords: string[] = documents
         ?.map(document =>
             document?.highlights?.flatMap(highlight => {
-                console.log('highlight', highlight);
+                console.log('highlight', highlight)
 
-                return safeHighlight(highlight, query);
+                return safeHighlight(highlight, query)
             })
         )
         .filter(Boolean)
-        .flat();
+        .flat()
 
     if (isLoading) {
         return (
@@ -164,7 +161,7 @@ export function DocumentTable({
                     </TableBody>
                 </Table>
             </TableContainer>
-        );
+        )
     }
 
     if (documents.length === 0) {
@@ -172,7 +169,7 @@ export function DocumentTable({
             <Paper sx={{ p: 3, textAlign: 'center' }}>
                 Документы не найдены
             </Paper>
-        );
+        )
     }
 
     return (
@@ -236,13 +233,16 @@ export function DocumentTable({
                                     <Stack direction='column' spacing={0.5}>
                                         {highlightedWords
                                             .slice(0, 3)
-                                            .map((word, i) => (
-                                                <Chip
-                                                    key={word + i}
-                                                    label={word}
-                                                    size='small'
-                                                />
-                                            ))}
+                                            .map((word, i) => {
+                                                const key = i
+                                                return (
+                                                    <Chip
+                                                        key={key}
+                                                        label={word}
+                                                        size='small'
+                                                    />
+                                                )
+                                            })}
                                     </Stack>
                                 </TableCell>
                             )}
@@ -325,5 +325,5 @@ export function DocumentTable({
                 </TableBody>
             </Table>
         </TableContainer>
-    );
+    )
 }

@@ -1,10 +1,7 @@
-'use client';
+'use client'
 
-import { MouseEvent, useState } from 'react';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import { VisibilityOff } from '@mui/icons-material';
-import { Visibility } from '@mui/icons-material';
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 import {
     Alert,
     Button,
@@ -21,23 +18,24 @@ import {
     Select,
     Switch,
     TextField,
-} from '@mui/material';
-import { useForm } from 'react-hook-form';
+} from '@mui/material'
+import { type MouseEvent, useState } from 'react'
+import { useForm } from 'react-hook-form'
 
 import {
     USER_ROLES,
     USER_ROLES_LABELS,
     USER_STATUSES,
     USER_STATUSES_LABELS,
-} from '@/constants/user';
-import { createUser } from '@/lib/actions/users';
-import { createUserSchema } from '@/lib/schemas/user';
-import { CreateUserData } from '@/lib/types/user';
+} from '@/constants/user'
+import { createUser } from '@/lib/actions/users'
+import { createUserSchema } from '@/lib/schemas/user'
+import type { CreateUserData } from '@/lib/types/user'
 
 interface CreateUserDialogProps {
-    open: boolean;
-    onClose: () => void;
-    onSuccess: () => void;
+    open: boolean
+    onClose: () => void
+    onSuccess: () => void
 }
 
 export function CreateUserDialog({
@@ -45,14 +43,14 @@ export function CreateUserDialog({
     onClose,
     onSuccess,
 }: CreateUserDialogProps) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [showPassword, setShowPassword] = useState(false)
 
-    const handleClickShowPassword = () => setShowPassword(show => !show);
+    const handleClickShowPassword = () => setShowPassword(show => !show)
     const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-    };
+        event.preventDefault()
+    }
 
     const {
         register,
@@ -61,32 +59,32 @@ export function CreateUserDialog({
         formState: { errors },
     } = useForm({
         resolver: zodResolver(createUserSchema),
-    });
+    })
 
     const onSubmit = async (data: CreateUserData) => {
-        setIsLoading(true);
-        setError(null);
+        setIsLoading(true)
+        setError(null)
 
         try {
-            await createUser(data);
-            reset();
-            onSuccess();
+            await createUser(data)
+            reset()
+            onSuccess()
         } catch (err: unknown) {
             if (err instanceof Error) {
-                setError(err.message);
+                setError(err.message)
             } else {
-                setError('Произошла неизвестная ошибка');
+                setError('Произошла неизвестная ошибка')
             }
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     const handleClose = () => {
-        reset();
-        setError(null);
-        onClose();
-    };
+        reset()
+        setError(null)
+        onClose()
+    }
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
@@ -202,5 +200,5 @@ export function CreateUserDialog({
                 </DialogActions>
             </form>
         </Dialog>
-    );
+    )
 }

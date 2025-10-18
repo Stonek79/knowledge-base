@@ -1,8 +1,6 @@
-'use client';
+'use client'
 
-import { useCallback } from 'react';
-
-import { Clear as ClearIcon } from '@mui/icons-material';
+import { Clear as ClearIcon } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -14,24 +12,25 @@ import {
     Stack,
     Tab,
     Tabs,
-} from '@mui/material';
+} from '@mui/material'
+import { useCallback } from 'react'
 
-import { useUsers } from '@/lib/hooks/useUsers';
+import { useUsers } from '@/lib/hooks/useUsers'
 import type {
     CategoryBase,
     DocumentFilters as DocumentFiltersType,
     DocumentStatus,
-} from '@/lib/types/document';
+} from '@/lib/types/document'
 
-import { SearchField } from './SearchField';
+import { SearchField } from './SearchField'
 
 interface DocumentFiltersProps {
-    filters: DocumentFiltersType;
-    onFiltersChange: (filters: DocumentFiltersType) => void;
-    categories: CategoryBase[];
-    categoryDisabled?: boolean;
-    isLoading: boolean;
-    onReset: () => void;
+    filters: DocumentFiltersType
+    onFiltersChange: (filters: DocumentFiltersType) => void
+    categories: CategoryBase[]
+    categoryDisabled?: boolean
+    isLoading: boolean
+    onReset: () => void
 }
 
 /**
@@ -50,33 +49,33 @@ export function DocumentFilters({
     isLoading,
     onReset,
 }: DocumentFiltersProps) {
-    const { users } = useUsers();
+    const { users } = useUsers()
     const handleSearchChange = useCallback(
         (search: string) => {
-            const trimmedSearch = search.trim();
+            const trimmedSearch = search.trim()
             onFiltersChange({
                 ...filters,
                 q: trimmedSearch || undefined,
                 page: 1,
-            });
+            })
         },
         [filters, onFiltersChange]
-    );
+    )
 
     const handleCategoryChange = useCallback(
         (categoryIds: string[]) => {
             const filteredIds = categoryIds.filter(
                 id => id !== 'all' && id.trim() !== ''
-            );
+            )
 
             onFiltersChange({
                 ...filters,
                 categoryIds: filteredIds.length > 0 ? filteredIds : undefined,
                 page: 1,
-            });
+            })
         },
         [filters, onFiltersChange]
-    );
+    )
 
     const handleSortChange = useCallback(
         (sortBy: DocumentFiltersType['sortBy']) => {
@@ -84,10 +83,10 @@ export function DocumentFilters({
                 ...filters,
                 sortBy,
                 page: 1,
-            });
+            })
         },
         [filters, onFiltersChange]
-    );
+    )
 
     const handleSortOrderChange = useCallback(
         (sortOrder: DocumentFiltersType['sortOrder']) => {
@@ -95,20 +94,20 @@ export function DocumentFilters({
                 ...filters,
                 sortOrder,
                 page: 1,
-            });
+            })
         },
         [filters, onFiltersChange]
-    );
+    )
 
     const handleStatusChange = useCallback(
         (status: DocumentStatus | undefined) => {
             onFiltersChange({
                 ...filters,
                 status,
-            });
+            })
         },
         [filters, onFiltersChange]
-    );
+    )
 
     return (
         <Paper sx={{ p: 2, mb: 3, overflowX: 'auto', maxWidth: 'fit-content' }}>
@@ -134,12 +133,12 @@ export function DocumentFilters({
                         disabled={categoryDisabled}
                         value={filters.categoryIds || []}
                         onChange={e => {
-                            const value = e.target.value as string[];
+                            const value = e.target.value as string[]
 
                             if (value.includes('all')) {
-                                handleCategoryChange([]);
+                                handleCategoryChange([])
                             } else {
-                                handleCategoryChange(value);
+                                handleCategoryChange(value)
                             }
                         }}
                         label='Категория'
@@ -160,11 +159,11 @@ export function DocumentFilters({
                         sx={{ minWidth: 200 }}
                         value={filters.authorId || ''}
                         onChange={e => {
-                            console.log('e.target.value', e.target.value);
+                            console.log('e.target.value', e.target.value)
                             return onFiltersChange({
                                 ...filters,
                                 authorId: e.target.value,
-                            });
+                            })
                         }}
                     >
                         <MenuItem value=''>
@@ -218,8 +217,8 @@ export function DocumentFilters({
                 <Tabs
                     value={filters.status || ''}
                     onChange={(_, newValue) => {
-                        console.log('newValue', newValue);
-                        handleStatusChange(newValue);
+                        console.log('newValue', newValue)
+                        handleStatusChange(newValue)
                     }}
                     aria-label='Фильтр по статусу документа'
                 >
@@ -229,5 +228,5 @@ export function DocumentFilters({
                 </Tabs>
             </Box>
         </Paper>
-    );
+    )
 }

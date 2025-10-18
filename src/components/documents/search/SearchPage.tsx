@@ -1,63 +1,62 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 import {
     FilterList as FilterIcon,
     FilterListOff as FilterOffIcon,
-} from '@mui/icons-material';
-import { Box, Button, Container, Grid, Typography } from '@mui/material';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+} from '@mui/icons-material'
+import { Box, Button, Container, Grid, Typography } from '@mui/material'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 
-import { useDocuments } from '@/lib/hooks/documents/useDocuments';
-import { DocumentFilters } from '@/lib/types/document';
+import { useDocuments } from '@/lib/hooks/documents/useDocuments'
+import type { DocumentFilters } from '@/lib/types/document'
 
-import { SearchBar } from './SearchBar';
-import { SearchedDocuments } from './SearchedDocuments';
-import { SearchFilters } from './SearchFilters';
+import { SearchBar } from './SearchBar'
+import { SearchedDocuments } from './SearchedDocuments'
+import { SearchFilters } from './SearchFilters'
 
 export function SearchPage() {
-    const router = useRouter();
-    const pathname = usePathname();
-    const sp = useSearchParams();
+    const router = useRouter()
+    const pathname = usePathname()
+    const sp = useSearchParams()
 
-    const initialQuery = sp.get('q') ?? '';
-    const [query, setQuery] = useState(initialQuery);
+    const initialQuery = sp.get('q') ?? ''
+    const [query, setQuery] = useState(initialQuery)
     const [filters, setFilters] = useState<DocumentFilters>({
         page: 1,
         limit: 20,
         categoryIds: undefined,
         sortBy: 'createdAt',
         sortOrder: 'desc',
-    });
+    })
     const { documents, isLoading } = useDocuments({
         ...filters,
         q: query, // Передаем поисковый запрос в фильтрах
-    });
-    const [filtersExpanded, setFiltersExpanded] = useState(false);
+    })
+    const [filtersExpanded, setFiltersExpanded] = useState(false)
 
     const updateUrl = (newQuery: string, newFilters: DocumentFilters) => {
-        const params = new URLSearchParams();
-        if (newQuery) params.set('q', newQuery);
+        const params = new URLSearchParams()
+        if (newQuery) params.set('q', newQuery)
         if (newFilters.categoryIds?.length)
-            params.set('categories', newFilters.categoryIds.join(','));
-        if (newFilters.authorId) params.set('authorId', newFilters.authorId);
+            params.set('categories', newFilters.categoryIds.join(','))
+        if (newFilters.authorId) params.set('authorId', newFilters.authorId)
 
-        router.replace(`${pathname}?${params.toString()}`);
-    };
+        router.replace(`${pathname}?${params.toString()}`)
+    }
 
     const handleSearch = (q: string) => {
-        const newFilters = { ...filters, q: q, page: 1 };
-        setQuery(q);
-        setFilters(newFilters);
-        updateUrl(q, newFilters);
-    };
+        const newFilters = { ...filters, q: q, page: 1 }
+        setQuery(q)
+        setFilters(newFilters)
+        updateUrl(q, newFilters)
+    }
 
     const handleFiltersChange = (newFilters: Partial<DocumentFilters>) => {
-        const updatedFilters = { ...filters, ...newFilters, page: 1 };
-        setFilters(updatedFilters);
-        updateUrl(query, updatedFilters);
-    };
+        const updatedFilters = { ...filters, ...newFilters, page: 1 }
+        setFilters(updatedFilters)
+        updateUrl(query, updatedFilters)
+    }
 
     const resetFilters = () => {
         const defaultFilters: DocumentFilters = {
@@ -66,10 +65,10 @@ export function SearchPage() {
             sortBy: 'createdAt',
             sortOrder: 'desc',
             authorId: '',
-        };
-        setFilters(defaultFilters);
-        updateUrl(query, defaultFilters);
-    };
+        }
+        setFilters(defaultFilters)
+        updateUrl(query, defaultFilters)
+    }
 
     return (
         <Container
@@ -125,5 +124,5 @@ export function SearchPage() {
                 </Grid>
             </Box>
         </Container>
-    );
+    )
 }

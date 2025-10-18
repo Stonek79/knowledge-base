@@ -1,29 +1,21 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
+import { Alert, Box, Button, Container, Stack, Typography } from '@mui/material'
+import Link from 'next/link'
+import { useEffect } from 'react'
 
-import {
-    Alert,
-    Box,
-    Button,
-    Container,
-    Stack,
-    Typography,
-} from '@mui/material';
-import Link from 'next/link';
-
-import { HOME_PATH } from '@/constants/api';
+import { HOME_PATH } from '@/constants/api'
 
 interface ErrorProps {
-    error: Error & { digest?: string };
-    reset: () => void;
+    error: Error & { digest?: string }
+    reset: () => void
 }
 
 export function ErrorPage({ error, reset }: ErrorProps) {
     useEffect(() => {
         // Log the error to an error reporting service
-        console.error('[GlobalError]:', error);
-    }, [error]);
+        console.error('[GlobalError]:', error)
+    }, [error])
 
     return (
         <Container component='main' maxWidth='md'>
@@ -91,5 +83,5 @@ export function ErrorPage({ error, reset }: ErrorProps) {
                 </Stack>
             </Box>
         </Container>
-    );
+    )
 }

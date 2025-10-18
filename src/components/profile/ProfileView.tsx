@@ -5,21 +5,25 @@ import {
     CardContent,
     CardHeader,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
 
-import { UserWithProfile } from '@/lib/types/user';
+import type { UserWithProfile } from '@/lib/types/user'
 
 interface ProfileViewProps {
-    profile: UserWithProfile;
-    onEdit: () => void;
-    onChangePassword: () => void;
+    profile: UserWithProfile
+    onEdit: () => void
+    onChangePassword: () => void
 }
 
 /**
  * Компонент для отображения данных профиля в режиме просмотра.
  */
-export function ProfileView({ profile, onEdit, onChangePassword }: ProfileViewProps) {
-    const visibility = profile.profile?.visibilitySettings;
+export function ProfileView({
+    profile,
+    onEdit,
+    onChangePassword,
+}: ProfileViewProps) {
+    const visibility = profile.profile?.visibilitySettings
 
     return (
         <Card>
@@ -71,7 +75,9 @@ export function ProfileView({ profile, onEdit, onChangePassword }: ProfileViewPr
                     {visibility?.phoneMobile !== false && (
                         <Typography>
                             <b>Мобильный телефон:</b>{' '}
-                            {profile.profile?.phoneMobile || <i>не заполнено</i>}
+                            {profile.profile?.phoneMobile || (
+                                <i>не заполнено</i>
+                            )}
                         </Typography>
                     )}
                     {visibility?.phoneCity !== false && (
@@ -83,7 +89,9 @@ export function ProfileView({ profile, onEdit, onChangePassword }: ProfileViewPr
                     {visibility?.phoneInternal !== false && (
                         <Typography>
                             <b>Внутренний телефон:</b>{' '}
-                            {profile.profile?.phoneInternal || <i>не заполнено</i>}
+                            {profile.profile?.phoneInternal || (
+                                <i>не заполнено</i>
+                            )}
                         </Typography>
                     )}
                     {visibility?.manager !== false && (
@@ -101,5 +109,5 @@ export function ProfileView({ profile, onEdit, onChangePassword }: ProfileViewPr
                 </Box>
             </CardContent>
         </Card>
-    );
+    )
 }

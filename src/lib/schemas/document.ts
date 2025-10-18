@@ -1,8 +1,8 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { DOCUMENT_STATUS } from '@/constants/document';
+import { DOCUMENT_STATUS } from '@/constants/document'
 
-import { attachmentMetadataSchema, baseAttachmentSchema } from './attachment';
+import { attachmentMetadataSchema, baseAttachmentSchema } from './attachment'
 
 export const createDocumentSchema = z.object({
     title: z
@@ -19,7 +19,7 @@ export const createDocumentSchema = z.object({
         .max(500, 'Ключевые слова не более 500 символов')
         .optional(),
     authorId: z.string(),
-});
+})
 
 export const updateDocumentSchema = z
     .object({
@@ -35,7 +35,7 @@ export const updateDocumentSchema = z
         message:
             'Необходимо указать автора (либо выбрать существующего, либо ввести имя нового)',
         path: ['authorId'], // Путь для отображения ошибки
-    });
+    })
 
 export const documentListSchema = z.object({
     page: z.number().min(1).default(1),
@@ -50,7 +50,7 @@ export const documentListSchema = z.object({
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
     q: z.string().optional(),
     status: z.enum(DOCUMENT_STATUS).optional(),
-});
+})
 
 export const createCategorySchema = z.object({
     name: z
@@ -66,13 +66,13 @@ export const createCategorySchema = z.object({
         .regex(/^#[0-9A-F]{6}$/i, 'Неверный формат цвета')
         .optional(),
     isDefault: z.boolean().optional(),
-});
+})
 
 export const updateCategorySchema = createCategorySchema
     .extend({
         id: z.string(),
     })
-    .partial();
+    .partial()
 
 export const searchSchema = z.object({
     q: z.string().nullable().optional(),
@@ -83,7 +83,7 @@ export const searchSchema = z.object({
     sortBy: z.string().nullable().optional(),
     sortOrder: z.string().nullable().optional(),
     status: z.enum(DOCUMENT_STATUS).optional(),
-});
+})
 
 export const uploadFormSchema = z
     .object({
@@ -106,4 +106,4 @@ export const uploadFormSchema = z
         message:
             'Необходимо указать автора (либо выбрать существующего, либо ввести имя нового)',
         path: ['authorId'], // Путь для отображения ошибки
-    });
+    })

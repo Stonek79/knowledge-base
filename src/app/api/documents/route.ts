@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 
-import { getCurrentUser } from '@/lib/actions/users';
-import { handleApiError } from '@/lib/api/apiError';
-import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document';
-import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService';
-import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService';
-import { UserService } from '@/lib/services/UserService';
+import { getCurrentUser } from '@/lib/actions/users'
+import { handleApiError } from '@/lib/api/apiError'
+import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document'
+import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService'
+import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService'
+import { UserService } from '@/lib/services/UserService'
 
 /**
  * @swagger
@@ -51,20 +51,20 @@ import { UserService } from '@/lib/services/UserService';
  */
 export async function GET(request: NextRequest) {
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
 
         if (!user) {
             return NextResponse.json(
                 { message: 'Unauthorized' },
                 { status: 401 }
-            );
+            )
         }
 
-        const { searchParams } = new URL(request.url);
+        const { searchParams } = new URL(request.url)
 
         const validation = documentListSchema.safeParse({
-            page: parseInt(searchParams.get('page') || '1'),
-            limit: parseInt(searchParams.get('limit') || '10'),
+            page: parseInt(searchParams.get('page') || '1', 10),
+            limit: parseInt(searchParams.get('limit') || '10', 10),
             categoryIds: searchParams.get('categoryIds')?.split(','),
             sortBy: searchParams.get('sortBy') || 'createdAt',
             sortOrder: searchParams.get('sortOrder') || 'desc',
@@ -75,20 +75,20 @@ export async function GET(request: NextRequest) {
             status: searchParams.get('status')
                 ? searchParams.get('status')
                 : undefined,
-        });
+        })
 
         if (!validation.success) {
-            return handleApiError(validation.error);
+            return handleApiError(validation.error)
         }
 
         const result = await DocumentQueryService.searchDocuments(
             validation?.data,
             user
-        );
+        )
 
-        return NextResponse.json(result);
+        return NextResponse.json(result)
     } catch (error) {
-        return handleApiError(error);
+        return handleApiError(error)
     }
 }
 
@@ -123,34 +123,34 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
         if (!user) {
-            return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
-        const formData = await request.formData();
+        const formData = await request.formData()
 
-        const rawData = Object.fromEntries(formData.entries());
+        const rawData = Object.fromEntries(formData.entries())
         if (typeof rawData.categoryIds === 'string') {
-            rawData.categoryIds = JSON.parse(rawData.categoryIds);
+            rawData.categoryIds = JSON.parse(rawData.categoryIds)
         }
 
-        const validation = uploadFormSchema.safeParse(rawData);
+        const validation = uploadFormSchema.safeParse(rawData)
 
         if (!validation.success) {
-            return handleApiError(validation.error);
+            return handleApiError(validation.error)
         }
 
-        let authorId: string;
+        let authorId: string
         if (validation.data.authorId) {
-            authorId = validation.data.authorId;
+            authorId = validation.data.authorId
         } else if (validation.data.username) {
             const author = await UserService.findOrCreateAuthor(
                 validation.data.username
-            );
-            authorId = author.id;
+            )
+            authorId = author.id
         } else {
-            authorId = user.id;
+            authorId = user.id
         }
 
         const documentData = {
@@ -158,12 +158,12 @@ export async function POST(request: NextRequest) {
             file: formData.get('file') as File,
             creatorId: user.id, // Текущий юзер - это создатель
             authorId: authorId, // Автор - тот, кого нашли или создали
-        };
+        }
 
         const document = await DocumentCommandService.createDocument(
             documentData,
             user
-        );
+        )
 
         return NextResponse.json(
             {
@@ -171,8 +171,8 @@ export async function POST(request: NextRequest) {
                 document,
             },
             { status: 201 }
-        );
+        )
     } catch (error) {
-        return handleApiError(error);
+        return handleApiError(error)
     }
 }

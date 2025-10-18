@@ -104,3 +104,33 @@ stop:
 
 restart:
 	docker compose restart
+
+size:
+	df -h
+
+# =========================
+# === FULL DOCKER PROD ====
+# =========================
+.PHONY: help prod-update prod-update-migrate prod-pull prod-restart prod-logs prod-down
+
+help: ## Показывает это справочное сообщение
+	@echo "Usage: make [target]"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+prod-pull: ## Скачивает последнюю версию Docker-образа из registry
+	@echo "🐳 Pulling latest image from registry..."
+	docker compose --env-file $(ENV_FILE_PROD) -f docker-compose.yml -f docker-compose.prod.yml pull
+
+prod-restart: ## Перезапускает сервисы, используя уже скачанные на сервер образы
+	@echo "🔄 Restarting services..."
+	docker compose --env-file $(ENV_FILE_PROD) -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+prod-update: prod-pull prod-restart ## Основная команда: скачивает новый образ и перезапускает сервисы (БЕЗ миграций)
+
+prod-update-migrate: prod-update migrate-prod ## Обновление с применением миграций базы данных
+
+prod-logs: ## Показывает логи всех продакшен-сервисов
+	docker compose --env-file $(ENV_FILE_PROD) -f docker-compose.yml -f docker-compose.prod.yml logs -f
+
+prod-down: ## Останавливает и удаляет все продакшен-сервисы
+	docker compose --env-file $(ENV_FILE_PROD) -f docker-compose.yml -f docker-compose.prod.yml down

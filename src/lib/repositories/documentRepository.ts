@@ -1,7 +1,5 @@
-import { prisma } from '@/lib/prisma';
-
-import type { Prisma } from '@prisma/client';
-
+import type { Prisma } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
 /**
  * DocumentRepository инкапсулирует прямой доступ к данным документов и связанных сущностей в БД.
@@ -15,7 +13,7 @@ export class DocumentRepository {
      * @returns - Массив документов.
      */
     public static findMany(options: Prisma.DocumentFindManyArgs) {
-        return prisma.document.findMany(options);
+        return prisma.document.findMany(options)
     }
 
     /**
@@ -24,7 +22,7 @@ export class DocumentRepository {
      * @returns - Найденный документ или null.
      */
     public static findUnique(options: Prisma.DocumentFindUniqueArgs) {
-        return prisma.document.findUnique(options);
+        return prisma.document.findUnique(options)
     }
 
     /**
@@ -33,7 +31,7 @@ export class DocumentRepository {
      * @returns - Количество документов.
      */
     public static count(options: Prisma.DocumentCountArgs) {
-        return prisma.document.count(options);
+        return prisma.document.count(options)
     }
 
     /**
@@ -50,7 +48,7 @@ export class DocumentRepository {
                     documentId: documentId,
                 },
             },
-        });
+        })
     }
 
     /**
@@ -59,7 +57,7 @@ export class DocumentRepository {
      * @returns - Созданный документ.
      */
     public static create(options: Prisma.DocumentCreateArgs) {
-        return prisma.document.create(options);
+        return prisma.document.create(options)
     }
 
     /**
@@ -68,7 +66,7 @@ export class DocumentRepository {
      * @returns - Обновленный документ.
      */
     public static update(options: Prisma.DocumentUpdateArgs) {
-        return prisma.document.update(options);
+        return prisma.document.update(options)
     }
 
     // --- ConvertedDocument Methods ---
@@ -81,7 +79,7 @@ export class DocumentRepository {
     public static createConvertedDocument(
         options: Prisma.ConvertedDocumentCreateArgs
     ) {
-        return prisma.convertedDocument.create(options);
+        return prisma.convertedDocument.create(options)
     }
 
     // --- Transaction Methods ---
@@ -94,12 +92,12 @@ export class DocumentRepository {
     public static transaction(
         operations: Prisma.PrismaPromise<unknown>[],
         options?: {
-            maxWait?: number;
-            timeout?: number;
-            isolationLevel?: Prisma.TransactionIsolationLevel;
+            maxWait?: number
+            timeout?: number
+            isolationLevel?: Prisma.TransactionIsolationLevel
         }
     ) {
-        return prisma.$transaction(operations, options);
+        return prisma.$transaction(operations, options)
     }
 
     /**
@@ -110,11 +108,11 @@ export class DocumentRepository {
     public static interactiveTransaction<T>(
         callback: (tx: Prisma.TransactionClient) => Promise<T>,
         options?: {
-            maxWait?: number;
-            timeout?: number;
-            isolationLevel?: Prisma.TransactionIsolationLevel;
+            maxWait?: number
+            timeout?: number
+            isolationLevel?: Prisma.TransactionIsolationLevel
         }
     ) {
-        return prisma.$transaction(callback, options);
+        return prisma.$transaction(callback, options)
     }
 }

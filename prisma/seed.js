@@ -1,13 +1,13 @@
-import { PrismaClient, Role } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { PrismaClient, Role } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-    console.log('Start seeding...');
+    console.log('Start seeding...')
 
     // 1. Create Users
-    const hashedPasswordAdmin = await bcrypt.hash('adminpassword', 10);
+    const hashedPasswordAdmin = await bcrypt.hash('adminpassword', 10)
     const admin = await prisma.user.upsert({
         where: { username: 'admin' },
         update: { enabled: true },
@@ -22,10 +22,10 @@ async function main() {
                 },
             },
         },
-    });
-    console.log('Admin user created/updated.');
+    })
+    console.log('Admin user created/updated.')
 
-    const hashedPasswordUser = await bcrypt.hash('userpassword', 10);
+    const hashedPasswordUser = await bcrypt.hash('userpassword', 10)
     const user = await prisma.user.upsert({
         where: { username: 'user' },
         update: { enabled: true },
@@ -40,8 +40,8 @@ async function main() {
                 },
             },
         },
-    });
-    console.log('Regular user created/updated.');
+    })
+    console.log('Regular user created/updated.')
 
     // 2. Create Categories
     const defaultCategories = [
@@ -49,25 +49,27 @@ async function main() {
         { name: 'Кадры и персонал', color: '#4CAF50', isDefault: true },
         { name: 'Бухгалтерия', color: '#FF9800', isDefault: true },
         { name: 'Прочее', color: '#9E9E9E', isDefault: true },
-    ];
+    ]
 
     for (const category of defaultCategories) {
         await prisma.category.upsert({
             where: { name: category.name },
             update: {},
             create: category,
-        });
+        })
     }
-    console.log('Default categories created/updated.');
-    const staffCategory = await prisma.category.findUnique({ where: { name: 'Кадры и персонал' } });
+    console.log('Default categories created/updated.')
+    const staffCategory = await prisma.category.findUnique({
+        where: { name: 'Кадры и персонал' },
+    })
 
     if (!staffCategory) {
-        console.error('Staff category not found!');
-        return;
+        console.error('Staff category not found!')
+        return
     }
 
     // 3. Create Documents
-    const doc1 = await prisma.document.upsert({
+    await prisma.document.upsert({
         where: { hash: 'hash_regular_doc_1' },
         update: {},
         create: {
@@ -76,7 +78,8 @@ async function main() {
             filePath: '/path/to/regular_doc.docx',
             fileName: 'regular_doc.docx',
             fileSize: 12345,
-            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             hash: 'hash_regular_doc_1',
             creatorId: admin.id,
             authorId: admin.id,
@@ -84,8 +87,8 @@ async function main() {
                 create: [{ categoryId: staffCategory.id }],
             },
         },
-    });
-    console.log('Regular document created.');
+    })
+    console.log('Regular document created.')
 
     const confidentialDoc = await prisma.document.upsert({
         where: { hash: 'hash_confidential_doc_1' },
@@ -96,7 +99,8 @@ async function main() {
             filePath: '/path/to/confidential_doc.docx',
             fileName: 'confidential_doc.docx',
             fileSize: 54321,
-            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             hash: 'hash_confidential_doc_1',
             creatorId: admin.id,
             authorId: admin.id,
@@ -105,11 +109,11 @@ async function main() {
                 create: [{ categoryId: staffCategory.id }],
             },
         },
-    });
-    console.log('Confidential document created.');
+    })
+    console.log('Confidential document created.')
 
-    const secretAccessCode = 'secret123';
-    const hashedSecretCode = await bcrypt.hash(secretAccessCode, 10);
+    const secretAccessCode = 'secret123'
+    const hashedSecretCode = await bcrypt.hash(secretAccessCode, 10)
     await prisma.document.upsert({
         where: { hash: 'hash_secret_doc_1' },
         update: {},
@@ -119,7 +123,8 @@ async function main() {
             filePath: '/path/to/secret_doc.docx',
             fileName: 'secret_doc.docx',
             fileSize: 67890,
-            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             hash: 'hash_secret_doc_1',
             creatorId: admin.id,
             authorId: admin.id,
@@ -129,8 +134,8 @@ async function main() {
                 create: [{ categoryId: staffCategory.id }],
             },
         },
-    });
-    console.log('Secret document created.');
+    })
+    console.log('Secret document created.')
 
     // 4. Create Access Rights
     await prisma.confidentialDocumentAccess.upsert({
@@ -145,18 +150,19 @@ async function main() {
             userId: user.id,
             documentId: confidentialDoc.id,
         },
-    });
-    console.log(`Access to confidential document granted for user: ${user.username}`);
+    })
+    console.log(
+        `Access to confidential document granted for user: ${user.username}`
+    )
 
-
-    console.log('Seeding finished successfully.');
+    console.log('Seeding finished successfully.')
 }
 
 main()
     .catch(e => {
-        console.error(e);
-        process.exit(1);
+        console.error(e)
+        process.exit(1)
     })
     .finally(async () => {
-        await prisma.$disconnect();
-    });
+        await prisma.$disconnect()
+    })

@@ -1,25 +1,24 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-
-import { Clear, Search } from '@mui/icons-material';
+import { Clear, Search } from '@mui/icons-material'
 import {
     Box,
     Button,
     IconButton,
     InputAdornment,
     TextField,
-} from '@mui/material';
-import { useRouter } from 'next/navigation';
+} from '@mui/material'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
-import { DOCUMENTS_BASE_PATH, SEARCH_BASE_PATH } from '@/constants/api';
+import { DOCUMENTS_BASE_PATH, SEARCH_BASE_PATH } from '@/constants/api'
 
-type ExtraParams = Record<string, string | number | boolean | undefined | null>;
+type ExtraParams = Record<string, string | number | boolean | undefined | null>
 
 interface SearchBarProps {
-    initialValue?: string;
-    onSearch?: (q: string) => void;
-    getExtraParams?: () => ExtraParams;
+    initialValue?: string
+    onSearch?: (q: string) => void
+    getExtraParams?: () => ExtraParams
 }
 
 export function SearchBar({
@@ -27,35 +26,35 @@ export function SearchBar({
     onSearch,
     getExtraParams,
 }: SearchBarProps) {
-    const router = useRouter();
-    const [query, setQuery] = useState(initialValue ?? '');
+    const router = useRouter()
+    const [query, setQuery] = useState(initialValue ?? '')
 
     const handleOnSearch = (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        const q = query.trim();
+        if (e) e.preventDefault()
+        const q = query.trim()
 
         if (onSearch) {
-            onSearch(q);
-            return;
+            onSearch(q)
+            return
         }
 
-        const params = new URLSearchParams();
-        if (q) params.set('q', q);
+        const params = new URLSearchParams()
+        if (q) params.set('q', q)
 
-        const extra = getExtraParams?.() ?? {};
+        const extra = getExtraParams?.() ?? {}
         Object.entries(extra).forEach(([key, value]) => {
-            if (value === undefined || value === null || value === '') return;
-            params.set(key, String(value));
-        });
+            if (value === undefined || value === null || value === '') return
+            params.set(key, String(value))
+        })
 
         router.push(
             `${DOCUMENTS_BASE_PATH}${SEARCH_BASE_PATH}?${params.toString()}`
-        );
-    };
+        )
+    }
 
     const handleClear = () => {
-        setQuery('');
-    };
+        setQuery('')
+    }
 
     return (
         <Box sx={{ width: '100%', display: 'flex' }}>
@@ -90,5 +89,5 @@ export function SearchBar({
                 Найти
             </Button>
         </Box>
-    );
+    )
 }

@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { MIME } from '@/constants/mime';
+import { MIME } from '@/constants/mime'
 
 export const pdfCombineRequestSchema = z.object({
     mainDocumentPath: z.string(),
@@ -14,7 +14,7 @@ export const pdfCombineRequestSchema = z.object({
             mimeType: z.enum(MIME),
         })
     ),
-});
+})
 
 export const pdfCombineResultSchema = z.object({
     success: z.boolean(),
@@ -23,4 +23,4 @@ export const pdfCombineResultSchema = z.object({
     error: z.string().optional(),
     fileSize: z.number().int().min(0).optional(),
     originalName: z.string().optional(),
-});
+})

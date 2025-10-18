@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
     Box,
@@ -13,16 +13,16 @@ import {
     Paper,
     Select,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
 
-import { useCategories } from '@/lib/hooks/documents/useCategories';
-import { useUsers } from '@/lib/hooks/useUsers';
-import { DocumentFilters } from '@/lib/types/document';
+import { useCategories } from '@/lib/hooks/documents/useCategories'
+import { useUsers } from '@/lib/hooks/useUsers'
+import type { DocumentFilters } from '@/lib/types/document'
 
 interface SearchFiltersProps {
-    filters: DocumentFilters;
-    onFiltersChange: (filters: Partial<DocumentFilters>) => void;
-    onReset: () => void;
+    filters: DocumentFilters
+    onFiltersChange: (filters: Partial<DocumentFilters>) => void
+    onReset: () => void
 }
 
 export function SearchFilters({
@@ -30,8 +30,8 @@ export function SearchFilters({
     onFiltersChange,
     onReset,
 }: SearchFiltersProps) {
-    const { categories, isLoading } = useCategories();
-    const { users, isLoading: usersLoading } = useUsers();
+    const { categories } = useCategories()
+    const { users } = useUsers()
 
     return (
         <Paper sx={{ p: 3 }}>
@@ -65,14 +65,14 @@ export function SearchFilters({
                                     {selected.map(value => {
                                         const category = categories?.find(
                                             cat => cat.id === value
-                                        );
+                                        )
                                         return (
                                             <Chip
                                                 key={value}
                                                 label={category?.name || value}
                                                 size='small'
                                             />
-                                        );
+                                        )
                                     })}
                                 </Box>
                             )}
@@ -162,5 +162,5 @@ export function SearchFilters({
                 </Button>
             </Box>
         </Paper>
-    );
+    )
 }

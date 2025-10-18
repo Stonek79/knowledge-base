@@ -1,10 +1,9 @@
-import { Box, Typography } from '@mui/material';
-import DOMPurify from 'dompurify';
+import { Box, Typography } from '@mui/material'
 
 interface SearchHighlightProps {
-    text: string;
-    highlights: string[];
-    query: string;
+    text: string
+    highlights: string[]
+    query: string
 }
 
 export function SearchHighlight({
@@ -13,25 +12,32 @@ export function SearchHighlight({
     query,
 }: SearchHighlightProps) {
     const highlightText = (text: string, query: string) => {
-        if (!query) return text;
+        if (!query) return text
 
-        const regex = new RegExp(`(${query})`, 'gi');
-        return text.replace(regex, '<mark>$1</mark>');
-    };
+        const parts = text.split(new RegExp(`(${query})`, 'gi'))
+
+        return (
+            <>
+                {parts.map((part, ind) => {
+                    const key = ind
+                    return part.toLowerCase() === query.toLowerCase() ? (
+                        <mark key={key}>{part}</mark>
+                    ) : (
+                        part
+                    )
+                })}
+            </>
+        )
+    }
 
     return (
         <Box>
             {highlights?.length > 0 ? (
-                highlights?.map((highlight, index) => (
+                highlights?.map(highlight => (
                     <Typography
-                        key={index}
+                        key={highlights.indexOf(highlight)}
                         variant='body2'
                         color='text.secondary'
-                        dangerouslySetInnerHTML={{
-                            __html: DOMPurify.sanitize(
-                                highlightText(highlight, query)
-                            ),
-                        }}
                         sx={{
                             '& mark': {
                                 backgroundColor: 'yellow',
@@ -39,15 +45,14 @@ export function SearchHighlight({
                                 borderRadius: '2px',
                             },
                         }}
-                    />
+                    >
+                        {highlightText(highlight, query)}
+                    </Typography>
                 ))
             ) : (
                 <Typography
                     variant='body2'
                     color='text.secondary'
-                    dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(highlightText(text, query)),
-                    }}
                     sx={{
                         '& mark': {
                             backgroundColor: 'yellow',
@@ -55,8 +60,10 @@ export function SearchHighlight({
                             borderRadius: '2px',
                         },
                     }}
-                />
+                >
+                    {highlightText(text, query)}
+                </Typography>
             )}
         </Box>
-    );
+    )
 }

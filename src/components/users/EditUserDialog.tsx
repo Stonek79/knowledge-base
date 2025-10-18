@@ -1,8 +1,6 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
     Alert,
     Button,
@@ -17,28 +15,27 @@ import {
     Select,
     Switch,
     TextField,
-} from '@mui/material';
-import { Controller, useForm } from 'react-hook-form';
-
-
+} from '@mui/material'
+import { useId, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 import {
     USER_ROLES,
     USER_ROLES_LABELS,
     USER_STATUSES,
     USER_STATUSES_LABELS,
-} from '@/constants/user';
-import { updateUser } from '@/lib/actions/users';
-import { updateUserSchema } from '@/lib/schemas/user';
-import { UpdateUserData, UserWithDocuments } from '@/lib/types/user';
+} from '@/constants/user'
+import { updateUser } from '@/lib/actions/users'
+import { updateUserSchema } from '@/lib/schemas/user'
+import type { UpdateUserData, UserWithDocuments } from '@/lib/types/user'
 
-import { PasswordField } from '../auth/PasswordField';
+import { PasswordField } from '../auth/PasswordField'
 
 interface EditUserDialogProps {
-    open: boolean;
-    user: UserWithDocuments;
-    onClose: () => void;
-    onSuccess: () => void;
+    open: boolean
+    user: UserWithDocuments
+    onClose: () => void
+    onSuccess: () => void
 }
 
 export function EditUserDialog({
@@ -47,7 +44,9 @@ export function EditUserDialog({
     onClose,
     onSuccess,
 }: EditUserDialogProps) {
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null)
+    const newPassId = useId()
+    const newPassConfirmId = useId()
 
     const {
         register,
@@ -65,30 +64,30 @@ export function EditUserDialog({
             newPassword: undefined,
             confirmNewPassword: undefined,
         },
-    });
+    })
 
     const handleClose = () => {
-        reset();
-        setError(null);
-        onClose();
-    };
+        reset()
+        setError(null)
+        onClose()
+    }
 
     const onSubmit = async (data: UpdateUserData) => {
-        setError(null);
+        setError(null)
 
         try {
-            await updateUser(user.id, data);
+            await updateUser(user.id, data)
 
-            onSuccess();
-            handleClose();
+            onSuccess()
+            handleClose()
         } catch (err: unknown) {
             if (err instanceof Error) {
-                setError(err.message);
+                setError(err.message)
             } else {
-                setError('Произошла неизвестная ошибка');
+                setError('Произошла неизвестная ошибка')
             }
         }
-    };
+    }
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
@@ -117,7 +116,7 @@ export function EditUserDialog({
                             <PasswordField
                                 {...field}
                                 value={field.value ?? ''}
-                                id='newPassword'
+                                id={newPassId}
                                 name='newPassword'
                                 label='Новый пароль'
                                 autoCompletePolicy='new-password'
@@ -134,7 +133,7 @@ export function EditUserDialog({
                             <PasswordField
                                 {...field}
                                 value={field.value ?? ''}
-                                id='confirmNewPassword'
+                                id={newPassConfirmId}
                                 name='confirmNewPassword'
                                 label='Подтверждение пароля'
                                 autoCompletePolicy='new-password'
@@ -210,5 +209,5 @@ export function EditUserDialog({
                 </DialogActions>
             </form>
         </Dialog>
-    );
+    )
 }

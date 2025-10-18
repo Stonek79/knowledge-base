@@ -1,29 +1,27 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import Brightness4Icon from '@mui/icons-material/Brightness4'
+import Brightness7Icon from '@mui/icons-material/Brightness7'
+import DescriptionIcon from '@mui/icons-material/Description'
+import LogoutIcon from '@mui/icons-material/Logout'
+import MenuIcon from '@mui/icons-material/Menu'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
+import AppBar from '@mui/material/AppBar'
+import Avatar from '@mui/material/Avatar'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import Toolbar from '@mui/material/Toolbar'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import { usePathname, useRouter } from 'next/navigation'
+import { useId, useState } from 'react'
 
-
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import DescriptionIcon from '@mui/icons-material/Description';
-import LogoutIcon from '@mui/icons-material/Logout';
-import MenuIcon from '@mui/icons-material/Menu';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import AppBar from '@mui/material/AppBar';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Toolbar from '@mui/material/Toolbar';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import { usePathname, useRouter } from 'next/navigation';
-
-import { useTheme } from '@/components/providers/CustomThemeProvider';
+import { useTheme } from '@/components/providers/CustomThemeProvider'
 import {
     ADMIN_PATH,
     DOCUMENTS_BASE_PATH,
@@ -32,66 +30,67 @@ import {
     LOGIN_PAGE_PATH,
     PROFILE_BASE_PATH,
     UPLOAD_PAGE_PATH,
-} from '@/constants/api';
-import { USER_ROLES } from '@/constants/user';
-import { useAuth } from '@/lib/hooks/useAuth';
+} from '@/constants/api'
+import { USER_ROLES } from '@/constants/user'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 // для светлой темы
 
 interface HeaderProps {
-    onSidebarToggle?: () => void;
-    showSidebar?: boolean;
+    onSidebarToggle?: () => void
+    showSidebar?: boolean
 }
 
 export function Header({ onSidebarToggle, showSidebar = false }: HeaderProps) {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const { user, logout } = useAuth();
-    const { mode, toggleTheme } = useTheme();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+    const { user, logout } = useAuth()
+    const { mode, toggleTheme } = useTheme()
 
-    const router = useRouter();
-    const pathname = usePathname();
+    const router = useRouter()
+    const pathname = usePathname()
+    const menuId = useId()
 
-    const isAdmin = user?.role === USER_ROLES.ADMIN;
-    const canAddDocument = isAdmin || USER_ROLES.USER;
+    const isAdmin = user?.role === USER_ROLES.ADMIN
+    const canAddDocument = isAdmin || USER_ROLES.USER
 
     const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
+        setAnchorEl(event.currentTarget)
+    }
 
     const handleClose = () => {
-        setAnchorEl(null);
-    };
+        setAnchorEl(null)
+    }
 
     const handleLogout = async () => {
-        await logout();
-        router.push(LOGIN_PAGE_PATH);
-        handleClose();
-    };
+        await logout()
+        router.push(LOGIN_PAGE_PATH)
+        handleClose()
+    }
 
     const handleProfile = () => {
-        console.log('[header] profile, user?.profile', user?.profile);
+        console.log('[header] profile, user?.profile', user?.profile)
 
-        router.push(`${PROFILE_BASE_PATH}`);
+        router.push(`${PROFILE_BASE_PATH}`)
 
-        handleClose();
-    };
+        handleClose()
+    }
 
     // Навигационные функции
     const navigateToHome = () => {
-        router.push(HOME_PATH);
-    };
+        router.push(HOME_PATH)
+    }
 
     const navigateToDocuments = () => {
-        router.push(DOCUMENTS_PAGE_PATH);
-    };
+        router.push(DOCUMENTS_PAGE_PATH)
+    }
 
     const navigateToAdmin = () => {
-        router.push(ADMIN_PATH);
-    };
+        router.push(ADMIN_PATH)
+    }
 
     const navigateToUpload = () => {
-        router.push(UPLOAD_PAGE_PATH);
-    };
+        router.push(UPLOAD_PAGE_PATH)
+    }
     return (
         <AppBar
             position='fixed'
@@ -236,7 +235,7 @@ export function Header({ onSidebarToggle, showSidebar = false }: HeaderProps) {
                     </Tooltip>
 
                     <Menu
-                        id='menu-appbar'
+                        id={menuId}
                         anchorEl={anchorEl}
                         anchorOrigin={{
                             vertical: 'bottom',
@@ -262,5 +261,5 @@ export function Header({ onSidebarToggle, showSidebar = false }: HeaderProps) {
                 </Box>
             </Toolbar>
         </AppBar>
-    );
+    )
 }

@@ -1,17 +1,14 @@
-'use client';
+'use client'
 
-import {
-    Delete as DeleteIcon,
-    Upload as UploadIcon,
-} from '@mui/icons-material';
-import { Box, IconButton, Paper, Typography } from '@mui/material';
+import { Delete as DeleteIcon, Upload as UploadIcon } from '@mui/icons-material'
+import { Box, IconButton, Paper, Typography } from '@mui/material'
 
-import { formatFileSize } from '@/utils/formatFileSize';
+import { formatFileSize } from '@/utils/formatFileSize'
 
 interface FilePreviewProps {
-    file: File;
-    onRemove: () => void;
-    disabled?: boolean;
+    file: File
+    onRemove: () => void
+    disabled?: boolean
 }
 
 export function FilePreview({
@@ -51,5 +48,5 @@ export function FilePreview({
                 </IconButton>
             </Box>
         </Paper>
-    );
+    )
 }

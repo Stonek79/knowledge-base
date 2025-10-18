@@ -1,16 +1,15 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
+import { Search as SearchIcon } from '@mui/icons-material'
+import { TextField } from '@mui/material'
+import { useEffect, useState } from 'react'
 
-import { Search as SearchIcon } from '@mui/icons-material';
-import { TextField } from '@mui/material';
-
-import { useDebounce } from '@/lib/hooks/useDebounce';
+import { useDebounce } from '@/lib/hooks/useDebounce'
 
 interface SearchFieldProps {
-    value?: string;
-    onSearch: (search: string) => void;
-    placeholder?: string;
+    value?: string
+    onSearch: (search: string) => void
+    placeholder?: string
 }
 
 export function SearchField({
@@ -18,19 +17,19 @@ export function SearchField({
     onSearch,
     placeholder = 'Поиск документов...',
 }: SearchFieldProps) {
-    const [searchValue, setSearchValue] = useState(value);
+    const [searchValue, setSearchValue] = useState(value)
 
-    const debouncedOnSearch = useDebounce(onSearch);
+    const debouncedOnSearch = useDebounce(onSearch)
 
     useEffect(() => {
-        setSearchValue(value);
-    }, [value]);
+        setSearchValue(value)
+    }, [value])
 
     const handleInputChange = (newValue: string) => {
-        setSearchValue(newValue);
+        setSearchValue(newValue)
 
-        debouncedOnSearch(newValue);
-    };
+        debouncedOnSearch(newValue)
+    }
 
     return (
         <TextField
@@ -44,5 +43,5 @@ export function SearchField({
             }}
             size='small'
         />
-    );
+    )
 }

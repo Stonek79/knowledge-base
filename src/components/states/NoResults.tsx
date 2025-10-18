@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Box, Button, Typography } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import { Box, Button, Typography } from '@mui/material'
+import { useRouter } from 'next/navigation'
 
 export function NoResults({
     title = 'Нет данных',
@@ -11,21 +11,21 @@ export function NoResults({
     onAction,
     icon = <ArrowBackIcon sx={{ fontSize: 64, color: 'text.disabled' }} />,
 }: {
-    title?: string;
-    message?: string;
-    actionLabel?: string;
-    onAction?: () => void;
-    icon?: React.ReactNode;
+    title?: string
+    message?: string
+    actionLabel?: string
+    onAction?: () => void
+    icon?: React.ReactNode
 }) {
-    const router = useRouter();
+    const router = useRouter()
 
     const handleOnClick = () => {
         if (onAction) {
-            onAction();
+            onAction()
         } else {
-            router.back();
+            router.back()
         }
-    };
+    }
 
     return (
         <Box
@@ -61,5 +61,5 @@ export function NoResults({
                 </Button>
             )}
         </Box>
-    );
+    )
 }

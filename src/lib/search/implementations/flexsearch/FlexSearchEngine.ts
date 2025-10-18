@@ -1,28 +1,28 @@
-import { DefaultSearchResults, Index } from 'flexsearch';
+import { type DefaultSearchResults, Index } from 'flexsearch'
 
-import {
+import type {
     Highlight,
     IndexStatus,
     SearchDocument,
     SearchEngineConfig,
     SearchOptions,
     SearchResult,
-} from '../../../types/search';
-import { SearchEngine } from '../../interfaces/SearchEngine';
+} from '../../../types/search'
+import type { SearchEngine } from '../../interfaces/SearchEngine'
 
 /**
  * Конфигурация FlexSearch
  */
-export type FlexSearchConfig = SearchEngineConfig;
+export type FlexSearchConfig = SearchEngineConfig
 
 /**
  * Реализация поискового движка на основе FlexSearch
  * Обеспечивает полнотекстовый поиск с поддержкой нечеткого поиска
  */
 export class FlexSearchEngine implements SearchEngine {
-    private index: Index;
-    private documents: Map<string, SearchDocument> = new Map();
-    private config: FlexSearchConfig;
+    private index: Index
+    private documents: Map<string, SearchDocument> = new Map()
+    private config: FlexSearchConfig
 
     constructor(config: FlexSearchConfig = {}) {
         this.config = {
@@ -31,14 +31,14 @@ export class FlexSearchEngine implements SearchEngine {
             cache: config.cache ?? true,
             language: config.language || 'ru',
             threshold: config.threshold || 0.1,
-        };
+        }
 
         this.index = new Index({
             tokenize: this.config.tokenize,
             resolution: this.config.resolution,
             cache: this.config.cache ? 100 : false, // Кэш на 100 слотов
             encoder: 'Normalize',
-        });
+        })
     }
 
     /**
@@ -55,12 +55,12 @@ export class FlexSearchEngine implements SearchEngine {
             const results = await this.index.search(query, {
                 limit: options.limit || 100,
                 offset: options.offset || 0,
-            });
+            })
 
-            return this.processSearchResults(results, query, options);
+            return this.processSearchResults(results, query, options)
         } catch (error) {
-            console.error('Ошибка поиска FlexSearch:', error);
-            return [];
+            console.error('Ошибка поиска FlexSearch:', error)
+            return []
         }
     }
 
@@ -79,18 +79,18 @@ export class FlexSearchEngine implements SearchEngine {
                 document.metadata.authorName,
                 document.metadata.categoryName || '',
                 document.keywords.join(' '),
-            ].join(' ');
+            ].join(' ')
 
             // Добавляем в индекс
-            await this.index.add(document.id, indexContent);
+            await this.index.add(document.id, indexContent)
 
             // Сохраняем документ в памяти
-            this.documents.set(document.id, document);
+            this.documents.set(document.id, document)
 
-            console.log(`Документ ${document.id} проиндексирован`);
+            console.log(`Документ ${document.id} проиндексирован`)
         } catch (error) {
-            console.error(`Ошибка индексации документа ${document.id}:`, error);
-            throw error;
+            console.error(`Ошибка индексации документа ${document.id}:`, error)
+            throw error
         }
     }
 
@@ -100,12 +100,12 @@ export class FlexSearchEngine implements SearchEngine {
      */
     async removeDocument(documentId: string): Promise<void> {
         try {
-            await this.index.remove(documentId);
-            this.documents.delete(documentId);
-            console.log(`Документ ${documentId} удален из индекса`);
+            await this.index.remove(documentId)
+            this.documents.delete(documentId)
+            console.log(`Документ ${documentId} удален из индекса`)
         } catch (error) {
-            console.error(`Ошибка удаления документа ${documentId}:`, error);
-            throw error;
+            console.error(`Ошибка удаления документа ${documentId}:`, error)
+            throw error
         }
     }
 
@@ -116,17 +116,17 @@ export class FlexSearchEngine implements SearchEngine {
     async reindexAll(documents: SearchDocument[]): Promise<void> {
         try {
             // Очищаем текущий индекс
-            await this.clearIndex();
+            await this.clearIndex()
 
             // Индексируем все документы
             for (const document of documents) {
-                await this.indexDocument(document);
+                await this.indexDocument(document)
             }
 
-            console.log(`Переиндексировано ${documents.length} документов`);
+            console.log(`Переиндексировано ${documents.length} документов`)
         } catch (error) {
-            console.error('Ошибка переиндексации:', error);
-            throw error;
+            console.error('Ошибка переиндексации:', error)
+            throw error
         }
     }
 
@@ -136,16 +136,16 @@ export class FlexSearchEngine implements SearchEngine {
      */
     async getIndexStatus(): Promise<IndexStatus> {
         try {
-            const documentCount = this.documents.size;
-            const indexSize = documentCount * 1024;
-            const lastUpdated = new Date();
+            const documentCount = this.documents.size
+            const indexSize = documentCount * 1024
+            const lastUpdated = new Date()
 
             return {
                 documentCount,
                 indexSize,
                 lastUpdated,
                 status: 'ready',
-            };
+            }
         } catch (error) {
             return {
                 documentCount: 0,
@@ -157,7 +157,7 @@ export class FlexSearchEngine implements SearchEngine {
                         ? error.message
                         : 'Неизвестная ошибка',
                 ],
-            };
+            }
         }
     }
 
@@ -166,12 +166,12 @@ export class FlexSearchEngine implements SearchEngine {
      */
     async clearIndex(): Promise<void> {
         try {
-            await this.index.clear();
-            this.documents.clear();
-            console.log('Индекс очищен');
+            await this.index.clear()
+            this.documents.clear()
+            console.log('Индекс очищен')
         } catch (error) {
-            console.error('Ошибка очистки индекса:', error);
-            throw error;
+            console.error('Ошибка очистки индекса:', error)
+            throw error
         }
     }
 
@@ -187,14 +187,14 @@ export class FlexSearchEngine implements SearchEngine {
         query: string,
         options: SearchOptions
     ): SearchResult[] {
-        const searchResults: SearchResult[] = [];
+        const searchResults: SearchResult[] = []
 
         for (const documentId of results) {
-            const document = this.documents.get(documentId.toString());
-            if (!document) continue;
+            const document = this.documents.get(documentId.toString())
+            if (!document) continue
 
-            const relevance = this.calculateRelevance(document, query);
-            const highlights = this.generateHighlights(document, query);
+            const relevance = this.calculateRelevance(document, query)
+            const highlights = this.generateHighlights(document, query)
 
             searchResults.push({
                 documentId: document.id,
@@ -204,20 +204,20 @@ export class FlexSearchEngine implements SearchEngine {
                 highlights,
                 metadata: document.metadata,
                 source: 'text' as const,
-            });
+            })
         }
 
         // Применяем лимиты из опций
-        let finalResults = searchResults;
+        let finalResults = searchResults
 
         if (options.limit) {
-            const start = options.offset || 0;
-            const end = start + options.limit;
-            finalResults = searchResults.slice(start, end);
+            const start = options.offset || 0
+            const end = start + options.limit
+            finalResults = searchResults.slice(start, end)
         }
 
         // Сортируем по релевантности
-        return finalResults.sort((a, b) => b.relevance - a.relevance);
+        return finalResults.sort((a, b) => b.relevance - a.relevance)
     }
 
     /**
@@ -230,19 +230,19 @@ export class FlexSearchEngine implements SearchEngine {
         document: SearchDocument,
         query: string
     ): number {
-        const queryWords = query.toLowerCase().split(/\s+/);
+        const queryWords = query.toLowerCase().split(/\s+/)
         const titleMatch = queryWords.filter(word =>
             document.title.toLowerCase().includes(word)
-        ).length;
+        ).length
         const contentMatch = queryWords.filter(word =>
             document.content.toLowerCase().includes(word)
-        ).length;
+        ).length
 
-        const totalWords = queryWords.length;
-        const titleScore = (titleMatch / totalWords) * 0.6;
-        const contentScore = (contentMatch / totalWords) * 0.4;
+        const totalWords = queryWords.length
+        const titleScore = (titleMatch / totalWords) * 0.6
+        const contentScore = (contentMatch / totalWords) * 0.4
 
-        return Math.min(titleScore + contentScore, 1);
+        return Math.min(titleScore + contentScore, 1)
     }
 
     /**
@@ -255,40 +255,40 @@ export class FlexSearchEngine implements SearchEngine {
         document: SearchDocument,
         query: string
     ): Highlight[] {
-        const highlights: Highlight[] = [];
-        const queryWords = query.toLowerCase().split(/\s+/);
+        const highlights: Highlight[] = []
+        const queryWords = query.toLowerCase().split(/\s+/)
 
         // Ищем в заголовке
         queryWords.forEach(word => {
-            const index = document.title.toLowerCase().indexOf(word);
+            const index = document.title.toLowerCase().indexOf(word)
             if (index !== -1) {
                 highlights.push({
                     text: document.title.substring(index, index + word.length),
                     field: 'title',
                     position: index,
                     length: word.length,
-                });
+                })
             }
-        });
+        })
 
         // Ищем в содержимом
         queryWords.forEach(word => {
-            const index = document.content.toLowerCase().indexOf(word);
+            const index = document.content.toLowerCase().indexOf(word)
             if (index !== -1) {
-                const start = Math.max(0, index - 20);
+                const start = Math.max(0, index - 20)
                 const end = Math.min(
                     document.content.length,
                     index + word.length + 20
-                );
+                )
                 highlights.push({
                     text: document.content.substring(start, end),
                     field: 'content',
                     position: index,
                     length: word.length,
-                });
+                })
             }
-        });
+        })
 
-        return highlights;
+        return highlights
     }
 }

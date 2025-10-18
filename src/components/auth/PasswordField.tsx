@@ -1,18 +1,20 @@
-'use client';
+'use client'
 
-import { MouseEvent, useState } from 'react';
-
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import TextField, { TextFieldProps } from '@mui/material/TextField';
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
+import TextField, { type TextFieldProps } from '@mui/material/TextField'
+import { type MouseEvent, useState } from 'react'
 
 interface PasswordFieldProps
-    extends Omit<TextFieldProps, 'name' | 'type' | 'variant' | 'margin' | 'fullWidth'> {
-    autoCompletePolicy?: string; // 'current-password' или 'new-password'
-    name?: string;
-    required?: boolean;
+    extends Omit<
+        TextFieldProps,
+        'name' | 'type' | 'variant' | 'margin' | 'fullWidth'
+    > {
+    autoCompletePolicy?: string // 'current-password' или 'new-password'
+    name?: string
+    required?: boolean
 }
 
 export function PasswordField({
@@ -23,16 +25,16 @@ export function PasswordField({
     required = true,
     ...props
 }: PasswordFieldProps) {
-    const [showPassword, setShowPassword] = useState(false);
+    const [showPassword, setShowPassword] = useState(false)
 
-    const handleClickShowPassword = () => setShowPassword(show => !show);
+    const handleClickShowPassword = () => setShowPassword(show => !show)
     const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-    };
+        event.preventDefault()
+    }
 
     return (
         <TextField
-            margin="normal"
+            margin='normal'
             required={required}
             fullWidth
             name={name}
@@ -40,24 +42,28 @@ export function PasswordField({
             type={showPassword ? 'text' : 'password'}
             id={id}
             autoComplete={autoCompletePolicy}
-            variant="outlined"
+            variant='outlined'
             {...props} // Здесь будут error, helperText, value, onChange от Controller
             slotProps={{
                 input: {
                     endAdornment: (
-                        <InputAdornment position="end">
+                        <InputAdornment position='end'>
                             <IconButton
-                                aria-label="Показать/скрыть пароль"
+                                aria-label='Показать/скрыть пароль'
                                 onClick={handleClickShowPassword}
                                 onMouseDown={handleMouseDownPassword}
-                                edge="end"
+                                edge='end'
                             >
-                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                {showPassword ? (
+                                    <VisibilityOff />
+                                ) : (
+                                    <Visibility />
+                                )}
                             </IconButton>
                         </InputAdornment>
                     ),
                 },
             }}
         />
-    );
+    )
 }

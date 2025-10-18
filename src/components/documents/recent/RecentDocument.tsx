@@ -1,7 +1,6 @@
-'use client';
+'use client'
 
-
-import { Description as FileIcon } from '@mui/icons-material';
+import { Description as FileIcon } from '@mui/icons-material'
 import {
     Box,
     Card,
@@ -12,24 +11,24 @@ import {
     ListItemIcon,
     Typography,
     useTheme,
-} from '@mui/material';
-import { useRouter } from 'next/navigation';
+} from '@mui/material'
+import { useRouter } from 'next/navigation'
 
-import { DOCUMENTS_PAGE_PATH } from '@/constants/api';
-import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
-import { DocumentWithAuthor, SearchResult } from '@/lib/types/document';
+import { DOCUMENTS_PAGE_PATH } from '@/constants/api'
+import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments'
+import type { DocumentWithAuthor, SearchResult } from '@/lib/types/document'
 
 export function RecentDocuments() {
-    const { recentDocuments } = useRecentDocuments();
-    const router = useRouter();
-    const theme = useTheme();
-    const isDark = theme.palette.mode === 'dark';
+    const { recentDocuments } = useRecentDocuments()
+    const router = useRouter()
+    const theme = useTheme()
+    const isDark = theme.palette.mode === 'dark'
 
     const handleDocumentClick = (
         document: DocumentWithAuthor | SearchResult
     ) => {
-        router.push(`${DOCUMENTS_PAGE_PATH}/${document.id}`);
-    };
+        router.push(`${DOCUMENTS_PAGE_PATH}/${document.id}`)
+    }
 
     if (recentDocuments.length === 0) {
         return (
@@ -72,7 +71,7 @@ export function RecentDocuments() {
                     </Box>
                 </CardContent>
             </Card>
-        );
+        )
     }
 
     return (
@@ -139,5 +138,5 @@ export function RecentDocuments() {
                 </List>
             </CardContent>
         </Card>
-    );
+    )
 }

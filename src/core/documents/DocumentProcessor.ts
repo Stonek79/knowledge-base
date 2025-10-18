@@ -1,23 +1,26 @@
-import { STORAGE_BASE_PATHS } from '@/constants/app';
-import { MIME } from '@/constants/mime';
-import { FileStorageService, getFileStorageService } from '@/lib/services/FileStorageService';
-import type { SupportedMime } from '@/lib/types/mime';
-import { FileUtils } from '@/utils/files';
-import { isSupportedMime } from '@/utils/mime';
+import { STORAGE_BASE_PATHS } from '@/constants/app'
+import { MIME } from '@/constants/mime'
+import {
+    type FileStorageService,
+    getFileStorageService,
+} from '@/lib/services/FileStorageService'
+import type { SupportedMime } from '@/lib/types/mime'
+import { FileUtils } from '@/utils/files'
+import { isSupportedMime } from '@/utils/mime'
 
-import { ConversionService } from './ConversionService';
-import { textExtractorService } from './TextExtractorService';
+import type { ConversionService } from './ConversionService'
+import { textExtractorService } from './TextExtractorService'
 
 export interface ProcessResult {
-    original: { path: string; mimeType: SupportedMime; fileName: string };
-    derivativePdf?: { path: string };
-    extractedText?: string;
-    storage?: { originalKey: string; pdfKey?: string };
+    original: { path: string; mimeType: SupportedMime; fileName: string }
+    derivativePdf?: { path: string }
+    extractedText?: string
+    storage?: { originalKey: string; pdfKey?: string }
     attachments?: Array<{
-        path: string;
-        fileName: string;
-        mimeType: SupportedMime;
-    }>;
+        path: string
+        fileName: string
+        mimeType: SupportedMime
+    }>
 }
 
 /**
@@ -28,12 +31,10 @@ export interface ProcessResult {
  * Ошибки конвертации/извлечения логируются; документ создаётся всегда.
  */
 export class DocumentProcessor {
-    private storage: FileStorageService;
+    private storage: FileStorageService
 
-    constructor(
-        private readonly conversion: ConversionService,
-    ) {
-        this.storage = getFileStorageService();
+    constructor(private readonly conversion: ConversionService) {
+        this.storage = getFileStorageService()
     }
 
     /**
@@ -52,51 +53,51 @@ export class DocumentProcessor {
         options?: { enableOcr?: boolean }
     ): Promise<ProcessResult> {
         // 1) Сохраняем оригинал
-        const safeName = FileUtils.generateSafeFileName(originalName);
+        const safeName = FileUtils.generateSafeFileName(originalName)
 
-        let originalKey: string | undefined;
+        let originalKey: string | undefined
         if (this.storage) {
             try {
                 const { key } = await this.storage.uploadDocument(
                     input,
                     { originalName: safeName, mimeType, size: input.length },
                     { basePath: STORAGE_BASE_PATHS.ORIGINAL }
-                );
-                originalKey = key;
+                )
+                originalKey = key
             } catch (e) {
                 console.warn(
                     'Original file upload failed:',
                     e instanceof Error ? e.message : e
-                );
+                )
             }
         }
 
         if (!originalKey) {
-            throw new Error('Original file upload failed');
+            throw new Error('Original file upload failed')
         }
 
         // 2) Пытаемся получить PDF-дериват
-        let pdfBuffer: Buffer | null = null;
+        let pdfBuffer: Buffer | null = null
         if (mimeType === MIME.PDF) {
-            pdfBuffer = input;
+            pdfBuffer = input
         } else {
             try {
                 const pdfRes = await this.conversion.convertToPdf(
                     input,
                     mimeType
-                );
-                pdfBuffer = pdfRes.buffer;
+                )
+                pdfBuffer = pdfRes.buffer
             } catch (e) {
                 console.warn(
                     'PDF conversion failed:',
                     e instanceof Error ? e.message : e
-                );
+                )
             }
         }
 
-        let pdfKey: string | undefined;
+        let pdfKey: string | undefined
         if (pdfBuffer && mimeType !== MIME.PDF) {
-            const pdfName = safeName.replace(/\.[^.]+$/, '.pdf');
+            const pdfName = safeName.replace(/\.[^.]+$/, '.pdf')
             try {
                 const res = await this.storage.uploadDocument(
                     pdfBuffer,
@@ -106,13 +107,13 @@ export class DocumentProcessor {
                         size: pdfBuffer.length,
                     },
                     { basePath: STORAGE_BASE_PATHS.CONVERTED }
-                );
-                pdfKey = res.key;
+                )
+                pdfKey = res.key
             } catch (e) {
                 console.warn(
                     'PDF upload failed:',
                     e instanceof Error ? e.message : e
-                );
+                )
             }
         }
 
@@ -120,7 +121,7 @@ export class DocumentProcessor {
         let extractedText = await textExtractorService.extractText(
             input,
             mimeType
-        );
+        )
 
         // OCR-хук: если текста нет и включен OCR — постановка в очередь/лог
         if (!extractedText && options?.enableOcr && pdfBuffer) {
@@ -130,7 +131,7 @@ export class DocumentProcessor {
             // 3. Результат сохраняется в БД и переиндексируется
             console.info('OCR requested for PDF without text layer', {
                 originalName,
-            });
+            })
         }
 
         // Нормализация и ограничение размера извлечённого текста
@@ -138,7 +139,7 @@ export class DocumentProcessor {
             extractedText = extractedText
                 .replace(/\s+/g, ' ')
                 .trim()
-                .slice(0, 100_000);
+                .slice(0, 100_000)
         }
 
         return {
@@ -146,7 +147,7 @@ export class DocumentProcessor {
             derivativePdf: pdfKey ? { path: pdfKey } : undefined,
             extractedText,
             storage: { originalKey, pdfKey },
-        };
+        }
     }
 
     /**
@@ -158,9 +159,9 @@ export class DocumentProcessor {
     async processUploadWithAttachments(
         mainFile: { buffer: Buffer; mimeType: SupportedMime; fileName: string },
         attachments: Array<{
-            buffer: Buffer;
-            mimeType: SupportedMime;
-            fileName: string;
+            buffer: Buffer
+            mimeType: SupportedMime
+            fileName: string
         }> = [],
         options?: { enableOcr?: boolean }
     ): Promise<ProcessResult> {
@@ -170,30 +171,30 @@ export class DocumentProcessor {
             mainFile.mimeType,
             mainFile.fileName,
             options
-        );
+        )
 
         // 2. Обрабатываем приложения
-        const attachmentResults: ProcessResult['attachments'] = [];
+        const attachmentResults: ProcessResult['attachments'] = []
 
         const tasks = attachments.map(async att => {
-            if (!isSupportedMime(att.mimeType)) return;
+            if (!isSupportedMime(att.mimeType)) return
             const result = await this.processUpload(
                 att.buffer,
                 att.mimeType,
                 att.fileName,
                 options
-            );
+            )
             attachmentResults.push({
                 path: result.original.path,
                 fileName: result.original.fileName,
                 mimeType: result.original.mimeType,
-            });
-        });
-        await Promise.allSettled(tasks);
+            })
+        })
+        await Promise.allSettled(tasks)
 
         return {
             ...mainResult,
             attachments: attachmentResults,
-        };
+        }
     }
 }

@@ -1,83 +1,81 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 import {
     Alert,
-    AlertColor,
+    type AlertColor,
     Button,
     CircularProgress,
     Container,
     Snackbar,
-} from '@mui/material';
-import { useRouter } from 'next/navigation';
+} from '@mui/material'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
+import { ApiHttpError } from '@/lib/api/apiHelper'
+import { useProfile } from '@/lib/hooks/useProfile'
+import type { ProfileUpdate } from '@/lib/types/profile'
 
-import { ApiHttpError } from '@/lib/api/apiHelper';
-import { useProfile } from '@/lib/hooks/useProfile';
-import { ProfileUpdate } from '@/lib/types/profile';
-
-import { ChangePasswordDialog } from './ChangePasswordDialog';
-import { ProfileEditForm } from './ProfileEdit';
-import { ProfileView } from './ProfileView';
+import { ChangePasswordDialog } from './ChangePasswordDialog'
+import { ProfileEditForm } from './ProfileEdit'
+import { ProfileView } from './ProfileView'
 
 /**
  * Контейнер для страницы профиля.
  * Управляет состоянием (просмотр/редактирование) и данными.
  */
 export function ProfilePage() {
-    const router = useRouter();
-    const { profile, isLoading, error, updateProfile, mutate } = useProfile();
-    const [isEditing, setIsEditing] = useState(false);
-    const [isChangePasswordOpen, setChangePasswordOpen] = useState(false);
-    const [serverError, setServerError] = useState<string | null>(null);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const router = useRouter()
+    const { profile, isLoading, error, updateProfile, mutate } = useProfile()
+    const [isEditing, setIsEditing] = useState(false)
+    const [isChangePasswordOpen, setChangePasswordOpen] = useState(false)
+    const [serverError, setServerError] = useState<string | null>(null)
+    const [snackbarOpen, setSnackbarOpen] = useState(false)
     const [snackbarSeverity, setSnackbarSeverity] =
-        useState<AlertColor>('success');
-    const [snackbarMessage, setSnackbarMessage] = useState('');
+        useState<AlertColor>('success')
+    const [snackbarMessage, setSnackbarMessage] = useState('')
 
     const handleSnackbarClose = () => {
-        setSnackbarOpen(false);
-    };
+        setSnackbarOpen(false)
+    }
 
     const onSubmit = async (data: ProfileUpdate) => {
         try {
-            setServerError(null);
-            await updateProfile(data);
-            setIsEditing(false);
-            mutate();
-            setSnackbarOpen(true);
-            setSnackbarSeverity('success');
-            setSnackbarMessage('Профиль успешно обновлен');
+            setServerError(null)
+            await updateProfile(data)
+            setIsEditing(false)
+            mutate()
+            setSnackbarOpen(true)
+            setSnackbarSeverity('success')
+            setSnackbarMessage('Профиль успешно обновлен')
         } catch (e) {
             if (e instanceof ApiHttpError) {
-                setServerError(e.payload.message);
+                setServerError(e.payload.message)
             } else if (e instanceof Error) {
-                setServerError(e.message);
+                setServerError(e.message)
             } else {
-                setServerError('Произошла неизвестная ошибка');
+                setServerError('Произошла неизвестная ошибка')
             }
         }
-    };
+    }
 
     if (isLoading) {
-        return <CircularProgress />;
+        return <CircularProgress />
     }
 
     if (error) {
-        return <Alert severity='error'>{error.message}</Alert>;
+        return <Alert severity='error'>{error.message}</Alert>
     }
 
     if (!profile) {
-        return <Alert severity='warning'>Профиль не найден.</Alert>;
+        return <Alert severity='warning'>Профиль не найден.</Alert>
     }
 
     const successChangePassword = () => {
-        setChangePasswordOpen(false);
-        setSnackbarOpen(true);
-        setSnackbarSeverity('success');
-        setSnackbarMessage('Пароль успешно изменен');
-    };
+        setChangePasswordOpen(false)
+        setSnackbarOpen(true)
+        setSnackbarSeverity('success')
+        setSnackbarMessage('Пароль успешно изменен')
+    }
 
     return (
         <Container maxWidth='md' sx={{ py: 4 }}>
@@ -120,5 +118,5 @@ export function ProfilePage() {
                 </Alert>
             </Snackbar>
         </Container>
-    );
+    )
 }

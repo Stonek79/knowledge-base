@@ -1,6 +1,4 @@
-'use client';
-
-import { useEffect, useRef } from 'react';
+'use client'
 
 import {
     Box,
@@ -13,24 +11,24 @@ import {
     Typography,
     useMediaQuery,
     useTheme,
-} from '@mui/material';
-import dynamic from 'next/dynamic';
+} from '@mui/material'
+import dynamic from 'next/dynamic'
+import { useEffect, useRef } from 'react'
 
+import { DOCUMENT_VIEWER_PATH } from '@/constants/api'
+import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments'
+import type { DocumentWithAuthor, SearchResult } from '@/lib/types/document'
 
-import { DOCUMENT_VIEWER_PATH } from '@/constants/api';
-import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
-import { DocumentWithAuthor, SearchResult } from '@/lib/types/document';
-
-import { DownloadButtons } from '../download/DownloadButtons';
+import { DownloadButtons } from '../download/DownloadButtons'
 
 const PDFDocumentViewer = dynamic(
     () => import('./PDFViewer').then(m => m.PDFDocumentViewer),
     { ssr: false }
-);
+)
 interface DocumentViewerProps {
-    document: SearchResult | DocumentWithAuthor;
-    open: boolean;
-    onClose: () => void;
+    document: SearchResult | DocumentWithAuthor
+    open: boolean
+    onClose: () => void
 }
 
 /**
@@ -50,26 +48,26 @@ export function DocumentViewer({
     open,
     onClose,
 }: DocumentViewerProps) {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const { addRecentDocument } = useRecentDocuments();
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+    const { addRecentDocument } = useRecentDocuments()
 
-    const hasAddedToRecent = useRef(false); // Флаг для предотвращения повторного добавления
+    const hasAddedToRecent = useRef(false) // Флаг для предотвращения повторного добавления
 
     // Добавляем в недавние только при первом открытии
     useEffect(() => {
         if (open && document && !hasAddedToRecent.current) {
-            addRecentDocument(document);
-            hasAddedToRecent.current = true;
+            addRecentDocument(document)
+            hasAddedToRecent.current = true
         }
 
         // Сбрасываем флаг при закрытии
         if (!open) {
-            hasAddedToRecent.current = false;
+            hasAddedToRecent.current = false
         }
-    }, [open, document, addRecentDocument]);
+    }, [open, document, addRecentDocument])
 
-    const documentPath = DOCUMENT_VIEWER_PATH(document.id);
+    const documentPath = DOCUMENT_VIEWER_PATH(document.id)
 
     return (
         <Dialog
@@ -111,5 +109,5 @@ export function DocumentViewer({
                 <Button onClick={onClose}>Закрыть</Button>
             </DialogActions>
         </Dialog>
-    );
+    )
 }

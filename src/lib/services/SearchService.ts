@@ -1,30 +1,30 @@
-import { SearchCache } from '../search/cache/SearchCache';
-import { SearchCoordinator } from '../search/coordinator/SearchCoordinator';
-import { FlexSearchEngine } from '../search/implementations/flexsearch/FlexSearchEngine';
-import {
+import { SearchCache } from '../search/cache/SearchCache'
+import { SearchCoordinator } from '../search/coordinator/SearchCoordinator'
+import { FlexSearchEngine } from '../search/implementations/flexsearch/FlexSearchEngine'
+import type {
     SearchDocument,
     SearchFilters,
     SearchOptions,
     SearchResult,
-} from '../types/search';
+} from '../types/search'
 
 /**
  * Основной сервис поиска, объединяющий все компоненты
  */
 export class SearchService {
-    private coordinator: SearchCoordinator;
-    private cache: SearchCache;
-    private textEngine: FlexSearchEngine;
+    private coordinator: SearchCoordinator
+    private cache: SearchCache
+    private textEngine: FlexSearchEngine
 
     constructor() {
         this.textEngine = new FlexSearchEngine({
             resolution: 7,
             tokenize: 'full',
             cache: true,
-        });
+        })
 
-        this.coordinator = new SearchCoordinator(this.textEngine);
-        this.cache = new SearchCache();
+        this.coordinator = new SearchCoordinator(this.textEngine)
+        this.cache = new SearchCache()
     }
 
     /**
@@ -40,18 +40,18 @@ export class SearchService {
         options: SearchOptions = {}
     ): Promise<SearchResult[]> {
         // Проверяем кэш
-        const cachedResults = this.cache.get(query, filters);
+        const cachedResults = this.cache.get(query, filters)
         if (cachedResults) {
-            return cachedResults;
+            return cachedResults
         }
 
         // Выполняем поиск
-        const results = await this.coordinator.search(query, filters, options);
+        const results = await this.coordinator.search(query, filters, options)
 
         // Сохраняем в кэш
-        this.cache.set(query, filters, results);
+        this.cache.set(query, filters, results)
 
-        return results;
+        return results
     }
 
     /**
@@ -64,7 +64,7 @@ export class SearchService {
         filters: SearchFilters,
         options: SearchOptions = {}
     ): Promise<SearchResult[]> {
-        return await this.coordinator.search('', filters, options);
+        return await this.coordinator.search('', filters, options)
     }
 
     /**
@@ -77,7 +77,7 @@ export class SearchService {
         query: string,
         options: SearchOptions = {}
     ): Promise<SearchResult[]> {
-        return await this.coordinator.searchByContent(query, options);
+        return await this.coordinator.searchByContent(query, options)
     }
 
     /**
@@ -85,9 +85,9 @@ export class SearchService {
      * @param document - Документ для индексации
      */
     async indexDocument(document: SearchDocument): Promise<void> {
-        await this.textEngine.indexDocument(document);
+        await this.textEngine.indexDocument(document)
         // Инвалидируем кэш при изменении документов
-        this.cache.invalidateAll();
+        this.cache.invalidateAll()
     }
 
     /**
@@ -95,8 +95,8 @@ export class SearchService {
      * @param documentId - ID документа для удаления
      */
     async removeDocument(documentId: string): Promise<void> {
-        await this.textEngine.removeDocument(documentId);
-        this.cache.invalidateAll();
+        await this.textEngine.removeDocument(documentId)
+        this.cache.invalidateAll()
     }
 
     /**
@@ -104,8 +104,8 @@ export class SearchService {
      * @param documents - Массив документов для индексации
      */
     async reindexAll(documents: SearchDocument[]): Promise<void> {
-        await this.textEngine.reindexAll(documents);
-        this.cache.invalidateAll();
+        await this.textEngine.reindexAll(documents)
+        this.cache.invalidateAll()
     }
 
     /**
@@ -113,7 +113,7 @@ export class SearchService {
      * @returns Статус индекса
      */
     async getSearchEngineStatus() {
-        return await this.coordinator.getSearchEngineStatus();
+        return await this.coordinator.getSearchEngineStatus()
     }
 
     /**
@@ -121,16 +121,16 @@ export class SearchService {
      * @returns Статистика использования кэша
      */
     getCacheStats() {
-        return this.cache.getStats();
+        return this.cache.getStats()
     }
 
     /**
      * Очищает кэш поиска
      */
     clearCache(): void {
-        this.cache.clear();
+        this.cache.clear()
     }
 }
 
 // Экспорт экземпляра для использования в приложении
-export const searchService = new SearchService();
+export const searchService = new SearchService()

@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Add as AddIcon, Save as SaveIcon } from '@mui/icons-material';
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Add as AddIcon, Save as SaveIcon } from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -13,17 +13,17 @@ import {
     Switch,
     TextField,
     Typography,
-} from '@mui/material';
-import { useParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+} from '@mui/material'
+import { useParams } from 'next/navigation'
+import { useForm } from 'react-hook-form'
 
-import { useCategories } from '@/lib/hooks/documents/useCategories';
-import { updateCategorySchema } from '@/lib/schemas/document';
-import { UpdateCategoryData } from '@/lib/types/document';
+import { useCategories } from '@/lib/hooks/documents/useCategories'
+import { updateCategorySchema } from '@/lib/schemas/document'
+import type { UpdateCategoryData } from '@/lib/types/document'
 
 export function EditCategoryPage() {
-    const params = useParams();
-    const categoryId = params.categoryId as string;
+    const params = useParams()
+    const categoryId = params.categoryId as string
 
     const {
         updateCategory,
@@ -31,9 +31,9 @@ export function EditCategoryPage() {
         operationError,
         operationSuccess,
         categories,
-    } = useCategories();
+    } = useCategories()
 
-    const category = categories?.find(c => c.id === categoryId);
+    const category = categories?.find(c => c.id === categoryId)
 
     const {
         register,
@@ -50,23 +50,23 @@ export function EditCategoryPage() {
             color: category?.color || '#000000',
             isDefault: category?.isDefault || false,
         },
-    });
+    })
 
     const onSubmit = async (data: UpdateCategoryData) => {
         try {
-            await updateCategory(data);
-            reset();
+            await updateCategory(data)
+            reset()
         } catch (error) {
-            console.error('Failed to update category:', error);
+            console.error('Failed to update category:', error)
         }
-    };
+    }
 
     const handleReset = () => {
-        reset();
-    };
+        reset()
+    }
 
-    const nameValue = watch('name');
-    const descriptionValue = watch('description');
+    const nameValue = watch('name')
+    const descriptionValue = watch('description')
 
     return (
         <Paper sx={{ p: 3, m: 3 }}>
@@ -163,5 +163,5 @@ export function EditCategoryPage() {
                 </Box>
             </form>
         </Paper>
-    );
+    )
 }

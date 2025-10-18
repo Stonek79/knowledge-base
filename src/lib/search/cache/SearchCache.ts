@@ -1,23 +1,23 @@
-import { SearchFilters, SearchResult } from '../../types/search';
+import type { SearchFilters, SearchResult } from '../../types/search'
 
 /**
  * Кэш для результатов поиска
  */
 export interface SearchCacheEntry {
     /** Результаты поиска */
-    results: SearchResult[];
+    results: SearchResult[]
     /** Время создания кэша */
-    timestamp: number;
+    timestamp: number
     /** Время жизни кэша в миллисекундах */
-    ttl: number;
+    ttl: number
 }
 
 /**
  * Сервис кэширования результатов поиска
  */
 export class SearchCache {
-    private cache = new Map<string, SearchCacheEntry>();
-    private defaultTtl = 5 * 60 * 1000; // 5 минут
+    private cache = new Map<string, SearchCacheEntry>()
+    private defaultTtl = 5 * 60 * 1000 // 5 минут
 
     /**
      * Получает результаты поиска из кэша
@@ -26,20 +26,20 @@ export class SearchCache {
      * @returns Результаты поиска или null если не найдены
      */
     get(query: string, filters: SearchFilters = {}): SearchResult[] | null {
-        const key = this.generateCacheKey(query, filters);
-        const entry = this.cache.get(key);
+        const key = this.generateCacheKey(query, filters)
+        const entry = this.cache.get(key)
 
         if (!entry) {
-            return null;
+            return null
         }
 
         // Проверяем, не истек ли кэш
         if (Date.now() - entry.timestamp > entry.ttl) {
-            this.cache.delete(key);
-            return null;
+            this.cache.delete(key)
+            return null
         }
 
-        return entry.results;
+        return entry.results
     }
 
     /**
@@ -55,14 +55,14 @@ export class SearchCache {
         results: SearchResult[],
         ttl?: number
     ): void {
-        const key = this.generateCacheKey(query, filters);
+        const key = this.generateCacheKey(query, filters)
         const entry: SearchCacheEntry = {
             results,
             timestamp: Date.now(),
             ttl: ttl || this.defaultTtl,
-        };
+        }
 
-        this.cache.set(key, entry);
+        this.cache.set(key, entry)
     }
 
     /**
@@ -71,15 +71,15 @@ export class SearchCache {
      * @param filters - Фильтры поиска
      */
     delete(query: string, filters: SearchFilters = {}): void {
-        const key = this.generateCacheKey(query, filters);
-        this.cache.delete(key);
+        const key = this.generateCacheKey(query, filters)
+        this.cache.delete(key)
     }
 
     /**
      * Очищает весь кэш
      */
     clear(): void {
-        this.cache.clear();
+        this.cache.clear()
     }
 
     /**
@@ -87,7 +87,7 @@ export class SearchCache {
      * Вызывается при изменении документов
      */
     invalidateAll(): void {
-        this.clear();
+        this.clear()
     }
 
     /**
@@ -95,21 +95,21 @@ export class SearchCache {
      * @returns Статистика использования кэша
      */
     getStats(): {
-        size: number;
-        hitRate: number;
-        totalHits: number;
-        totalMisses: number;
+        size: number
+        hitRate: number
+        totalHits: number
+        totalMisses: number
     } {
-        const totalHits = this.totalHits;
-        const totalMisses = this.totalMisses;
-        const total = totalHits + totalMisses;
+        const totalHits = this.totalHits
+        const totalMisses = this.totalMisses
+        const total = totalHits + totalMisses
 
         return {
             size: this.cache.size,
             hitRate: total > 0 ? totalHits / total : 0,
             totalHits,
             totalMisses,
-        };
+        }
     }
 
     /**
@@ -119,25 +119,11 @@ export class SearchCache {
      * @returns Ключ кэша
      */
     private generateCacheKey(query: string, filters: SearchFilters): string {
-        const filterString = JSON.stringify(filters);
-        return `${query}:${filterString}`;
+        const filterString = JSON.stringify(filters)
+        return `${query}:${filterString}`
     }
 
     // Счетчики для статистики
-    private totalHits = 0;
-    private totalMisses = 0;
-
-    /**
-     * Увеличивает счетчик попаданий в кэш
-     */
-    private incrementHits(): void {
-        this.totalHits++;
-    }
-
-    /**
-     * Увеличивает счетчик промахов кэша
-     */
-    private incrementMisses(): void {
-        this.totalMisses++;
-    }
+    private totalHits = 0
+    private totalMisses = 0
 }

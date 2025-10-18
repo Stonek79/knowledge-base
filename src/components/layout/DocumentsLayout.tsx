@@ -1,12 +1,12 @@
-'use client';
+'use client'
 
-import Box from '@mui/material/Box';
-import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box'
+import CssBaseline from '@mui/material/CssBaseline'
 
-import { Header } from './Header';
+import { Header } from './Header'
 
 interface DocumentsLayoutProps {
-    children: React.ReactNode;
+    children: React.ReactNode
 }
 
 export function DocumentsLayout({ children }: DocumentsLayoutProps) {
@@ -37,5 +37,5 @@ export function DocumentsLayout({ children }: DocumentsLayoutProps) {
                 {children}
             </Box>
         </Box>
-    );
+    )
 }

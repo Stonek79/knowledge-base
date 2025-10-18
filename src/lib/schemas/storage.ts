@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { STORAGE_BASE_PATHS } from '@/constants/app';
-import { MIME } from '@/constants/mime';
+import { STORAGE_BASE_PATHS } from '@/constants/app'
+import { MIME } from '@/constants/mime'
 
 /**
  * Схема валидации метаданных файла
@@ -30,7 +30,7 @@ export const fileMetadataSchema = z.object({
     customMetadata: z
         .record(z.string().max(100), z.string().max(500))
         .optional(),
-});
+})
 
 /**
  * Схема валидации результата загрузки
@@ -53,7 +53,7 @@ export const fileUploadResultSchema = z.object({
     hash: z.string().length(64, 'Хеш должен быть 64 символа'),
     mimeType: z.string().min(1),
     storagePath: z.string().min(1),
-});
+})
 
 /**
  * Схема валидации информации о файле
@@ -76,7 +76,7 @@ export const fileInfoSchema = z.object({
     etag: z.string().min(1),
     mimeType: z.string().optional(),
     metadata: z.record(z.string(), z.string()).optional(),
-});
+})
 
 /**
  * Схема валидации конфигурации MinIO
@@ -99,7 +99,7 @@ export const minioConfigSchema = z.object({
     accessKey: z.string().min(1, 'Access key обязателен'),
     secretKey: z.string().min(1, 'Secret key обязателен'),
     region: z.string().optional(),
-});
+})
 
 /**
  * Схема валидации базового пути хранения файла
@@ -108,7 +108,7 @@ export const minioConfigSchema = z.object({
  * @example
  * 'original'
  */
-export const storageBasePathSchema = z.enum(Object.values(STORAGE_BASE_PATHS));
+export const storageBasePathSchema = z.enum(Object.values(STORAGE_BASE_PATHS))
 
 /**
  * Схема валидации опций загрузки
@@ -127,7 +127,7 @@ export const uploadOptionsSchema = z.object({
     public: z.boolean().optional(),
     presignedExpiry: z.number().int().min(60).max(604800).optional(), // 1 минута - 7 дней
     basePath: storageBasePathSchema.optional(),
-});
+})
 
 /**
  * Схема валидации результата операции
@@ -144,4 +144,4 @@ export const storageOperationResultSchema = z.object({
     success: z.boolean(),
     error: z.string().optional(),
     data: z.record(z.string(), z.string()).optional(),
-});
+})

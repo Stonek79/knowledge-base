@@ -1,13 +1,13 @@
-import { ALLOWED_UPLOAD_MIME } from '@/constants/mime';
-import { prisma } from '@/lib/prisma';
-import { AppSettings } from '@/lib/types/settings';
+import { ALLOWED_UPLOAD_MIME } from '@/constants/mime'
+import { prisma } from '@/lib/prisma'
+import type { AppSettings } from '@/lib/types/settings'
 
-import { systemSettingsSchema } from '../schemas/settings';
+import { systemSettingsSchema } from '../schemas/settings'
 
 type Cached<T> = {
-    value: T | null;
-    loadedAt: number;
-};
+    value: T | null
+    loadedAt: number
+}
 
 const DEFAULTS: AppSettings = {
     maxFileSize: 2 * 1024 * 1024, // 2MB
@@ -15,9 +15,9 @@ const DEFAULTS: AppSettings = {
     allowedMimeTypes: [...ALLOWED_UPLOAD_MIME],
     enableOcr: true,
     ocrLanguages: ['rus', 'eng'],
-};
+}
 
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_MS = 60_000
 
 /**
  * Сервис для работы с настройками системы
@@ -41,24 +41,24 @@ const CACHE_TTL_MS = 60_000;
  *
  * const allowedMimeTypes = await settingsService.getAllowedMimeTypes();
  * console.log(allowedMimeTypes);
- * 
+ *
  */
 class SettingsService {
-    private cache: Cached<AppSettings> = { value: null, loadedAt: 0 };
+    private cache: Cached<AppSettings> = { value: null, loadedAt: 0 }
 
     private isExpired(): boolean {
-        return Date.now() - this.cache.loadedAt > CACHE_TTL_MS;
+        return Date.now() - this.cache.loadedAt > CACHE_TTL_MS
     }
 
     private async load(): Promise<AppSettings> {
         const row = await prisma.systemSettings.findUnique({
             where: { id: 'singleton' },
-        });
+        })
 
-        const parsed = systemSettingsSchema.safeParse(row ?? {});
+        const parsed = systemSettingsSchema.safeParse(row ?? {})
         const normalized = parsed.success
             ? parsed.data
-            : systemSettingsSchema.parse({});
+            : systemSettingsSchema.parse({})
         // Приводим к AppSettings (отбрасываем служебные поля)
         const settings: AppSettings = {
             maxFileSize: normalized.maxFileSize ?? DEFAULTS.maxFileSize,
@@ -74,38 +74,38 @@ class SettingsService {
                 normalized.ocrLanguages && normalized.ocrLanguages.length > 0
                     ? normalized.ocrLanguages
                     : DEFAULTS.ocrLanguages,
-        };
-        this.cache = { value: settings, loadedAt: Date.now() };
-        return settings;
+        }
+        this.cache = { value: settings, loadedAt: Date.now() }
+        return settings
     }
 
     async get(): Promise<AppSettings> {
         if (!this.cache.value || this.isExpired()) {
-            return this.load();
+            return this.load()
         }
-        return this.cache.value;
+        return this.cache.value
     }
 
     async refresh(): Promise<AppSettings> {
-        return this.load();
+        return this.load()
     }
 
     async getMaxFileSize(): Promise<number> {
-        return (await this.get()).maxFileSize;
+        return (await this.get()).maxFileSize
     }
 
     async getAllowedMimeTypes(): Promise<string[]> {
-        return (await this.get()).allowedMimeTypes;
+        return (await this.get()).allowedMimeTypes
     }
 
     async isOcrEnabled(): Promise<boolean> {
-        return (await this.get()).enableOcr;
+        return (await this.get()).enableOcr
     }
 
     async getOcrLanguages(): Promise<string[]> {
-        return (await this.get()).ocrLanguages;
+        return (await this.get()).ocrLanguages
     }
 }
 
 // Импортируем всё в один экземпляре
-export const settingsService = new SettingsService();
+export const settingsService = new SettingsService()

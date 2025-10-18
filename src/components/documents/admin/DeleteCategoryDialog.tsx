@@ -1,6 +1,4 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 import {
     Alert,
@@ -10,15 +8,16 @@ import {
     DialogContent,
     DialogTitle,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
+import { useState } from 'react'
 
-import { CategoryBase } from '@/lib/types/document';
+import type { CategoryBase } from '@/lib/types/document'
 
 interface DeleteCategoryDialogProps {
-    open: boolean;
-    category: CategoryBase | null;
-    onClose: () => void;
-    onConfirm: (categoryId: string) => Promise<void>;
+    open: boolean
+    category: CategoryBase | null
+    onClose: () => void
+    onConfirm: () => Promise<void>
 }
 
 /**
@@ -35,31 +34,31 @@ export function DeleteCategoryDialog({
     onClose,
     onConfirm,
 }: DeleteCategoryDialogProps) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const handleDelete = async () => {
-        if (!category) return;
+        if (!category) return
 
-        setIsLoading(true);
-        setError(null);
+        setIsLoading(true)
+        setError(null)
 
         try {
-            await onConfirm(category.id);
+            await onConfirm()
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : 'Ошибка удаления категории'
-            );
+            )
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     // Очищаем ошибку при открытии/закрытии диалога
     const handleClose = () => {
-        setError(null);
-        onClose();
-    };
+        setError(null)
+        onClose()
+    }
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
@@ -102,5 +101,5 @@ export function DeleteCategoryDialog({
                 </Button>
             </DialogActions>
         </Dialog>
-    );
+    )
 }

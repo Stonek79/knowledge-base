@@ -1,15 +1,13 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+'use client'
 
 import {
     ArrowBack as ArrowBackIcon,
-    CalendarToday as DateIcon,
     ColorLens as ColorIcon,
+    CalendarToday as DateIcon,
     Delete as DeleteIcon,
     Description as DocumentIcon,
     Edit as EditIcon,
-} from '@mui/icons-material';
+} from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -24,26 +22,30 @@ import {
     Skeleton,
     Tooltip,
     Typography,
-} from '@mui/material';
-import { useParams, useRouter } from 'next/navigation';
+} from '@mui/material'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-import { useCategories } from '@/lib/hooks/documents/useCategories';
-import { useDocuments } from '@/lib/hooks/documents/useDocuments';
-import { DocumentFilters as DocumentFiltersType, ViewableDocument } from '@/lib/types/document';
-import { formatDate } from '@/utils/date';
+import { useCategories } from '@/lib/hooks/documents/useCategories'
+import { useDocuments } from '@/lib/hooks/documents/useDocuments'
+import type {
+    DocumentFilters as DocumentFiltersType,
+    ViewableDocument,
+} from '@/lib/types/document'
+import { formatDate } from '@/utils/date'
 
-import { DocumentViewer } from '../viewer/DocumentViewer';
+import { DocumentViewer } from '../viewer/DocumentViewer'
 
-import { DocumentFilters } from './DocumentFilters';
+import { DocumentFilters } from './DocumentFilters'
 
 export default function CategoryPage() {
-    const params = useParams();
-    const router = useRouter();
-    const categoryId = params.categoryId as string;
+    const params = useParams()
+    const router = useRouter()
+    const categoryId = params.categoryId as string
 
-    const [viewerOpen, setViewerOpen] = useState(false);
+    const [viewerOpen, setViewerOpen] = useState(false)
     const [selectedDocument, setSelectedDocument] =
-        useState<ViewableDocument | null>(null);
+        useState<ViewableDocument | null>(null)
     const [filters, setFilters] = useState<DocumentFiltersType>({
         page: 1,
         limit: 10,
@@ -51,46 +53,46 @@ export default function CategoryPage() {
         sortOrder: 'desc',
         q: undefined,
         categoryIds: [categoryId], // Фильтруем по текущей категории
-    });
+    })
 
     const {
         categories,
         isLoading: categoriesLoading,
         error: categoriesError,
-    } = useCategories();
+    } = useCategories()
     const {
         documents,
         pagination,
         error: documentsError,
-    } = useDocuments(filters);
+    } = useDocuments(filters)
 
-    const category = categories?.find(cat => cat.id === categoryId);
+    const category = categories?.find(cat => cat.id === categoryId)
 
     useEffect(() => {
         if (categoryId) {
-            setFilters(prev => ({ ...prev, categoryIds: [categoryId] }));
+            setFilters(prev => ({ ...prev, categoryIds: [categoryId] }))
         }
-    }, [categoryId]);
+    }, [categoryId])
 
     const handleBack = () => {
-        router.back();
-    };
+        router.back()
+    }
 
     const handleEdit = () => {
         // TODO: Открыть модалку редактирования
-        console.log('Edit category:', category);
-    };
+        console.log('Edit category:', category)
+    }
 
     const handleDelete = async () => {
-        if (!category || category.isDefault) return;
+        if (!category || category.isDefault) return
 
         // TODO: Показать диалог подтверждения
-        console.log('Delete category:', category);
-    };
+        console.log('Delete category:', category)
+    }
 
     const handleFiltersChange = (newFilters: DocumentFiltersType) => {
-        setFilters(newFilters);
-    };
+        setFilters(newFilters)
+    }
 
     const resetFilters = () => {
         setFilters({
@@ -100,8 +102,8 @@ export default function CategoryPage() {
             sortOrder: 'desc',
             q: undefined,
             categoryIds: [categoryId],
-        });
-    };
+        })
+    }
 
     if (categoriesLoading) {
         return (
@@ -109,7 +111,7 @@ export default function CategoryPage() {
                 <Skeleton variant='rectangular' height={200} sx={{ mb: 3 }} />
                 <Skeleton variant='rectangular' height={400} />
             </Container>
-        );
+        )
     }
 
     if (categoriesError || !category) {
@@ -119,7 +121,7 @@ export default function CategoryPage() {
                     Категория не найдена или произошла ошибка загрузки.
                 </Alert>
             </Container>
-        );
+        )
     }
 
     return (
@@ -406,8 +408,8 @@ export default function CategoryPage() {
                                         variant='outlined'
                                         size='small'
                                         onClick={() => {
-                                            setSelectedDocument(doc);
-                                            setViewerOpen(true);
+                                            setSelectedDocument(doc)
+                                            setViewerOpen(true)
                                         }}
                                     >
                                         Просмотреть
@@ -436,12 +438,12 @@ export default function CategoryPage() {
                         document={selectedDocument}
                         open={viewerOpen}
                         onClose={() => {
-                            setViewerOpen(false);
-                            setSelectedDocument(null);
+                            setViewerOpen(false)
+                            setSelectedDocument(null)
                         }}
                     />
-                )}  
+                )}
             </Box>
         </Container>
-    );
+    )
 }

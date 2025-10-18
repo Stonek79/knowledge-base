@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { DOCUMENT_TYPE, SORT_ORDER } from '@/constants/document';
+import { DOCUMENT_TYPE, SORT_ORDER } from '@/constants/document'
 
 /**
  * Схема валидации фильтров документов
@@ -25,7 +25,7 @@ export const documentFiltersSchema = z.object({
         .optional(),
     mimeType: z.string().optional(),
     searchQuery: z.string().optional(),
-});
+})
 
 /**
  * Схема валидации опций сортировки
@@ -40,7 +40,7 @@ export const sortOptionsSchema = z.object({
         'downloadCount',
     ]),
     order: z.enum([SORT_ORDER.ASC, SORT_ORDER.DESC]).default(SORT_ORDER.DESC),
-});
+})
 
 /**
  * Схема валидации пагинации
@@ -48,7 +48,7 @@ export const sortOptionsSchema = z.object({
 export const paginationOptionsSchema = z.object({
     page: z.number().int().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(20),
-});
+})
 
 /**
  * Схема валидации агрегации
@@ -59,4 +59,4 @@ export const aggregationOptionsSchema = z.object({
         .optional(),
     count: z.boolean().default(true),
     sum: z.array(z.enum(['fileSize', 'viewCount', 'downloadCount'])).optional(),
-});
+})

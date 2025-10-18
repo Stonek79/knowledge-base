@@ -1,11 +1,11 @@
-import jwt from 'jsonwebtoken';
-import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken'
+import { type NextRequest, NextResponse } from 'next/server'
 
-import { COOKIE_NAME } from '@/constants/app';
-import { JWT_SECRET } from '@/constants/auth';
-import { ApiError, handleApiError } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
-import { jwtPayloadSchema } from '@/lib/schemas/user';
+import { COOKIE_NAME } from '@/constants/app'
+import { JWT_SECRET } from '@/constants/auth'
+import { ApiError, handleApiError } from '@/lib/api'
+import { prisma } from '@/lib/prisma'
+import { jwtPayloadSchema } from '@/lib/schemas/user'
 
 /**
  * @swagger
@@ -27,24 +27,24 @@ import { jwtPayloadSchema } from '@/lib/schemas/user';
  */
 export async function GET(req: NextRequest) {
     try {
-        const token = req.cookies.get(COOKIE_NAME)?.value;
+        const token = req.cookies.get(COOKIE_NAME)?.value
 
         if (!token) {
-            throw new ApiError('Токен аутентификации не предоставлен', 401);
+            throw new ApiError('Токен аутентификации не предоставлен', 401)
         }
 
-        const jwtSecret = process.env.JWT_SECRET || JWT_SECRET;
+        const jwtSecret = process.env.JWT_SECRET || JWT_SECRET
 
         if (!jwtSecret) {
-            console.error('JWT_SECRET не определен в .env');
-            throw new ApiError('Ошибка конфигурации сервера (JWT)', 500);
+            console.error('JWT_SECRET не определен в .env')
+            throw new ApiError('Ошибка конфигурации сервера (JWT)', 500)
         }
 
-        let decoded: unknown;
+        let decoded: unknown
         try {
-            decoded = jwt.verify(token, jwtSecret);
+            decoded = jwt.verify(token, jwtSecret)
         } catch (error) {
-            console.log('[GET] /auth/me error', error);
+            console.log('[GET] /auth/me error', error)
 
             const errResponse = NextResponse.json(
                 {
@@ -52,24 +52,24 @@ export async function GET(req: NextRequest) {
                     error: 'InvalidTokenError',
                 },
                 { status: 401 }
-            );
+            )
 
             // Удаляем невалидный cookie
-            errResponse.cookies.set(COOKIE_NAME, '', { maxAge: 0 });
-            return errResponse;
+            errResponse.cookies.set(COOKIE_NAME, '', { maxAge: 0 })
+            return errResponse
         }
 
-        const validationResult = jwtPayloadSchema.safeParse(decoded);
+        const validationResult = jwtPayloadSchema.safeParse(decoded)
 
         if (!validationResult.success) {
-            throw new ApiError('Некорректный формат токена', 401);
+            throw new ApiError('Некорректный формат токена', 401)
         }
 
-        const { id } = validationResult.data;
+        const { id } = validationResult.data
 
         if (!id) {
             // Если токен есть, но его содержимое не соответствует схеме, это тоже ошибка авторизации
-            throw new ApiError('Некорректный формат токена', 401);
+            throw new ApiError('Некорректный формат токена', 401)
         }
 
         // Получаем самые свежие данные пользователя из БД
@@ -83,32 +83,32 @@ export async function GET(req: NextRequest) {
                 role: true,
                 profile: true,
             },
-        });
+        })
 
         if (!user) {
             // Если пользователь с таким ID из токена не найден в БД, это критическая ошибка синхронизации
             const errResponse = NextResponse.json(
                 { message: 'Пользователь не найден', error: 'UserNotFound' },
                 { status: 401 }
-            );
+            )
 
-            return errResponse;
+            return errResponse
         }
 
-        return NextResponse.json(user, { status: 200 });
+        return NextResponse.json(user, { status: 200 })
     } catch (error) {
         // Обработка ошибок ApiError для корректных HTTP-ответов
         if (error instanceof ApiError) {
             const response = NextResponse.json(
                 { message: error.message, error: error.name }, // Используем error.name для кода ошибки
                 { status: error.status }
-            );
+            )
 
-            return response;
+            return response
         }
         // Обработка остальных (непредвиденных) ошибок
         return handleApiError(error, {
             message: 'Ошибка при получении данных пользователя',
-        });
+        })
     }
 }

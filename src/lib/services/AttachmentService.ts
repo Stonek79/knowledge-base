@@ -1,9 +1,9 @@
 // src/lib/services/AttachmentService.ts
-import { STORAGE_BASE_PATHS } from '@/constants/app';
-import { attachmentMetadataSchema } from '@/lib/schemas/attachment';
-import type { AttachmentMetadata } from '@/lib/types/attachment';
+import { STORAGE_BASE_PATHS } from '@/constants/app'
+import { attachmentMetadataSchema } from '@/lib/schemas/attachment'
+import type { AttachmentMetadata } from '@/lib/types/attachment'
 
-import { getFileStorageService } from './FileStorageService';
+import { getFileStorageService } from './FileStorageService'
 
 /**
  * Сервис для управления приложениями к документам
@@ -13,8 +13,6 @@ import { getFileStorageService } from './FileStorageService';
  * Управление записями БД происходит в API роутах.
  */
 export class AttachmentService {
-    constructor() {}
-
     /**
      * Загружает приложение в MinIO
      * @param fileBuffer Буфер файла приложения
@@ -26,7 +24,7 @@ export class AttachmentService {
         metadata: AttachmentMetadata
     ): Promise<{ key: string; size: number; mimeType: string }> {
         // Валидация метаданных
-        const validatedMetadata = attachmentMetadataSchema.parse(metadata);
+        const validatedMetadata = attachmentMetadataSchema.parse(metadata)
 
         // Загружаем файл в MinIO
         const result = await getFileStorageService().uploadDocument(
@@ -37,13 +35,13 @@ export class AttachmentService {
                 size: validatedMetadata.fileSize,
             },
             { basePath: STORAGE_BASE_PATHS.ATTACHMENTS }
-        );
+        )
 
         return {
             key: result.key,
             size: result.size,
             mimeType: result.mimeType,
-        };
+        }
     }
 
     /**
@@ -51,7 +49,7 @@ export class AttachmentService {
      * @param fileKey Ключ файла в MinIO
      */
     async deleteAttachment(fileKey: string): Promise<void> {
-        await getFileStorageService().deleteDocument(fileKey);
+        await getFileStorageService().deleteDocument(fileKey)
     }
 
     /**
@@ -59,7 +57,7 @@ export class AttachmentService {
      * @param fileKey Ключ файла в MinIO
      */
     async getAttachmentInfo(fileKey: string) {
-        return getFileStorageService().getFileInfo(fileKey);
+        return getFileStorageService().getFileInfo(fileKey)
     }
 
     /**
@@ -67,7 +65,7 @@ export class AttachmentService {
      * @param fileKey Ключ файла в MinIO
      */
     async downloadAttachment(fileKey: string): Promise<Buffer> {
-        return getFileStorageService().downloadDocument(fileKey);
+        return getFileStorageService().downloadDocument(fileKey)
     }
 
     /**
@@ -79,9 +77,9 @@ export class AttachmentService {
         fileKey: string,
         expirySeconds?: number
     ): Promise<string> {
-        return getFileStorageService().getFileUrl(fileKey, expirySeconds);
+        return getFileStorageService().getFileUrl(fileKey, expirySeconds)
     }
 }
 
 // Экспорт экземпляра сервиса
-export const attachmentService = new AttachmentService();
+export const attachmentService = new AttachmentService()

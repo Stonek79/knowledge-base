@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 
-import { getCurrentUser } from '@/lib/actions/users';
-import { handleApiError } from '@/lib/api/apiError';
-import { composeChangeSetSchema } from '@/lib/schemas/compose';
-import { DocumentComposeService } from '@/lib/services/documents/DocumentComposeService';
-import { UserService } from '@/lib/services/UserService';
+import { getCurrentUser } from '@/lib/actions/users'
+import { handleApiError } from '@/lib/api/apiError'
+import { composeChangeSetSchema } from '@/lib/schemas/compose'
+import { DocumentComposeService } from '@/lib/services/documents/DocumentComposeService'
+import { UserService } from '@/lib/services/UserService'
 
 /**
  * @swagger
@@ -40,31 +40,31 @@ export async function POST(
     { params }: { params: { documentId: string } }
 ) {
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
         if (!user)
             return NextResponse.json(
                 { message: 'Unauthorized' },
                 { status: 401 }
-            );
+            )
 
-        const { documentId } = await params;
-        const body = await request.json();
-        const validation = composeChangeSetSchema.safeParse(body);
+        const { documentId } = await params
+        const body = await request.json()
+        const validation = composeChangeSetSchema.safeParse(body)
 
         if (!validation.success) {
-            return handleApiError(validation.error);
+            return handleApiError(validation.error)
         }
 
-        let authorId: string | undefined = undefined;
-        const metadata = validation.data.metadata;
+        let authorId: string | undefined
+        const metadata = validation.data.metadata
 
         if (metadata?.authorId) {
-            authorId = metadata.authorId;
+            authorId = metadata.authorId
         } else if (metadata?.username) {
             const author = await UserService.findOrCreateAuthor(
                 metadata.username
-            );
-            authorId = author.id;
+            )
+            authorId = author.id
         }
 
         const result = await DocumentComposeService.composeUpdateDocument(
@@ -72,14 +72,14 @@ export async function POST(
             validation.data,
             user,
             authorId
-        );
+        )
 
-        return NextResponse.json({ status: 'ok', ...result });
+        return NextResponse.json({ status: 'ok', ...result })
     } catch (error) {
         console.warn(
             '[compose/update] rolling back promoted files due to error'
-        );
+        )
 
-        return handleApiError(error);
+        return handleApiError(error)
     }
 }

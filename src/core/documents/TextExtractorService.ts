@@ -1,23 +1,22 @@
-import { GOTENBERG_URL } from '@/constants/app';
-import { MIME } from '@/constants/mime';
-import { SupportedMime } from '@/lib/types/mime';
-import { DocxProcessor } from '@/utils/docx';
-import { PdfProcessor } from '@/utils/pdf';
+import { GOTENBERG_URL } from '@/constants/app'
+import { MIME } from '@/constants/mime'
+import type { SupportedMime } from '@/lib/types/mime'
+import { DocxProcessor } from '@/utils/docx'
+import { PdfProcessor } from '@/utils/pdf'
 
-import { GotenbergAdapter } from './GotenbergAdapter';
+import { GotenbergAdapter } from './GotenbergAdapter'
 
 /**
  * Сервис для инкапсуляции логики извлечения текста из различных форматов файлов.
  * Использует специализированные процессоры для каждого типа и Gotenberg для конвертации.
  */
 export class TextExtractorService {
-    private gotenberg: GotenbergAdapter;
+    private gotenberg: GotenbergAdapter
 
     constructor() {
         // Инициализируем адаптер для Gotenberg
-        const gotenbergUrl =
-            process.env.GOTENBERG_URL || GOTENBERG_URL;
-        this.gotenberg = new GotenbergAdapter(gotenbergUrl);
+        const gotenbergUrl = process.env.GOTENBERG_URL || GOTENBERG_URL
+        this.gotenberg = new GotenbergAdapter(gotenbergUrl)
     }
 
     /**
@@ -33,19 +32,19 @@ export class TextExtractorService {
         try {
             // Для DOCX используем Mammoth
             if (mimeType === MIME.DOCX) {
-                return (await DocxProcessor.extractText(buffer))?.trim() || '';
+                return (await DocxProcessor.extractText(buffer))?.trim() || ''
             }
 
             // Для PDF используем pdfjs-dist
             if (mimeType === MIME.PDF) {
-                return (await PdfProcessor.extractText(buffer))?.trim() || '';
+                return (await PdfProcessor.extractText(buffer))?.trim() || ''
             }
 
             // Для других поддерживаемых типов (например, DOC) пробуем конвертировать в PDF и затем     извлечь текст
             const pdfConversionResult = await this.gotenberg.convertToPdf(
                 buffer,
                 mimeType
-            );
+            )
             if (pdfConversionResult.buffer) {
                 return (
                     (
@@ -53,18 +52,18 @@ export class TextExtractorService {
                             pdfConversionResult.buffer
                         )
                     )?.trim() || ''
-                );
+                )
             }
         } catch (error) {
             console.error(
                 `[TextExtractorService] Failed to extract text for mime type ${mimeType}:`,
                 error
-            );
+            )
         }
         // Возвращаем пустую строку, если извлечение не удалось
-        return '';
+        return ''
     }
 }
 
 // Экспортируем синглтон для удобного использования в других частях приложения
-export const textExtractorService = new TextExtractorService();
+export const textExtractorService = new TextExtractorService()

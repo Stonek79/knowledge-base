@@ -1,29 +1,28 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
+import { Box, Container, Typography } from '@mui/material'
+import { useState } from 'react'
 
-import { Box, Container, Typography } from '@mui/material';
+import { useCategories } from '@/lib/hooks/documents/useCategories'
 
-import { useCategories } from '@/lib/hooks/documents/useCategories';
-
-import { CategoriesList } from './categories/CategoriesList';
-import { FilteredList } from './filtered/FilteredList';
-import { RecentDocuments } from './recent/RecentDocument';
-import { SearchBar } from './search/SearchBar';
+import { CategoriesList } from './categories/CategoriesList'
+import { FilteredList } from './filtered/FilteredList'
+import { RecentDocuments } from './recent/RecentDocument'
+import { SearchBar } from './search/SearchBar'
 
 export function DocumentsPage() {
-    const [currentCategory, setCurrentCategory] = useState<string | null>(null);
+    const [currentCategory, setCurrentCategory] = useState<string | null>(null)
 
-    const { categories, isLoading: categoriesLoading } = useCategories();
+    const { categories, isLoading: categoriesLoading } = useCategories()
 
     const handleCategoryClick = (categoryId: string) => {
-        setCurrentCategory(categoryId);
+        setCurrentCategory(categoryId)
         if (currentCategory === categoryId) {
-            setCurrentCategory(null);
+            setCurrentCategory(null)
         } else {
-            setCurrentCategory(categoryId);
+            setCurrentCategory(categoryId)
         }
-    };
+    }
 
     return (
         <Container maxWidth='xl' sx={{ py: 3 }}>
@@ -82,5 +81,5 @@ export function DocumentsPage() {
                 )}
             </Box>
         </Container>
-    );
+    )
 }

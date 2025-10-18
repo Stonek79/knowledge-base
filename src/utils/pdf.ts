@@ -11,34 +11,33 @@ export type TextItem = {
     /**
      * - Text content.
      */
-    str: string;
+    str: string
     /**
      * - Text direction: 'ttb', 'ltr' or 'rtl'.
      */
-    dir: string;
+    dir: string
     /**
      * - Transformation matrix.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transform: Array<any>;
+    transform: number[]
     /**
      * - Width in device space.
      */
-    width: number;
+    width: number
     /**
      * - Height in device space.
      */
-    height: number;
+    height: number
     /**
      * - Font name used by PDF.js for converted font.
      */
-    fontName: string;
+    fontName: string
     /**
      * - Indicating if the text content is followed by a
      * line-break.
      */
-    hasEOL: boolean;
-};
+    hasEOL: boolean
+}
 /**
  * Page text marked content part.
  */
@@ -47,13 +46,13 @@ export type TextMarkedContent = {
      * - Either 'beginMarkedContent',
      * 'beginMarkedContentProps', or 'endMarkedContent'.
      */
-    type: string;
+    type: string
     /**
      * - The marked content identifier. Only used for type
      * 'beginMarkedContentProps'.
      */
-    id: string;
-};
+    id: string
+}
 /**
  * Text style.
  */
@@ -61,20 +60,20 @@ export type TextStyle = {
     /**
      * - Font ascent.
      */
-    ascent: number;
+    ascent: number
     /**
      * - Font descent.
      */
-    descent: number;
+    descent: number
     /**
      * - Whether or not the text is in vertical mode.
      */
-    vertical: boolean;
+    vertical: boolean
     /**
      * - The possible font family.
      */
-    fontFamily: string;
-};
+    fontFamily: string
+}
 /**
  * Page text content.
  */
@@ -84,18 +83,18 @@ export type TextContent = {
      * {@link TextItem } and {@link TextMarkedContent } objects. TextMarkedContent
      * items are included when includeMarkedContent is true.
      */
-    items: Array<TextItem | TextMarkedContent>;
+    items: Array<TextItem | TextMarkedContent>
     /**
      * - {@link TextStyle } objects,
      * indexed by font name.
      */
     styles: {
-        [x: string]: TextStyle;
-    };
-};
+        [x: string]: TextStyle
+    }
+}
 
 function isTextItem(item: TextContent['items'][number]): item is TextItem {
-    return typeof (item as { str?: unknown }).str === 'string';
+    return typeof (item as { str?: unknown }).str === 'string'
 }
 
 /**
@@ -115,27 +114,26 @@ export class PdfProcessor {
      */
     static async extractText(buffer: Buffer): Promise<string> {
         // const loadingTask = getDocument({ data: buffer });
-        const pdfjsDistPath = 'pdfjs-dist/build/pdf.js';
-        const { getDocument } = await import(pdfjsDistPath);
+        const pdfjsDistPath = 'pdfjs-dist/build/pdf.js'
+        const { getDocument } = await import(pdfjsDistPath)
 
+        const loadingTask = getDocument({ data: buffer })
+        type PDFDocumentProxy = Awaited<typeof loadingTask.promise>
 
-        const loadingTask = getDocument({ data: buffer });
-        type PDFDocumentProxy = Awaited<typeof loadingTask.promise>;
-
-        const doc: PDFDocumentProxy = await loadingTask.promise;
-        const numPages = doc.numPages;
-        const parts: string[] = [];
+        const doc: PDFDocumentProxy = await loadingTask.promise
+        const numPages = doc.numPages
+        const parts: string[] = []
 
         for (let pageNum = 1; pageNum <= numPages; pageNum += 1) {
-            const page = await doc.getPage(pageNum);
-            const content = await page.getTextContent();
+            const page = await doc.getPage(pageNum)
+            const content = await page.getTextContent()
             const text = content.items
                 .filter(isTextItem)
                 .map(item => item.str)
-                .join(' ');
-            if (text.trim().length > 0) parts.push(text);
+                .join(' ')
+            if (text.trim().length > 0) parts.push(text)
         }
 
-        return parts.join('\n');
+        return parts.join('\n')
     }
 }

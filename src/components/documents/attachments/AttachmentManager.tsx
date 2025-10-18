@@ -1,11 +1,9 @@
-'use client';
+'use client'
 
-import { Fragment } from 'react';
-
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+import DeleteIcon from '@mui/icons-material/Delete'
 import {
     Alert,
     Box,
@@ -19,25 +17,26 @@ import {
     Skeleton,
     Tooltip,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
+import { Fragment } from 'react'
 
-import type { BaseAttachment } from '@/lib/types/attachment';
+import type { BaseAttachment } from '@/lib/types/attachment'
 
 export type AttachmentManagerProps = {
     /** Текущий список приложений (в нужном порядке) */
-    attachments: BaseAttachment[];
+    attachments: BaseAttachment[]
     /** Добавить одно приложение */
-    onAdd(file: File): void;
+    onAdd(file: File): void
     /** Удалить приложение по id */
-    onRemove(attachmentId: string): void;
+    onRemove(attachmentId: string): void
     /** Сдвинуть приложение вверх */
-    onMoveUp?(attachmentId: string): void;
+    onMoveUp?(attachmentId: string): void
     /** Сдвинуть приложение вниз */
-    onMoveDown?(attachmentId: string): void;
+    onMoveDown?(attachmentId: string): void
     /** Флаги состояния */
-    isLoading?: boolean;
-    error?: string | null;
-};
+    isLoading?: boolean
+    error?: string | null
+}
 
 export function AttachmentManager({
     onMoveUp,
@@ -65,9 +64,9 @@ export function AttachmentManager({
                         type='file'
                         hidden
                         onChange={e => {
-                            const f = e.target.files?.[0];
-                            if (f) void onAdd(f);
-                            e.currentTarget.value = '';
+                            const f = e.target.files?.[0]
+                            if (f) void onAdd(f)
+                            e.currentTarget.value = ''
                         }}
                         accept='.doc,.docx,.pdf'
                     />
@@ -99,17 +98,15 @@ export function AttachmentManager({
                         <ListItem
                             aria-label='attachment'
                             secondaryAction={
-                                <>
-                                    <IconButton
-                                        edge='end'
-                                        aria-label='delete'
-                                        onClick={async () => {
-                                            await onRemove(a.id);
-                                        }}
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </>
+                                <IconButton
+                                    edge='end'
+                                    aria-label='delete'
+                                    onClick={async () => {
+                                        await onRemove(a.id)
+                                    }}
+                                >
+                                    <DeleteIcon />
+                                </IconButton>
                             }
                         >
                             {/*TODO: Добавить просмотр при нажатии на файл */}
@@ -162,5 +159,5 @@ export function AttachmentManager({
                 )}
             </List>
         </Box>
-    );
+    )
 }

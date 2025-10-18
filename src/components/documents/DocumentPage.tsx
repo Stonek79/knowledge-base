@@ -1,7 +1,4 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-
+'use client'
 
 import {
     Archive as ArchiveIcon,
@@ -9,7 +6,7 @@ import {
     Person as PersonIcon,
     Schedule as ScheduleIcon,
     Tag as TagIcon,
-} from '@mui/icons-material';
+} from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -22,21 +19,22 @@ import {
     Paper,
     Stack,
     Typography,
-} from '@mui/material';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+} from '@mui/material'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-import { DOCUMENTS_BASE_PATH, DOCUMENT_EDIT_PAGE_PATH } from '@/constants/api';
-import { USER_ROLES } from '@/constants/user';
-import { useDocument } from '@/lib/hooks/documents/useDocument';
-import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete';
-import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { formatDate } from '@/utils/date';
-import { formatFileSize } from '@/utils/formatFileSize';
+import { DOCUMENT_EDIT_PAGE_PATH, DOCUMENTS_BASE_PATH } from '@/constants/api'
+import { USER_ROLES } from '@/constants/user'
+import { useDocument } from '@/lib/hooks/documents/useDocument'
+import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete'
+import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { formatDate } from '@/utils/date'
+import { formatFileSize } from '@/utils/formatFileSize'
 
-import { DeleteDocumentDialog } from './delete/DeleteDocumentDialog';
-import { DownloadButtons } from './download/DownloadButtons';
-import { DocumentViewer } from './viewer/DocumentViewer';
+import { DeleteDocumentDialog } from './delete/DeleteDocumentDialog'
+import { DownloadButtons } from './download/DownloadButtons'
+import { DocumentViewer } from './viewer/DocumentViewer'
 
 /**
  * Страница отдельного документа
@@ -50,51 +48,51 @@ import { DocumentViewer } from './viewer/DocumentViewer';
  * @param params - Параметры маршрута (documentId)
  */
 export function DocumentPage() {
-    const params = useParams();
-    const router = useRouter();
-    const { user } = useAuth();
-    const searchParams = useSearchParams();
-    const documentId = params.documentId as string;
+    const params = useParams()
+    const router = useRouter()
+    const { user } = useAuth()
+    const searchParams = useSearchParams()
+    const documentId = params.documentId as string
 
-    const { removeRecentDocument } = useRecentDocuments();
+    const { removeRecentDocument } = useRecentDocuments()
 
-    const { document, isLoading, error } = useDocument(documentId);
+    const { document, isLoading, error } = useDocument(documentId)
     const { deleteDocument, isDeleting, deleteError, clearError } =
-        useDocumentDelete();
+        useDocumentDelete()
 
-    const [isViewerOpen, setIsViewerOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isViewerOpen, setIsViewerOpen] = useState(false)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
     useEffect(() => {
-        if (!document) return;
-        const open = searchParams.get('open');
+        if (!document) return
+        const open = searchParams.get('open')
         if (open === '1' || open === 'true' || open === 'preview') {
-            setIsViewerOpen(true);
+            setIsViewerOpen(true)
         }
-    }, [document, searchParams]);
+    }, [document, searchParams])
 
     const handleEdit = (docId: string) => {
-        router.push(DOCUMENT_EDIT_PAGE_PATH(docId));
-    };
+        router.push(DOCUMENT_EDIT_PAGE_PATH(docId))
+    }
 
     const handleDelete = () => {
-        setDeleteDialogOpen(true);
-    };
+        setDeleteDialogOpen(true)
+    }
 
     const confirmDelete = async (documentId: string) => {
         try {
-            await deleteDocument(documentId);
+            await deleteDocument(documentId)
 
-            removeRecentDocument(documentId);
-            setDeleteDialogOpen(false);
+            removeRecentDocument(documentId)
+            setDeleteDialogOpen(false)
 
             if (!isDeleting && !deleteError) {
-                router.push(DOCUMENTS_BASE_PATH);
+                router.push(DOCUMENTS_BASE_PATH)
             }
         } catch (err) {
-            console.error('Ошибка удаления:', err);
+            console.error('Ошибка удаления:', err)
         }
-    };
+    }
 
     if (isLoading) {
         return (
@@ -103,7 +101,7 @@ export function DocumentPage() {
                     <CircularProgress />
                 </Box>
             </Container>
-        );
+        )
     }
 
     if (error || !document) {
@@ -119,7 +117,7 @@ export function DocumentPage() {
                     Вернуться к документам
                 </Button>
             </Container>
-        );
+        )
     }
 
     return (
@@ -356,8 +354,8 @@ export function DocumentPage() {
                     </Alert>
                     <Button
                         onClick={() => {
-                            clearError();
-                            router.refresh();
+                            clearError()
+                            router.refresh()
                         }}
                     >
                         Попробовать снова
@@ -374,10 +372,10 @@ export function DocumentPage() {
                     deletedAt: false,
                 }}
                 onClose={() => {
-                    setDeleteDialogOpen(false);
+                    setDeleteDialogOpen(false)
                 }}
                 onSoftDelete={confirmDelete}
             />
         </Container>
-    );
+    )
 }

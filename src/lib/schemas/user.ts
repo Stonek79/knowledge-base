@@ -1,12 +1,12 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 import {
     USER_ROLES,
     USER_SORTABLE_FIELDS,
     USER_STATUSES,
-} from '@/constants/user';
+} from '@/constants/user'
 
-import { profileSchema } from './profile';
+import { profileSchema } from './profile'
 
 export const createUserSchema = z
     .object({
@@ -32,9 +32,9 @@ export const createUserSchema = z
     .refine(
         data => {
             if (data.status === USER_STATUSES.PLACEHOLDER || !data.password) {
-                return true;
+                return true
             }
-            return data?.password?.length >= 6;
+            return data?.password?.length >= 6
         },
         {
             message: 'Пароль должен быть минимум 6 символов',
@@ -44,9 +44,9 @@ export const createUserSchema = z
     .refine(
         data => {
             if (data.status === USER_STATUSES.PLACEHOLDER || !data.password) {
-                return true;
+                return true
             }
-            return data?.password?.length <= 25;
+            return data?.password?.length <= 25
         },
         {
             message: 'Пароль должен быть максимум 25 символов',
@@ -56,15 +56,15 @@ export const createUserSchema = z
     .refine(
         data => {
             if (data.status === USER_STATUSES.PLACEHOLDER || !data.password) {
-                return true;
+                return true
             }
-            return data.password === data.confirmPassword;
+            return data.password === data.confirmPassword
         },
         {
             message: 'Пароли не совпадают',
             path: ['confirmPassword'],
         }
-    );
+    )
 
 export const userResponseSchema = z.object({
     id: z.string(),
@@ -75,7 +75,7 @@ export const userResponseSchema = z.object({
     status: z.enum(USER_STATUSES).optional(),
     profile: profileSchema.optional(),
     password: z.string().nullable().optional(),
-});
+})
 
 export const jwtPayloadSchema = z.object({
     id: z.string(),
@@ -83,7 +83,7 @@ export const jwtPayloadSchema = z.object({
     role: z.enum(USER_ROLES),
     createdAt: z.union([z.string(), z.date()]), // или приведите к строке
     enabled: z.boolean(),
-});
+})
 
 export const usersListSchema = z.object({
     page: z.number().min(1),
@@ -95,7 +95,7 @@ export const usersListSchema = z.object({
         .default(USER_SORTABLE_FIELDS.CREATED_AT),
     sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
     status: z.string().optional(),
-});
+})
 
 export const updateUserSchema = z
     .object({
@@ -120,9 +120,9 @@ export const updateUserSchema = z
     .refine(
         data => {
             if (!data.newPassword) {
-                return true; // Если пароль не меняется, пропускаем проверку
+                return true // Если пароль не меняется, пропускаем проверку
             }
-            return data.newPassword.length >= 6;
+            return data.newPassword.length >= 6
         },
         {
             message: 'Пароль должен быть минимум 6 символов',
@@ -132,9 +132,9 @@ export const updateUserSchema = z
     .refine(
         data => {
             if (!data.newPassword) {
-                return true; // Если пароль не меняется, пропускаем проверку
+                return true // Если пароль не меняется, пропускаем проверку
             }
-            return data.newPassword.length <= 25;
+            return data.newPassword.length <= 25
         },
         {
             message: 'Пароль должен быть максимум 25 символов',
@@ -145,13 +145,13 @@ export const updateUserSchema = z
         data => {
             // Если пароль меняется, он должен совпадать с подтверждением
             if (data.newPassword) {
-                return data.newPassword === data.confirmNewPassword;
+                return data.newPassword === data.confirmNewPassword
             }
             // Если не меняется, пропускаем
-            return true;
+            return true
         },
         {
             message: 'Пароли не совпадают',
             path: ['confirmNewPassword'],
         }
-    );
+    )

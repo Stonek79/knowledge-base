@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client'
 
 /**
  * Prisma Client Extension для реализации "мягкого удаления".
@@ -23,30 +23,30 @@ export const softDeleteExtension = Prisma.defineExtension({
                 const modifiedArgs = {
                     ...args,
                     where: { ...args.where, deletedAt: null },
-                };
-                return query(modifiedArgs);
+                }
+                return query(modifiedArgs)
             },
             async findFirst({ args, query }) {
                 const modifiedArgs = {
                     ...args,
                     where: { ...args.where, deletedAt: null },
-                };
-                return query(modifiedArgs);
+                }
+                return query(modifiedArgs)
             },
-            async findMany({ args, query }) { 
+            async findMany({ args, query }) {
                 const modifiedArgs = {
                     ...args,
                     where: { ...args.where, deletedAt: null },
-                };
-                return query(modifiedArgs);
+                }
+                return query(modifiedArgs)
             },
             async count({ args, query }) {
                 const modifiedArgs = {
                     ...args,
                     where: { ...args.where, deletedAt: null },
-                };
-                return query(modifiedArgs);
+                }
+                return query(modifiedArgs)
             },
         },
     },
-});
+})

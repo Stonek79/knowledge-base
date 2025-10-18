@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
 
 /** Пэйлоад ошибки, возвращаемый API (совместим с клиентским парсером) */
 export type ApiErrorPayload = {
-    message: string;
-    errors?: Record<string, string[]> | null;
-};
+    message: string
+    errors?: Record<string, string[]> | null
+}
 
 interface ApiErrorOptions {
-    status?: number;
-    message?: string;
-    errors?: Record<string, string[]> | null;
+    status?: number
+    message?: string
+    errors?: Record<string, string[]> | null
 }
 
 /**
@@ -39,21 +39,21 @@ export function handleApiError(
     options: ApiErrorOptions = {}
 ): NextResponse {
     // Логируем ошибку на сервере для отладки
-    console.error('[API Error]:', error);
+    console.error('[API Error]:', error)
 
     if (error instanceof z.ZodError) {
         // Дополнительное детальное логгирование для Zod-ошибок
         console.error(
             '[Zod Validation Error Details]:',
             JSON.stringify(error.flatten(), null, 2)
-        );
+        )
         return NextResponse.json(
             {
                 message: options.message || 'Ошибка валидации данных',
                 errors: error.flatten().fieldErrors,
             },
             { status: options.status || 400 }
-        );
+        )
     }
 
     if (error instanceof ApiError) {
@@ -63,7 +63,7 @@ export function handleApiError(
                 errors: error.errors,
             },
             { status: error.status }
-        );
+        )
     }
 
     if (error instanceof Error) {
@@ -80,7 +80,7 @@ export function handleApiError(
                 errors: options.errors,
             },
             { status: options.status || 500 }
-        );
+        )
     }
 
     // Если это не экземпляр Error и не ZodError
@@ -90,7 +90,7 @@ export function handleApiError(
             errors: options.errors,
         },
         { status: options.status || 500 }
-    );
+    )
 }
 
 /**
@@ -98,18 +98,18 @@ export function handleApiError(
  * Пример: throw new ApiError('Forbidden', 403)
  */
 export class ApiError extends Error {
-    public readonly status: number;
-    public readonly errors: Record<string, string[]> | null;
+    public readonly status: number
+    public readonly errors: Record<string, string[]> | null
 
     constructor(
         message: string,
         status: number = 500,
         errors: Record<string, string[]> | null = null
     ) {
-        super(message);
-        this.name = 'ApiError';
-        this.status = status;
-        this.errors = errors;
-        Object.setPrototypeOf(this, ApiError.prototype);
+        super(message)
+        this.name = 'ApiError'
+        this.status = status
+        this.errors = errors
+        Object.setPrototypeOf(this, ApiError.prototype)
     }
 }

@@ -1,12 +1,12 @@
-'use client';
+'use client'
 
-import { ErrorPage } from '@/components/states/ErrorPage';
+import { ErrorPage } from '@/components/states/ErrorPage'
 
 interface ErrorProps {
-    error: Error & { digest?: string };
-    reset: () => void;
+    error: Error & { digest?: string }
+    reset: () => void
 }
 
 export default function DocumentsError({ error, reset }: ErrorProps) {
-    return <ErrorPage error={error} reset={reset} />;
+    return <ErrorPage error={error} reset={reset} />
 }

@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 
-import { getCurrentUser } from '@/lib/actions/users';
-import { handleApiError } from '@/lib/api';
-import { profileUpdateApiScheme } from '@/lib/schemas/profile';
-import { UserService } from '@/lib/services/UserService';
+import { getCurrentUser } from '@/lib/actions/users'
+import { handleApiError } from '@/lib/api'
+import { profileUpdateApiScheme } from '@/lib/schemas/profile'
+import { UserService } from '@/lib/services/UserService'
 
 /**
  * @swagger
@@ -19,20 +19,20 @@ import { UserService } from '@/lib/services/UserService';
  */
 export async function GET(request: NextRequest) {
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
 
         if (!user) {
             return NextResponse.json(
                 { message: 'Unauthorized' },
                 { status: 401 }
-            );
+            )
         }
 
-        const userProfile = await UserService.getProfile(user.id);
+        const userProfile = await UserService.getProfile(user.id)
 
-        return NextResponse.json(userProfile);
+        return NextResponse.json(userProfile)
     } catch (error) {
-        return handleApiError(error);
+        return handleApiError(error)
     }
 }
 
@@ -58,29 +58,29 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
         if (!user) {
             return NextResponse.json(
                 { message: 'Unauthorized' },
                 { status: 401 }
-            );
+            )
         }
 
-        const body = await request.json();
+        const body = await request.json()
 
-        const validation = profileUpdateApiScheme.safeParse(body);
+        const validation = profileUpdateApiScheme.safeParse(body)
 
         if (!validation.success) {
-            return handleApiError(validation.error);
+            return handleApiError(validation.error)
         }
 
         const updatedProfile = await UserService.updateProfile(
             user.id,
             validation.data
-        );
+        )
 
-        return NextResponse.json(updatedProfile);
+        return NextResponse.json(updatedProfile)
     } catch (error) {
-        return handleApiError(error);
+        return handleApiError(error)
     }
 }

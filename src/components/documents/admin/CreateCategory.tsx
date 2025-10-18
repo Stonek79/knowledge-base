@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Add as AddIcon, Save as SaveIcon } from '@mui/icons-material';
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Add as AddIcon, Save as SaveIcon } from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -13,12 +13,12 @@ import {
     Switch,
     TextField,
     Typography,
-} from '@mui/material';
-import { useForm } from 'react-hook-form';
+} from '@mui/material'
+import { useForm } from 'react-hook-form'
 
-import { useCategories } from '@/lib/hooks/documents/useCategories';
-import { createCategorySchema } from '@/lib/schemas/document';
-import { CreateCategoryData } from '@/lib/types/document';
+import { useCategories } from '@/lib/hooks/documents/useCategories'
+import { createCategorySchema } from '@/lib/schemas/document'
+import type { CreateCategoryData } from '@/lib/types/document'
 
 export function CreateCategory() {
     const {
@@ -26,7 +26,7 @@ export function CreateCategory() {
         operationLoading,
         operationError,
         operationSuccess,
-    } = useCategories();
+    } = useCategories()
 
     const {
         register,
@@ -43,23 +43,23 @@ export function CreateCategory() {
             color: '#000000',
             isDefault: false,
         },
-    });
+    })
 
     const onSubmit = async (data: CreateCategoryData) => {
         try {
-            await createCategory(data);
-            reset();
+            await createCategory(data)
+            reset()
         } catch (error) {
-            console.error('Failed to create category:', error);
+            console.error('Failed to create category:', error)
         }
-    };
+    }
 
     const handleReset = () => {
-        reset();
-    };
+        reset()
+    }
 
-    const nameValue = watch('name');
-    const descriptionValue = watch('description');
+    const nameValue = watch('name')
+    const descriptionValue = watch('description')
 
     return (
         <Paper sx={{ p: 3, mb: 3 }}>
@@ -156,5 +156,5 @@ export function CreateCategory() {
                 </Box>
             </form>
         </Paper>
-    );
+    )
 }

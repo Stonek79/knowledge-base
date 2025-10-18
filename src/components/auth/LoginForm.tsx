@@ -1,30 +1,28 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button, { type ButtonProps } from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import Container from '@mui/material/Container'
+import Typography from '@mui/material/Typography'
+import { useId, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { useSWRConfig } from 'swr'
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import { ButtonProps } from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
-import { Controller, useForm } from 'react-hook-form';
-import { useSWRConfig } from 'swr';
+import { API_ME_PATH } from '@/constants/api'
+import { login } from '@/lib/actions/actions'
+import { useAuthRedirect } from '@/lib/hooks/useAuthRedirect'
+import { loginSchema } from '@/lib/schemas/auth'
+import type { LoginData } from '@/lib/types/auth'
 
-import { API_ME_PATH } from '@/constants/api';
-import { login } from '@/lib/actions/actions';
-import { useAuthRedirect } from '@/lib/hooks/useAuthRedirect';
-import { loginSchema } from '@/lib/schemas/auth';
-import { LoginData } from '@/lib/types/auth';
-
-import { PasswordField } from './PasswordField';
-import { UsernameField } from './UsernameField';
+import { PasswordField } from './PasswordField'
+import { UsernameField } from './UsernameField'
 
 interface SubmitButtonProps extends ButtonProps {
-    isLoading: boolean;
-    loadingText?: string;
+    isLoading: boolean
+    loadingText?: string
 }
 
 export function SubmitButton({
@@ -51,13 +49,15 @@ export function SubmitButton({
         >
             {isLoading ? loadingText || children : children}
         </Button>
-    );
+    )
 }
 
 export function LoginForm() {
-    const { mutate } = useSWRConfig();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const { redirectAfterAuth } = useAuthRedirect();
+    const { mutate } = useSWRConfig()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const { redirectAfterAuth } = useAuthRedirect()
+    const usernameId = useId()
+    const passwordId = useId()
 
     const {
         control,
@@ -68,21 +68,21 @@ export function LoginForm() {
         resolver: zodResolver(loginSchema),
         mode: 'onSubmit',
         reValidateMode: 'onSubmit',
-    });
+    })
 
     const onSubmit = async (data: LoginData) => {
-        setIsSubmitting(true);
+        setIsSubmitting(true)
 
         try {
-            const authResponse = await login(data);
-            await mutate(API_ME_PATH, authResponse, { revalidate: false });
+            const authResponse = await login(data)
+            await mutate(API_ME_PATH, authResponse, { revalidate: false })
 
             // Добавляем небольшую задержку перед редиректом чтобы куки успели записаться
             setTimeout(() => {
-                redirectAfterAuth(authResponse.role);
-            }, 100);
+                redirectAfterAuth(authResponse.role)
+            }, 100)
         } catch (error: unknown) {
-            console.log('error', error);
+            console.log('error', error)
             // Обрабатываем общую ошибку, не привязанную к полю
             const errorMessage =
                 typeof error === 'object' &&
@@ -90,16 +90,16 @@ export function LoginForm() {
                 'message' in error &&
                 typeof (error as { message: unknown }).message === 'string'
                     ? (error as { message: string }).message
-                    : 'Произошла неизвестная ошибка';
+                    : 'Произошла неизвестная ошибка'
 
             setError('root.serverError', {
                 type: 'server',
                 message: errorMessage,
-            });
+            })
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false)
         }
-    };
+    }
 
     return (
         <Container component='main' maxWidth='xs'>
@@ -129,7 +129,7 @@ export function LoginForm() {
                             <UsernameField
                                 {...field}
                                 autoFocus
-                                id='username-login'
+                                id={usernameId}
                                 error={!!errors.username}
                                 helperText={errors.username?.message}
                             />
@@ -142,7 +142,7 @@ export function LoginForm() {
                         render={({ field }) => (
                             <PasswordField
                                 {...field}
-                                id='password-login'
+                                id={passwordId}
                                 autoCompletePolicy='current-password'
                                 error={!!errors.password}
                                 helperText={errors.password?.message}
@@ -163,5 +163,5 @@ export function LoginForm() {
                 </Box>
             </Box>
         </Container>
-    );
+    )
 }

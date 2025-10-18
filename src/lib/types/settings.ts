@@ -1,8 +1,8 @@
-import { z } from 'zod';
+import type { z } from 'zod'
 
-import { systemSettingsSchema } from '@/lib/schemas/settings';
+import type { systemSettingsSchema } from '@/lib/schemas/settings'
 
-export type SystemSettings = z.infer<typeof systemSettingsSchema>;
+export type SystemSettings = z.infer<typeof systemSettingsSchema>
 
 // «Плоский» тип для приложения (без служебных полей)
 export type AppSettings = Pick<
@@ -12,4 +12,4 @@ export type AppSettings = Pick<
     | 'allowedMimeTypes'
     | 'enableOcr'
     | 'ocrLanguages'
->;
+>

@@ -1,51 +1,52 @@
-import { Queue } from 'bullmq';
-import Redis from 'ioredis';
+import { Queue } from 'bullmq'
+import Redis from 'ioredis'
 
 /**
  * Имя очереди для задач индексации.
  */
-export const INDEXING_QUEUE_NAME = 'indexing-queue';
-
+export const INDEXING_QUEUE_NAME = 'indexing-queue'
 
 /**
  * Создает Redis подключение или Mock для сборки
  */
 function createRedisConnection(): Redis {
-    const redisUrl = process.env.REDIS_URL;
-    
+    const redisUrl = process.env.REDIS_URL
+
     // Если нет REDIS_URL (во время сборки) - возвращаем mock
     if (!redisUrl) {
-        console.warn('>>> Build environment detected or REDIS_URL is not set. Using MOCK Redis for indexing queue.');
-        
+        console.warn(
+            '>>> Build environment detected or REDIS_URL is not set. Using MOCK Redis for indexing queue.'
+        )
+
         const mockRedis = {
-            options: { keyPrefix: '' },  // 👈 ВАЖНО! BullMQ читает это свойство
+            options: { keyPrefix: '' }, // 👈 ВАЖНО! BullMQ читает это свойство
             on: () => mockRedis,
             connect: async () => 'OK',
             disconnect: async () => {},
             duplicate: () => mockRedis,
             ping: async () => 'PONG',
             quit: async () => 'OK',
-        } as unknown as Redis;
-        
-        return mockRedis;
+        } as unknown as Redis
+
+        return mockRedis
     }
-    
+
     // Production подключение - maxRetriesPerRequest: null важно для BullMQ!
-    return new Redis(redisUrl, { maxRetriesPerRequest: null });
+    return new Redis(redisUrl, { maxRetriesPerRequest: null })
 }
 
 /**
  * Создаем переиспользуемое соединение с Redis.
  */
-const redisConnection = createRedisConnection();
+const redisConnection = createRedisConnection()
 
 // Обработчик ошибок только если реальный Redis
 if (process.env.REDIS_URL) {
     redisConnection.on('error', err => {
-        console.error('[Redis Connection Error]', err);
-    });
+        console.error('[Redis Connection Error]', err)
+    })
 }
-// 
+//
 // /**
 //  * URL для подключения к Redis.
 //  * В Docker-окружении `redis` - это имя сервиса.
@@ -77,7 +78,7 @@ export const indexingQueue = new Queue(INDEXING_QUEUE_NAME, {
         removeOnComplete: true, // автоматически удалять успешные задачи
         removeOnFail: 1000, // хранить 1000 последних упавших задач
     },
-});
+})
 
 // Обработчик ошибок на уровне соединения, чтобы логировать проблемы с Redis
 // redisConnection.on('error', err => {

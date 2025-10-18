@@ -1,23 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 
-import { MIME } from '@/constants/mime';
-import { getCurrentUser } from '@/lib/actions/users';
-import { prisma } from '@/lib/prisma';
-import { getFileStorageService } from '@/lib/services/FileStorageService';
+import { MIME } from '@/constants/mime'
+import { getCurrentUser } from '@/lib/actions/users'
+import { prisma } from '@/lib/prisma'
+import { getFileStorageService } from '@/lib/services/FileStorageService'
 
-export const runtime = 'nodejs';
-
+export const runtime = 'nodejs'
 
 async function resolveFile(request: NextRequest, documentId: string) {
-    const allowedTypes = ['original', 'pdf', 'converted'];
-    const { searchParams } = new URL(request.url);
+    const allowedTypes = ['original', 'pdf', 'converted']
+    const { searchParams } = new URL(request.url)
 
-    const fileType = (searchParams.get('type') || 'original').toLowerCase();
+    const fileType = (searchParams.get('type') || 'original').toLowerCase()
     const disposition =
-        searchParams.get('disposition') === 'inline' ? 'inline' : 'attachment';
+        searchParams.get('disposition') === 'inline' ? 'inline' : 'attachment'
 
     if (!allowedTypes.includes(fileType)) {
-        return { status: 400 as const, error: 'Invalid file type' };
+        return { status: 400 as const, error: 'Invalid file type' }
     }
 
     const doc = await prisma.document.findUnique({
@@ -29,68 +28,68 @@ async function resolveFile(request: NextRequest, documentId: string) {
             filePath: true,
             mainPdf: { select: { filePath: true } },
         },
-    });
+    })
 
     if (!doc) {
-        return { status: 404 as const, error: 'Document not found' };
+        return { status: 404 as const, error: 'Document not found' }
     }
 
-    let filePath = doc.filePath;
-    let fileName = doc.fileName;
-    let contentType = doc.mimeType;
+    let filePath = doc.filePath
+    let fileName = doc.fileName
+    let contentType = doc.mimeType
 
     if (fileType === 'pdf') {
-        const mainPdfKeyOrPath = doc.mainPdf?.filePath;
+        const mainPdfKeyOrPath = doc.mainPdf?.filePath
 
         if (mainPdfKeyOrPath) {
-            filePath = mainPdfKeyOrPath;
-            fileName = doc.fileName.replace(/\.[^.]+$/, '.pdf');
-            contentType = 'application/pdf';
+            filePath = mainPdfKeyOrPath
+            fileName = doc.fileName.replace(/\.[^.]+$/, '.pdf')
+            contentType = 'application/pdf'
         } else if (doc.mimeType === 'application/pdf') {
-            filePath = doc.filePath;
-            fileName = doc.fileName;
-            contentType = 'application/pdf';
+            filePath = doc.filePath
+            fileName = doc.fileName
+            contentType = 'application/pdf'
         } else {
-            return { status: 404 as const, error: 'PDF version not available' };
+            return { status: 404 as const, error: 'PDF version not available' }
         }
     }
 
     if (fileType === 'converted') {
-        const { searchParams } = new URL(request.url);
-        const conv = (searchParams.get('conversion') || 'pdf').toLowerCase();
+        const { searchParams } = new URL(request.url)
+        const conv = (searchParams.get('conversion') || 'pdf').toLowerCase()
         // маппинг query → Prisma enum, при необходимости расширить
         const typeMap: Record<string, 'PDF' | 'DOCX'> = {
             pdf: 'PDF',
             docx: 'DOCX',
-        };
+        }
 
-        const convType = typeMap[conv] ?? 'PDF';
+        const convType = typeMap[conv] ?? 'PDF'
 
         const converted = await prisma.convertedDocument.findFirst({
             where: { documentId, conversionType: convType },
             select: { filePath: true },
             orderBy: { convertedAt: 'desc' },
-        });
+        })
 
         if (!converted) {
             return {
                 status: 404 as const,
                 error: 'Converted version not available',
-            };
+            }
         }
 
-        filePath = converted.filePath;
+        filePath = converted.filePath
         fileName = doc.fileName.replace(
             /\.[^.]+$/,
             `.${convType.toLowerCase()}`
-        );
-        contentType = convType === 'PDF' ? MIME.PDF : MIME.DOCX;
+        )
+        contentType = convType === 'PDF' ? MIME.PDF : MIME.DOCX
     }
 
     try {
-        await getFileStorageService().getFileInfo(filePath);
+        await getFileStorageService().getFileInfo(filePath)
     } catch {
-        return { status: 404 as const, error: 'File not found' };
+        return { status: 404 as const, error: 'File not found' }
     }
 
     return {
@@ -99,7 +98,7 @@ async function resolveFile(request: NextRequest, documentId: string) {
         fileName,
         contentType,
         disposition,
-    };
+    }
 }
 
 /**
@@ -144,31 +143,28 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ documentId: string }> }
 ) {
-    const { documentId } = await params;
+    const { documentId } = await params
 
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
 
         if (!user) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const resolved = await resolveFile(request, documentId);
+        const resolved = await resolveFile(request, documentId)
         if (resolved.status !== 200) {
             return NextResponse.json(
                 { error: resolved.error },
                 { status: resolved.status }
-            );
+            )
         }
 
         const fileBuffer = await getFileStorageService().downloadDocument(
             resolved.filePath
-        );
+        )
 
-        const body = new Uint8Array(fileBuffer);
+        const body = new Uint8Array(fileBuffer)
 
         // const contentDispositionFilename = `filename*=UTF-8''${encodeURIComponent(resolved.fileName)}; filename="${safeFileName(resolved.fileName)}"`;
         return new NextResponse(body, {
@@ -190,29 +186,29 @@ export async function GET(
                 // 'X-Permitted-Cross-Domain-Policies': 'none', // Защита от атак через iframe
                 // 'X-Robots-Tag': 'noindex, nofollow', // Защита от индексации
             },
-        });
+        })
     } catch (error) {
-        console.error('Error downloading file:', error);
+        console.error('Error downloading file:', error)
 
         if (error instanceof Error) {
             if (error.message.includes('ENOENT')) {
                 return NextResponse.json(
                     { error: 'File not found on server' },
                     { status: 404 }
-                );
+                )
             }
             if (error.message.includes('EACCES')) {
                 return NextResponse.json(
                     { error: 'Access denied to file' },
                     { status: 403 }
-                );
+                )
             }
         }
 
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }
-        );
+        )
     }
 }
 
@@ -248,18 +244,18 @@ export async function HEAD(
     { params }: { params: Promise<{ documentId: string }> }
 ) {
     try {
-        const { documentId } = await params;
-        const resolved = await resolveFile(request, documentId);
+        const { documentId } = await params
+        const resolved = await resolveFile(request, documentId)
         if (resolved.status !== 200) {
-            return new NextResponse(null, { status: resolved.status });
+            return new NextResponse(null, { status: resolved.status })
         }
         return new NextResponse(null, {
             status: 200,
             headers: {
                 'Content-Type': resolved.contentType,
             },
-        });
+        })
     } catch {
-        return new NextResponse(null, { status: 500 });
+        return new NextResponse(null, { status: 500 })
     }
 }

@@ -1,15 +1,13 @@
-import { DocumentsLayout } from '@/components/layout/DocumentsLayout';
-
-import type { Metadata } from 'next';
-
+import type { Metadata } from 'next'
+import { DocumentsLayout } from '@/components/layout/DocumentsLayout'
 
 export const metadata: Metadata = {
     title: 'Главная страница заключений',
     description: 'Управление и просмотр документов',
-};
+}
 
 interface DocumentsLayoutWrapperProps {
-    children: React.ReactNode;
+    children: React.ReactNode
 }
 
 /**
@@ -19,5 +17,5 @@ interface DocumentsLayoutWrapperProps {
 export default async function DocumentsLayoutWrapper({
     children,
 }: Readonly<DocumentsLayoutWrapperProps>) {
-    return <DocumentsLayout>{children}</DocumentsLayout>;
+    return <DocumentsLayout>{children}</DocumentsLayout>
 }

@@ -1,12 +1,12 @@
-import Box from '@mui/material/Box';
-import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box'
+import Container from '@mui/material/Container'
+import Typography from '@mui/material/Typography'
 
 import {
     DashboardStats,
     QuickActions,
     RecentActivity,
-} from '@/components/admin';
+} from '@/components/admin'
 
 /**
  * Главная страница (дашборд) админ-панели.
@@ -32,5 +32,5 @@ export default async function AdminDashboardPage() {
                 <RecentActivity />
             </Box>
         </Container>
-    );
+    )
 }

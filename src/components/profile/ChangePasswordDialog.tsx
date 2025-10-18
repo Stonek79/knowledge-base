@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
     Alert,
     Box,
@@ -9,20 +9,19 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-} from '@mui/material';
-import { Controller, useForm } from 'react-hook-form';
+} from '@mui/material'
+import { Controller, useForm } from 'react-hook-form'
 
+import { useChangePassword } from '@/lib/hooks/useChangePassword'
+import { changePasswordSchema } from '@/lib/schemas/profile'
+import type { ChangePasswordFormData } from '@/lib/types/profile'
 
-import { useChangePassword } from '@/lib/hooks/useChangePassword';
-import { changePasswordSchema } from '@/lib/schemas/profile';
-import { ChangePasswordFormData } from '@/lib/types/profile';
-
-import { PasswordField } from '../auth/PasswordField';
+import { PasswordField } from '../auth/PasswordField'
 
 interface ChangePasswordDialogProps {
-    open: boolean;
-    onClose: () => void;
-    onSuccess: () => void;
+    open: boolean
+    onClose: () => void
+    onSuccess: () => void
 }
 
 export function ChangePasswordDialog({
@@ -30,7 +29,7 @@ export function ChangePasswordDialog({
     onClose,
     onSuccess,
 }: ChangePasswordDialogProps) {
-    const { isLoading, error, changePassword } = useChangePassword();
+    const { isLoading, error, changePassword } = useChangePassword()
 
     const {
         control,
@@ -44,21 +43,21 @@ export function ChangePasswordDialog({
             newPassword: '',
             confirmPassword: '',
         },
-    });
+    })
 
     const handleClose = () => {
-        reset();
-        onClose();
-    };
+        reset()
+        onClose()
+    }
 
     const onSubmit = async (data: ChangePasswordFormData) => {
-        const success = await changePassword(data);
+        const success = await changePassword(data)
 
         if (success) {
-            handleClose();
-            onSuccess();
+            handleClose()
+            onSuccess()
         }
-    };
+    }
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
@@ -127,5 +126,5 @@ export function ChangePasswordDialog({
                 </DialogActions>
             </form>
         </Dialog>
-    );
+    )
 }

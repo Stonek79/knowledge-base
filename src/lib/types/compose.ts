@@ -1,5 +1,5 @@
-import { z } from 'zod';
+import type { z } from 'zod'
 
-import { composeChangeSetSchema } from '../schemas/compose';
+import type { composeChangeSetSchema } from '../schemas/compose'
 
-export type ComposeChangeSet = z.infer<typeof composeChangeSetSchema>;
+export type ComposeChangeSet = z.infer<typeof composeChangeSetSchema>

@@ -1,11 +1,9 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 import {
     Person as PersonIcon,
     Visibility as VisibilityIcon,
-} from '@mui/icons-material';
+} from '@mui/icons-material'
 import {
     Avatar,
     Box,
@@ -18,19 +16,20 @@ import {
     ListItemButton,
     Pagination,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
+import { useState } from 'react'
 
-import { DocumentWithAuthor, SearchedDocument } from '@/lib/types/document';
+import type { DocumentWithAuthor, SearchedDocument } from '@/lib/types/document'
 
-import { DocumentViewer } from '../viewer/DocumentViewer';
+import { DocumentViewer } from '../viewer/DocumentViewer'
 
-import { SearchHighlight } from './SearchHighlight';
+import { SearchHighlight } from './SearchHighlight'
 
 type SearchedDocumentsProps = {
-    results: SearchedDocument[];
-    isLoading?: boolean;
-    query: string;
-};
+    results: SearchedDocument[]
+    isLoading?: boolean
+    query: string
+}
 
 export function SearchedDocuments({
     results,
@@ -39,17 +38,17 @@ export function SearchedDocuments({
 }: SearchedDocumentsProps) {
     const [viewedDocuments, setViewedDocuments] = useState<Set<string>>(
         new Set()
-    );
+    )
     const [selectedDocument, setSelectedDocument] =
-        useState<DocumentWithAuthor | null>(null);
-    const [viewerOpen, setViewerOpen] = useState(false);
+        useState<DocumentWithAuthor | null>(null)
+    const [viewerOpen, setViewerOpen] = useState(false)
 
     if (!query.trim()) {
         return (
             <Typography color='text.secondary'>
                 Введите запрос и нажмите «Найти»
             </Typography>
-        );
+        )
     }
 
     if (isLoading) {
@@ -58,23 +57,23 @@ export function SearchedDocuments({
                 <CircularProgress size={20} />
                 <Typography>Идет поиск…</Typography>
             </Box>
-        );
+        )
     }
 
     if (results.length === 0) {
-        return <Typography>Ничего не найдено</Typography>;
+        return <Typography>Ничего не найдено</Typography>
     }
 
     const handleDocumentClick = (result: DocumentWithAuthor) => {
-        setSelectedDocument(result);
-        setViewerOpen(true);
-        setViewedDocuments(prev => new Set([...prev, result.id]));
-    };
+        setSelectedDocument(result)
+        setViewerOpen(true)
+        setViewedDocuments(prev => new Set([...prev, result.id]))
+    }
 
     const handleViewerClose = () => {
-        setViewerOpen(false);
-        setSelectedDocument(null);
-    };
+        setViewerOpen(false)
+        setSelectedDocument(null)
+    }
 
     return (
         <Box>
@@ -242,7 +241,7 @@ export function SearchedDocuments({
                         count={Math.ceil(results?.length / 25)}
                         page={1}
                         onChange={(_, page) => {
-                            console.log('Переход на страницу:', page);
+                            console.log('Переход на страницу:', page)
                         }}
                         color='primary'
                     />
@@ -258,5 +257,5 @@ export function SearchedDocuments({
                 />
             )}
         </Box>
-    );
+    )
 }

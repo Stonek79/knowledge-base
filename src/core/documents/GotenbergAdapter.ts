@@ -1,11 +1,11 @@
-import axios from 'axios';
-import FormData from 'form-data';
+import axios from 'axios'
+import FormData from 'form-data'
 
-import { GOTENBERG_ENDPOINTS } from '@/constants/app';
-import { MIME } from '@/constants/mime';
-import { SupportedMime } from '@/lib/types/mime';
+import { GOTENBERG_ENDPOINTS } from '@/constants/app'
+import { MIME } from '@/constants/mime'
+import type { SupportedMime } from '@/lib/types/mime'
 
-import { ConversionResult, ConversionService } from './ConversionService';
+import type { ConversionResult, ConversionService } from './ConversionService'
 
 async function postMultipart(
     url: string,
@@ -17,13 +17,13 @@ async function postMultipart(
             ...formData.getHeaders(),
         },
         timeout: 15000,
-    });
+    })
 
     if (res.status !== 200) {
-        throw new Error(`Gotenberg error: ${res.status} ${res.statusText}`);
+        throw new Error(`Gotenberg error: ${res.status} ${res.statusText}`)
     }
 
-    return res.data;
+    return res.data
 }
 
 /**
@@ -32,16 +32,16 @@ async function postMultipart(
  * Взаимодействие по HTTP multipart.
  */
 export class GotenbergAdapter implements ConversionService {
-    private readonly baseUrl: string;
+    private readonly baseUrl: string
     private metrics = {
         totalConversions: 0,
         successfulConversions: 0,
         failedConversions: 0,
         averageResponseTime: 0,
-    };
+    }
 
     constructor(baseUrl: string) {
-        this.baseUrl = baseUrl.replace(/\/$/, '');
+        this.baseUrl = baseUrl.replace(/\/$/, '')
     }
 
     /**
@@ -56,32 +56,32 @@ export class GotenbergAdapter implements ConversionService {
         sourceMime: SupportedMime
     ): Promise<ConversionResult> {
         // DOCX/DOC/PDF → PDF (PDF passthrough для совместимости)
-        const startTime = Date.now();
-        this.metrics.totalConversions++;
+        const startTime = Date.now()
+        this.metrics.totalConversions++
 
         try {
-            const endpoint = this.resolveEndpointToPdf(sourceMime);
-            const fd = new FormData();
-            const fileName = this.suggestName(sourceMime);
-            fd.append('files', input, fileName);
+            const endpoint = this.resolveEndpointToPdf(sourceMime)
+            const fd = new FormData()
+            const fileName = this.suggestName(sourceMime)
+            fd.append('files', input, fileName)
 
-            const arr = await postMultipart(`${this.baseUrl}${endpoint}`, fd);
+            const arr = await postMultipart(`${this.baseUrl}${endpoint}`, fd)
 
-            this.metrics.successfulConversions++;
-            const endTime = Date.now();
+            this.metrics.successfulConversions++
+            const endTime = Date.now()
 
-            const conversionTime = endTime - startTime;
-            this.updateAverageTime(conversionTime);
+            const conversionTime = endTime - startTime
+            this.updateAverageTime(conversionTime)
 
             return {
                 buffer: Buffer.from(arr),
                 mimeType: MIME.PDF,
                 fileName: fileName.replace(/\.[^.]+$/, '.pdf'),
-            };
+            }
         } catch (e) {
-            this.metrics.failedConversions++;
-            console.error('Gotenberg conversion error:', e);
-            throw e;
+            this.metrics.failedConversions++
+            console.error('Gotenberg conversion error:', e)
+            throw e
         }
     }
 
@@ -96,23 +96,23 @@ export class GotenbergAdapter implements ConversionService {
         sourceMime: SupportedMime
     ): Promise<ConversionResult> {
         // DOC → DOCX (LibreOffice route)
-        const endpoint = GOTENBERG_ENDPOINTS.libreofficeConvert;
-        const fd = new FormData();
-        const fileName = this.suggestName(sourceMime);
-        fd.append('files', input, fileName);
-        fd.append('convertTo', 'docx');
+        const endpoint = GOTENBERG_ENDPOINTS.libreofficeConvert
+        const fd = new FormData()
+        const fileName = this.suggestName(sourceMime)
+        fd.append('files', input, fileName)
+        fd.append('convertTo', 'docx')
 
-        const arr = await postMultipart(`${this.baseUrl}${endpoint}`, fd);
+        const arr = await postMultipart(`${this.baseUrl}${endpoint}`, fd)
 
         if (sourceMime === MIME.PDF) {
-            return { buffer: input, mimeType: MIME.PDF, fileName: 'file.pdf' };
+            return { buffer: input, mimeType: MIME.PDF, fileName: 'file.pdf' }
         }
 
         return {
             buffer: Buffer.from(arr),
             mimeType: MIME.DOCX,
             fileName: fileName.replace(/\.[^.]+$/, '.docx'),
-        };
+        }
     }
 
     /**
@@ -126,7 +126,7 @@ export class GotenbergAdapter implements ConversionService {
         outputFileName: string
     ): Promise<ConversionResult> {
         if (pdfBuffers.length === 0 || !pdfBuffers[0]) {
-            throw new Error('No PDFs to merge');
+            throw new Error('No PDFs to merge')
         }
 
         if (pdfBuffers.length === 1) {
@@ -134,27 +134,27 @@ export class GotenbergAdapter implements ConversionService {
                 buffer: pdfBuffers[0].buffer,
                 mimeType: MIME.PDF,
                 fileName: outputFileName,
-            };
+            }
         }
 
-        const fd = new FormData();
+        const fd = new FormData()
 
         // Добавляем все PDF файлы с их именами
         pdfBuffers.forEach(({ buffer, fileName }) => {
-            fd.append('files', buffer, fileName);
-        });
+            fd.append('files', buffer, fileName)
+        })
 
         // Отправляем на объединение
         const arr = await postMultipart(
             `${this.baseUrl}${GOTENBERG_ENDPOINTS.pdfMerge}`,
             fd
-        );
+        )
 
         return {
             buffer: Buffer.from(arr),
             mimeType: MIME.PDF,
             fileName: outputFileName,
-        };
+        }
     }
 
     private resolveEndpointToPdf(mime: SupportedMime): string {
@@ -162,28 +162,33 @@ export class GotenbergAdapter implements ConversionService {
         // PDF → можно использовать passthrough chrome/pdf или оставить libreoffice (оба работают)
         switch (mime) {
             case MIME.PDF:
-                return GOTENBERG_ENDPOINTS.chromiumDocument;
+                return GOTENBERG_ENDPOINTS.chromiumDocument
             case MIME.DOC:
             case MIME.DOCX:
+                // Для офисных документов используем LibreOffice
+                return GOTENBERG_ENDPOINTS.libreofficeConvert
             default:
-                return GOTENBERG_ENDPOINTS.libreofficeConvert;
+                // Ошибка типа меме
+                throw new Error(
+                    `Unsupported MIME type for PDF conversion: ${mime}`
+                )
         }
     }
 
     private suggestName(mime: SupportedMime): string {
-        if (mime === MIME.PDF) return 'file.pdf';
-        if (mime === MIME.DOC) return 'file.doc';
-        return 'file.docx';
+        if (mime === MIME.PDF) return 'file.pdf'
+        if (mime === MIME.DOC) return 'file.doc'
+        return 'file.docx'
     }
 
     private updateAverageTime(responseTime: number): void {
-        const { totalConversions, averageResponseTime } = this.metrics;
+        const { totalConversions, averageResponseTime } = this.metrics
         this.metrics.averageResponseTime =
             (averageResponseTime * (totalConversions - 1) + responseTime) /
-            totalConversions;
+            totalConversions
     }
 
     getMetrics() {
-        return { ...this.metrics };
+        return { ...this.metrics }
     }
 }

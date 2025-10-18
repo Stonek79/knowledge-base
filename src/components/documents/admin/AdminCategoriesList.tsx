@@ -1,13 +1,10 @@
-'use client';
-
-import { useState } from 'react';
-
+'use client'
 
 import {
     Delete as DeleteIcon,
     Edit as EditIcon,
     Visibility as VisibilityIcon,
-} from '@mui/icons-material';
+} from '@mui/icons-material'
 import {
     Box,
     Card,
@@ -23,43 +20,57 @@ import {
     TableRow,
     Tooltip,
     Typography,
-} from '@mui/material';
-import { useRouter } from 'next/navigation';
+} from '@mui/material'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 import {
     ADMIN_PATH,
     CATEGORY_EDIT_PAGE_PATH,
     CATEGORY_PAGE_PATH,
-} from '@/constants/api';
-import { useCategories } from '@/lib/hooks/documents/useCategories';
-import { CategoryBase } from '@/lib/types/document';
-import { formatDate } from '@/utils/date';
+} from '@/constants/api'
+import { useCategories } from '@/lib/hooks/documents/useCategories'
+import type { CategoryBase } from '@/lib/types/document'
+import { formatDate } from '@/utils/date'
 
-import { DeleteCategoryDialog } from './DeleteCategoryDialog';
+import { DeleteCategoryDialog } from './DeleteCategoryDialog'
 
 export function AdminCategoriesList() {
-    const router = useRouter();
+    const router = useRouter()
 
-    const { categories, isLoading, deleteCategory } = useCategories();
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const { categories, isLoading, deleteCategory } = useCategories()
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] =
-        useState<CategoryBase | null>(null);
+        useState<CategoryBase | null>(null)
 
     const handleEdit = (category: CategoryBase) => {
-        router.push(`${ADMIN_PATH}${CATEGORY_EDIT_PAGE_PATH(category.id)}`);
-    };
+        router.push(`${ADMIN_PATH}${CATEGORY_EDIT_PAGE_PATH(category.id)}`)
+    }
 
     const handleDelete = async (categoryId: string) => {
         try {
-            await deleteCategory(categoryId);
+            await deleteCategory(categoryId)
         } catch (error) {
-            console.error('Failed to delete category:', error);
+            console.error('Failed to delete category:', error)
         }
-    };
+    }
 
     const handleViewCategory = (categoryId: string) => {
-        router.push(`${ADMIN_PATH}${CATEGORY_PAGE_PATH(categoryId)}`);
-    };
+        router.push(`${ADMIN_PATH}${CATEGORY_PAGE_PATH(categoryId)}`)
+    }
+
+    const handleOpenDeleteDialog = (category: CategoryBase) => {
+        setCategoryToDelete(category)
+        setDeleteDialogOpen(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (categoryToDelete) {
+            await handleDelete(categoryToDelete.id)
+        }
+        setDeleteDialogOpen(false)
+        setCategoryToDelete(null)
+    }
 
     if (isLoading) {
         return (
@@ -69,13 +80,14 @@ export function AdminCategoriesList() {
                         Управление категориями
                     </Typography>
                     <Box sx={{ mt: 2 }}>
-                        {[...Array(4)].map((_, i) => (
-                            <Skeleton key={i} height={60} sx={{ mb: 1 }} />
-                        ))}
+                        <Skeleton height={60} sx={{ mb: 1 }} />
+                        <Skeleton height={60} sx={{ mb: 1 }} />
+                        <Skeleton height={60} sx={{ mb: 1 }} />
+                        <Skeleton height={60} sx={{ mb: 1 }} />
                     </Box>
                 </CardContent>
             </Card>
-        );
+        )
     }
 
     return (
@@ -217,8 +229,8 @@ export function AdminCategoriesList() {
                                                         size='small'
                                                         color='error'
                                                         onClick={() =>
-                                                            handleDelete(
-                                                                category.id
+                                                            handleOpenDeleteDialog(
+                                                                category
                                                             )
                                                         }
                                                         disabled={
@@ -244,8 +256,8 @@ export function AdminCategoriesList() {
                 open={deleteDialogOpen}
                 category={categoryToDelete}
                 onClose={() => setDeleteDialogOpen(false)}
-                onConfirm={handleDelete}
+                onConfirm={handleConfirmDelete}
             />
         </Card>
-    );
+    )
 }

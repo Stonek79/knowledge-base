@@ -1,29 +1,27 @@
-'use client';
+'use client'
 
-import SwaggerUI from 'swagger-ui-react';
-import 'swagger-ui-react/swagger-ui.css';
+import SwaggerUI from 'swagger-ui-react'
+import 'swagger-ui-react/swagger-ui.css'
 
-import { useEffect, useState } from 'react';
-
-import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-
-import styles from './ApiDocsPage.module.css';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material'
+import { useEffect, useState } from 'react'
+import styles from './ApiDocsPage.module.css'
 
 export default function ApiDocsPage() {
-    const [spec, setSpec] = useState(null);
-    const theme = useTheme();
-    const isDark = theme.palette.mode === 'dark';
+    const [spec, setSpec] = useState(null)
+    const theme = useTheme()
+    const isDark = theme.palette.mode === 'dark'
 
     useEffect(() => {
         fetch('/api/doc')
             .then(res => res.json())
             .then(data => {
-                setSpec(data);
+                setSpec(data)
             })
             .catch(error => {
-                console.error('Failed to fetch API spec:', error);
-            });
-    }, []);
+                console.error('Failed to fetch API spec:', error)
+            })
+    }, [])
 
     return (
         <Box sx={{ p: 4 }}>
@@ -40,5 +38,5 @@ export default function ApiDocsPage() {
                 </Box>
             )}
         </Box>
-    );
+    )
 }

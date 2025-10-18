@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState } from 'react'
 
-import { API_PROFILE_CHANGE_PASSWORD_PATH } from '@/constants/api';
-import { ApiError } from '@/lib/api';
+import { API_PROFILE_CHANGE_PASSWORD_PATH } from '@/constants/api'
+import { ApiError } from '@/lib/api'
 
-import { ChangePasswordFormData } from '../types/profile';
+import type { ChangePasswordFormData } from '../types/profile'
 
 export function useChangePassword() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     /**
      * Функция для отправки запроса на смену пароля.
@@ -17,39 +17,39 @@ export function useChangePassword() {
     const changePassword = async (
         data: ChangePasswordFormData
     ): Promise<boolean> => {
-        setIsLoading(true);
-        setError(null); // Очищаем предыдущие ошибки
+        setIsLoading(true)
+        setError(null) // Очищаем предыдущие ошибки
         try {
             const response = await fetch(API_PROFILE_CHANGE_PASSWORD_PATH, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
-            });
+            })
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json()
                 // Предполагаем, что errorData содержит свойство 'message'
                 throw new ApiError(
                     errorData.message || 'Ошибка смены пароля',
                     response.status
-                );
+                )
             }
 
             // Пароль успешно изменен
-            return true;
+            return true
         } catch (e) {
             if (e instanceof ApiError) {
-                setError(e.message);
+                setError(e.message)
             } else if (e instanceof Error) {
-                setError(e.message);
+                setError(e.message)
             } else {
-                setError('Произошла неизвестная ошибка');
+                setError('Произошла неизвестная ошибка')
             }
-            return false; // Указываем на неудачу
+            return false // Указываем на неудачу
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
-    return { changePassword, isLoading, error };
+    return { changePassword, isLoading, error }
 }

@@ -1,11 +1,9 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 import {
     ArrowBack as ArrowBackIcon,
     CheckCircle as CheckCircleIcon,
-} from '@mui/icons-material';
+} from '@mui/icons-material'
 import {
     Alert,
     Breadcrumbs,
@@ -13,24 +11,25 @@ import {
     Container,
     Link,
     Typography,
-} from '@mui/material';
-import { usePathname, useRouter } from 'next/navigation';
+} from '@mui/material'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 import {
     ADMIN_PATH,
     DOCUMENTS_BASE_PATH,
     DOCUMENTS_PAGE_PATH,
-} from '@/constants/api';
-import { USER_ROLES } from '@/constants/user';
-import { useDocumentMutation } from '@/lib/hooks/documents/useDocumentMutation';
-import { useAuth } from '@/lib/hooks/useAuth';
-import type { BaseAttachment } from '@/lib/types/attachment';
-import type { ComposeChangeSet } from '@/lib/types/compose';
-import type { UploadFormInput } from '@/lib/types/document';
+} from '@/constants/api'
+import { USER_ROLES } from '@/constants/user'
+import { useDocumentMutation } from '@/lib/hooks/documents/useDocumentMutation'
+import { useAuth } from '@/lib/hooks/useAuth'
+import type { BaseAttachment } from '@/lib/types/attachment'
+import type { ComposeChangeSet } from '@/lib/types/compose'
+import type { UploadFormInput } from '@/lib/types/document'
 
-import { LoadingPage } from '../states/LoadingPage';
+import { LoadingPage } from '../states/LoadingPage'
 
-import { DocumentUploadForm } from './upload/DocumentUploadForm';
+import { DocumentUploadForm } from './upload/DocumentUploadForm'
 
 /**
  * Страница загрузки документов
@@ -44,16 +43,16 @@ import { DocumentUploadForm } from './upload/DocumentUploadForm';
  * @returns JSX компонент страницы загрузки
  */
 export function DocumentCreatePage() {
-    const router = useRouter();
-    const pathname = usePathname();
-    const { user, isLoading: isAuthLoading } = useAuth();
+    const router = useRouter()
+    const pathname = usePathname()
+    const { user, isLoading: isAuthLoading } = useAuth()
     const { stageFile, commit, isLoading, error, clearError } =
-        useDocumentMutation();
-    const [uploadSuccess, setUploadSuccess] = useState(false);
+        useDocumentMutation()
+    const [uploadSuccess, setUploadSuccess] = useState(false)
 
-    const isUser = user?.role === USER_ROLES.USER;
-    const isAdmin = user?.role === USER_ROLES.ADMIN;
-    const canUpload = isAdmin || isUser;
+    const isUser = user?.role === USER_ROLES.USER
+    const isAdmin = user?.role === USER_ROLES.ADMIN
+    const canUpload = isAdmin || isUser
 
     /**
      * Обработчик успешной загрузки документа
@@ -64,60 +63,60 @@ export function DocumentCreatePage() {
      *
      */
     const handleCommit = async (data: {
-        metadata: Omit<UploadFormInput, 'file' | 'attachments'>;
-        mainFile: File | null;
-        attachments: (File | BaseAttachment)[];
+        metadata: Omit<UploadFormInput, 'file' | 'attachments'>
+        mainFile: File | null
+        attachments: (File | BaseAttachment)[]
     }) => {
         if (!data.mainFile) {
             // Можно установить локальную ошибку, чтобы показать пользователю
-            console.error('Основной файл обязателен для создания документа.');
-            return;
+            console.error('Основной файл обязателен для создания документа.')
+            return
         }
 
-        clearError();
-        setUploadSuccess(false);
+        clearError()
+        setUploadSuccess(false)
 
         try {
             const attachmentsWithClientId = data.attachments.map(att => ({
                 clientId: crypto.randomUUID(), // Для создания все ID новые
                 item: att,
-            }));
+            }))
 
             // 1. Staging: грузим все файлы
-            const mainFileStagedResult = await stageFile(data.mainFile);
+            const mainFileStagedResult = await stageFile(data.mainFile)
             const mainFileStaged = {
                 ...mainFileStagedResult,
                 clientId: crypto.randomUUID(),
-            };
+            }
 
             const newAttachments = attachmentsWithClientId.filter(
                 ({ item }) => item instanceof File
-            );
+            )
 
             const uploadPromises = newAttachments.map(async attachmentInfo => {
-                const stagedFile = await stageFile(attachmentInfo.item as File);
+                const stagedFile = await stageFile(attachmentInfo.item as File)
                 return {
                     ...stagedFile,
                     clientId: attachmentInfo.clientId,
-                };
-            });
+                }
+            })
 
             const attachmentsStagedResults =
-                await Promise.allSettled(uploadPromises);
+                await Promise.allSettled(uploadPromises)
 
             const attachmentsToAdd = attachmentsStagedResults.map(
                 (result, index) => {
                     if (result.status === 'rejected') {
                         const failedFileName = (
-                            newAttachments[index]!.item as File
-                        ).name;
+                            newAttachments[index]?.item as File
+                        ).name
                         throw new Error(
                             `Не удалось загрузить файл: ${failedFileName}`
-                        );
+                        )
                     }
-                    return result.value;
+                    return result.value
                 }
-            );
+            )
 
             // 2. Commit: отправляем один JSON-пакет на сервер
             const finalPayload: ComposeChangeSet = {
@@ -133,39 +132,39 @@ export function DocumentCreatePage() {
                         order: index,
                     })
                 ),
-            };
+            }
 
-            const result = await commit(null, finalPayload); // `null` id означает создание
+            const result = await commit(null, finalPayload) // `null` id означает создание
 
-            setUploadSuccess(true);
+            setUploadSuccess(true)
 
             // 3. Успех: перенаправляем на страницу документа через 2 секунды
             setTimeout(() => {
-                router.push(`${DOCUMENTS_BASE_PATH}/${result.docId}`);
-            }, 2000);
+                router.push(`${DOCUMENTS_BASE_PATH}/${result.docId}`)
+            }, 2000)
         } catch (err) {
-            console.error('Ошибка при создании документа:', err);
+            console.error('Ошибка при создании документа:', err)
             // Ошибка уже будет в `error` из хука
         }
-    };
+    }
 
     const handleOnClickDocuments = () => {
         if (pathname.includes(ADMIN_PATH)) {
-            router.push(`${ADMIN_PATH}${DOCUMENTS_BASE_PATH}`);
+            router.push(`${ADMIN_PATH}${DOCUMENTS_BASE_PATH}`)
         } else {
-            router.push(DOCUMENTS_BASE_PATH);
+            router.push(DOCUMENTS_BASE_PATH)
         }
-    };
+    }
 
     /**
      * Обработчик отмены загрузки
      */
     const handleCancel = () => {
-        router.push(DOCUMENTS_PAGE_PATH);
-    };
+        router.push(DOCUMENTS_PAGE_PATH)
+    }
 
     if (isAuthLoading) {
-        return <LoadingPage />;
+        return <LoadingPage />
     }
 
     // Проверка прав доступа
@@ -183,7 +182,7 @@ export function DocumentCreatePage() {
                     Вернуться к документам
                 </Button>
             </Container>
-        );
+        )
     }
 
     return (
@@ -237,5 +236,5 @@ export function DocumentCreatePage() {
                 isLoading={isLoading}
             />
         </Container>
-    );
+    )
 }

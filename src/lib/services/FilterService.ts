@@ -1,17 +1,17 @@
-import { SORT_FIELDS, SORT_ORDER } from '@/constants/document';
+import { SORT_FIELDS, SORT_ORDER } from '@/constants/document'
 
-import { documentFiltersSchema } from '../schemas/filter';
-import {
+import { documentFiltersSchema } from '../schemas/filter'
+import type {
     DocumentCountArgs,
     DocumentFindManyArgs,
     DocumentOrderBy,
     WhereDocumentInput,
-} from '../types/document';
-import {
+} from '../types/document'
+import type {
     DocumentFilters,
     PaginationOptions,
     SortOptions,
-} from '../types/filter';
+} from '../types/filter'
 
 /**
  * Сервис для управления фильтрами, сортировкой и пагинацией
@@ -24,62 +24,62 @@ export class FilterService {
      * @returns Prisma запрос с WHERE условиями
      */
     buildFilterQuery(filters: DocumentFilters): WhereDocumentInput {
-        const where: WhereDocumentInput = {};
+        const where: WhereDocumentInput = {}
 
         // Фильтр по категориям
         if (filters.categoryIds && filters.categoryIds.length > 0) {
             where.categories = {
                 some: { categoryId: { in: filters.categoryIds } },
-            };
+            }
         }
 
         // Фильтр по автору
         if (filters.authorId) {
-            where.authorId = filters.authorId;
+            where.authorId = filters.authorId
         }
 
         // Фильтр по диапазону дат
         if (filters.dateRange) {
             if (filters.dateRange.from || filters.dateRange.to) {
-                where.createdAt = {};
+                where.createdAt = {}
                 if (filters.dateRange.from) {
-                    where.createdAt.gte = filters.dateRange.from;
+                    where.createdAt.gte = filters.dateRange.from
                 }
                 if (filters.dateRange.to) {
-                    where.createdAt.lte = filters.dateRange.to;
+                    where.createdAt.lte = filters.dateRange.to
                 }
             }
         }
 
         // Фильтр по типу документа
         if (filters.documentType) {
-            where.documentType = filters.documentType;
+            where.documentType = filters.documentType
         }
 
         // Фильтр по статусу публикации
         if (filters.isPublished !== undefined) {
-            where.isPublished = filters.isPublished;
+            where.isPublished = filters.isPublished
         }
 
         // Фильтр по тегам
         if (filters.tags && filters.tags.length > 0) {
-            where.tags = { hasSome: filters.tags };
+            where.tags = { hasSome: filters.tags }
         }
 
         // Фильтр по размеру файла
         if (filters.fileSize) {
-            where.fileSize = {};
+            where.fileSize = {}
             if (filters.fileSize.min !== undefined) {
-                where.fileSize.gte = filters.fileSize.min;
+                where.fileSize.gte = filters.fileSize.min
             }
             if (filters.fileSize.max !== undefined) {
-                where.fileSize.lte = filters.fileSize.max;
+                where.fileSize.lte = filters.fileSize.max
             }
         }
 
         // Фильтр по MIME типу
         if (filters.mimeType) {
-            where.mimeType = filters.mimeType;
+            where.mimeType = filters.mimeType
         }
 
         // Текстовый поиск по заголовку и описанию
@@ -97,10 +97,10 @@ export class FilterService {
                         mode: 'insensitive',
                     },
                 },
-            ];
+            ]
         }
 
-        return where;
+        return where
     }
 
     /**
@@ -113,32 +113,32 @@ export class FilterService {
         sortBy: SortOptions['field'],
         sortOrder: SortOptions['order'] = SORT_ORDER.DESC
     ): DocumentOrderBy {
-        const orderBy: DocumentOrderBy = {};
+        const orderBy: DocumentOrderBy = {}
 
         switch (sortBy) {
             case SORT_FIELDS.CREATED_AT:
-                orderBy.createdAt = sortOrder;
-                break;
+                orderBy.createdAt = sortOrder
+                break
             case SORT_FIELDS.UPDATED_AT:
-                orderBy.updatedAt = sortOrder;
-                break;
+                orderBy.updatedAt = sortOrder
+                break
             case SORT_FIELDS.TITLE:
-                orderBy.title = sortOrder;
-                break;
+                orderBy.title = sortOrder
+                break
             case SORT_FIELDS.FILE_SIZE:
-                orderBy.fileSize = sortOrder;
-                break;
+                orderBy.fileSize = sortOrder
+                break
             case SORT_FIELDS.VIEW_COUNT:
-                orderBy.viewCount = sortOrder;
-                break;
+                orderBy.viewCount = sortOrder
+                break
             case SORT_FIELDS.DOWNLOAD_COUNT:
-                orderBy.downloadCount = sortOrder;
-                break;
+                orderBy.downloadCount = sortOrder
+                break
             default:
-                orderBy.createdAt = SORT_ORDER.DESC;
+                orderBy.createdAt = SORT_ORDER.DESC
         }
 
-        return orderBy;
+        return orderBy
     }
 
     /**
@@ -151,8 +151,8 @@ export class FilterService {
         page: number,
         limit: number
     ): { skip: number; take: number } {
-        const skip = (page - 1) * limit;
-        return { skip, take: limit };
+        const skip = (page - 1) * limit
+        return { skip, take: limit }
     }
 
     /**
@@ -195,7 +195,7 @@ export class FilterService {
                     },
                 },
             },
-        };
+        }
     }
 
     /**
@@ -206,7 +206,7 @@ export class FilterService {
     buildCountQuery(filters: DocumentFilters): DocumentCountArgs {
         return {
             where: this.buildFilterQuery(filters),
-        };
+        }
     }
 
     /**
@@ -215,7 +215,7 @@ export class FilterService {
      * @returns Нормализованные фильтры
      */
     validateAndNormalizeFilters(filters: unknown): DocumentFilters {
-        return documentFiltersSchema.parse(filters);
+        return documentFiltersSchema.parse(filters)
     }
 
     /**
@@ -225,7 +225,7 @@ export class FilterService {
     getPublicDocumentFilters(): DocumentFilters {
         return {
             isPublished: true,
-        };
+        }
     }
 
     /**
@@ -240,15 +240,15 @@ export class FilterService {
     ): DocumentFilters {
         const filters: DocumentFilters = {
             authorId: userId,
-        };
-
-        if (!includePrivate) {
-            filters.isPublished = true;
         }
 
-        return filters;
+        if (!includePrivate) {
+            filters.isPublished = true
+        }
+
+        return filters
     }
 }
 
 // Экспорт экземпляр для использования в приложении
-export const filterService = new FilterService();
+export const filterService = new FilterService()

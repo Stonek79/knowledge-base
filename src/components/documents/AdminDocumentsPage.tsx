@@ -1,8 +1,6 @@
-'use client';
+'use client'
 
-import { useMemo, useState } from 'react';
-
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -11,35 +9,35 @@ import {
     Stack,
     TablePagination,
     Typography,
-} from '@mui/material';
-import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
-
+} from '@mui/material'
+import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 
 import {
     ADMIN_PATH,
     DOCUMENT_EDIT_PAGE_PATH,
     UPLOAD_PAGE_PATH,
-} from '@/constants/api';
-import { useCategories } from '@/lib/hooks/documents/useCategories';
-import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete';
-import { useDocumentRestore } from '@/lib/hooks/documents/useDocumentRestore';
-import { useDocuments } from '@/lib/hooks/documents/useDocuments';
-import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments';
-import {
+} from '@/constants/api'
+import { useCategories } from '@/lib/hooks/documents/useCategories'
+import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete'
+import { useDocumentRestore } from '@/lib/hooks/documents/useDocumentRestore'
+import { useDocuments } from '@/lib/hooks/documents/useDocuments'
+import { useRecentDocuments } from '@/lib/hooks/documents/useRecentDocuments'
+import type {
     DocumentFilters as DocumentFiltersType,
     DocumentWithAuthor,
     SearchResult,
-} from '@/lib/types/document';
+} from '@/lib/types/document'
 
-import { DocumentFilters } from './admin/DocumentFilters';
-import { DocumentTable } from './admin/DocumentTable';
-import { DeleteDocumentDialog } from './delete/DeleteDocumentDialog';
+import { DocumentFilters } from './admin/DocumentFilters'
+import { DocumentTable } from './admin/DocumentTable'
+import { DeleteDocumentDialog } from './delete/DeleteDocumentDialog'
 
 const DocumentViewer = dynamic(
     () => import('./viewer/DocumentViewer').then(m => m.DocumentViewer),
     { ssr: false }
-);
+)
 
 /**
  * Страница управления документами для администраторов
@@ -52,10 +50,10 @@ const DocumentViewer = dynamic(
  * - Экспорт данных
  */
 export function AdminDocumentsPage() {
-    const router = useRouter();
-    const { deleteDocument } = useDocumentDelete();
-    const { removeRecentDocument } = useRecentDocuments();
-    const { restoreDocument } = useDocumentRestore();
+    const router = useRouter()
+    const { deleteDocument } = useDocumentDelete()
+    const { removeRecentDocument } = useRecentDocuments()
+    const { restoreDocument } = useDocumentRestore()
 
     const [filters, setFilters] = useState<DocumentFiltersType>({
         page: 1,
@@ -66,32 +64,32 @@ export function AdminDocumentsPage() {
         categoryIds: undefined,
         authorId: undefined,
         status: undefined,
-    });
+    })
 
-    const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
-    const [viewerOpen, setViewerOpen] = useState(false);
+    const [selectedDocuments, setSelectedDocuments] = useState<string[]>([])
+    const [viewerOpen, setViewerOpen] = useState(false)
     const [selectedDocument, setSelectedDocument] = useState<
         SearchResult | DocumentWithAuthor | null
-    >(null);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    >(null)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [documentToDelete, setDocumentToDelete] = useState<{
-        id: string;
-        title: string;
-        deletedAt: boolean;
-    } | null>(null);
+        id: string
+        title: string
+        deletedAt: boolean
+    } | null>(null)
 
     const query = useMemo(() => {
-        return filters.q;
-    }, [filters.q]);
+        return filters.q
+    }, [filters.q])
 
     // Используем существующие хуки
     const { documents, pagination, isLoading, error, mutate } =
-        useDocuments(filters);
-    const { categories, isLoading: categoriesLoading } = useCategories();
+        useDocuments(filters)
+    const { categories, isLoading: categoriesLoading } = useCategories()
 
     const handleFiltersChange = (newFilters: DocumentFiltersType) => {
-        setFilters(newFilters);
-    };
+        setFilters(newFilters)
+    }
 
     const resetFilters = () => {
         setFilters({
@@ -102,92 +100,92 @@ export function AdminDocumentsPage() {
             q: undefined,
             categoryIds: undefined,
             status: undefined,
-        });
-        setSelectedDocuments([]);
-    };
+        })
+        setSelectedDocuments([])
+    }
 
     const handleSelectDocument = (documentId: string) => {
         setSelectedDocuments(prev =>
             prev.includes(documentId)
                 ? prev.filter(id => id !== documentId)
                 : [...prev, documentId]
-        );
-    };
+        )
+    }
 
     const handleSelectAll = (checked: boolean) => {
-        setSelectedDocuments(checked ? documents.map(doc => doc.id) : []);
-    };
+        setSelectedDocuments(checked ? documents.map(doc => doc.id) : [])
+    }
 
     const handleView = (document: DocumentWithAuthor) => {
-        setSelectedDocument(document);
-        setViewerOpen(true);
-    };
+        setSelectedDocument(document)
+        setViewerOpen(true)
+    }
 
     const handleEdit = (document: DocumentWithAuthor) => {
-        router.push(`${ADMIN_PATH}${DOCUMENT_EDIT_PAGE_PATH(document.id)}`);
-    };
+        router.push(`${ADMIN_PATH}${DOCUMENT_EDIT_PAGE_PATH(document.id)}`)
+    }
 
     const handleDelete = (document: {
-        id: string;
-        title: string;
-        deletedAt: boolean;
+        id: string
+        title: string
+        deletedAt: boolean
     }) => {
-        setDocumentToDelete(document);
-        setDeleteDialogOpen(true);
-    };
+        setDocumentToDelete(document)
+        setDeleteDialogOpen(true)
+    }
 
     const confirmSoftDelete = async (documentId: string) => {
         try {
             // `deleteDocument` без опций по умолчанию выполняет мягкое удаление
-            await deleteDocument(documentId);
-            await mutate();
-            removeRecentDocument(documentId);
-            setDeleteDialogOpen(false);
-            setDocumentToDelete(null);
+            await deleteDocument(documentId)
+            await mutate()
+            removeRecentDocument(documentId)
+            setDeleteDialogOpen(false)
+            setDocumentToDelete(null)
         } catch (err) {
-            console.error('Ошибка мягкого удаления:', err);
+            console.error('Ошибка мягкого удаления:', err)
         }
-    };
+    }
 
     const handleRestore = async (documentId: string) => {
         try {
-            await restoreDocument(documentId);
-            await mutate();
-            setDeleteDialogOpen(false);
-            setDocumentToDelete(null);
+            await restoreDocument(documentId)
+            await mutate()
+            setDeleteDialogOpen(false)
+            setDocumentToDelete(null)
         } catch (err) {
-            console.error('Ошибка восстановления документа:', err);
+            console.error('Ошибка восстановления документа:', err)
         }
-    };
+    }
 
     const handleHardDelete = async (documentId: string) => {
         try {
             // Вызываем хук с опцией hard: true для безвозвратного удаления
-            await deleteDocument(documentId, { hard: true });
-            await mutate();
-            removeRecentDocument(documentId);
-            setDeleteDialogOpen(false);
-            setDocumentToDelete(null);
+            await deleteDocument(documentId, { hard: true })
+            await mutate()
+            removeRecentDocument(documentId)
+            setDeleteDialogOpen(false)
+            setDocumentToDelete(null)
         } catch (err) {
-            console.error('Ошибка безвозвратного удаления:', err);
+            console.error('Ошибка безвозвратного удаления:', err)
         }
-    };
+    }
 
     const handleBulkDelete = async () => {
-        if (selectedDocuments.length === 0) return;
+        if (selectedDocuments.length === 0) return
 
         try {
             // Удаляем документы по одному (можно оптимизировать через bulk API)
             for (const documentId of selectedDocuments) {
-                await deleteDocument(documentId);
+                await deleteDocument(documentId)
             }
 
-            setSelectedDocuments([]);
-            await mutate();
+            setSelectedDocuments([])
+            await mutate()
         } catch (err) {
-            console.error('Ошибка массового удаления:', err);
+            console.error('Ошибка массового удаления:', err)
         }
-    };
+    }
 
     return (
         <Container maxWidth='xl' sx={{ py: 4, bgcolor: 'background.default' }}>
@@ -277,12 +275,12 @@ export function AdminDocumentsPage() {
                         }
                         rowsPerPage={pagination.limit}
                         onRowsPerPageChange={e => {
-                            const newLimit = parseInt(e.target.value, 10);
+                            const newLimit = parseInt(e.target.value, 10)
                             setFilters(prev => ({
                                 ...prev,
                                 limit: newLimit,
                                 page: 1,
-                            }));
+                            }))
                         }}
                         labelRowsPerPage='Строк на странице:'
                         labelDisplayedRows={({ from, to, count }) =>
@@ -297,8 +295,8 @@ export function AdminDocumentsPage() {
                     document={selectedDocument}
                     open={viewerOpen}
                     onClose={() => {
-                        setViewerOpen(false);
-                        setSelectedDocument(null);
+                        setViewerOpen(false)
+                        setSelectedDocument(null)
                     }}
                 />
             )}
@@ -308,8 +306,8 @@ export function AdminDocumentsPage() {
                 document={documentToDelete}
                 view={documentToDelete?.deletedAt ? 'deleted' : 'active'}
                 onClose={() => {
-                    setDeleteDialogOpen(false);
-                    setDocumentToDelete(null);
+                    setDeleteDialogOpen(false)
+                    setDocumentToDelete(null)
                 }}
                 onSoftDelete={confirmSoftDelete}
                 onRestore={handleRestore}
@@ -317,5 +315,5 @@ export function AdminDocumentsPage() {
                 isAdmin={true}
             />
         </Container>
-    );
+    )
 }

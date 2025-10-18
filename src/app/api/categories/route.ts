@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 
-import { USER_ROLES } from '@/constants/user';
-import { getCurrentUser } from '@/lib/actions/users';
-import { handleApiError } from '@/lib/api/apiError';
-import { prisma } from '@/lib/prisma';
-import { createCategorySchema } from '@/lib/schemas/document';
+import { USER_ROLES } from '@/constants/user'
+import { getCurrentUser } from '@/lib/actions/users'
+import { handleApiError } from '@/lib/api/apiError'
+import { prisma } from '@/lib/prisma'
+import { createCategorySchema } from '@/lib/schemas/document'
 
 /**
  * @swagger
@@ -28,11 +28,11 @@ export async function GET() {
                 },
                 documents: true,
             },
-        });
+        })
 
-        return NextResponse.json({ categories });
+        return NextResponse.json({ categories })
     } catch (error) {
-        return handleApiError(error);
+        return handleApiError(error)
     }
 }
 
@@ -58,32 +58,32 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
     try {
-        const user = await getCurrentUser(request);
+        const user = await getCurrentUser(request)
         if (!user || user.role !== USER_ROLES.ADMIN) {
-            return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
-        const body = await request.json();
-        const validation = createCategorySchema.safeParse(body);
+        const body = await request.json()
+        const validation = createCategorySchema.safeParse(body)
 
         if (!validation.success) {
-            return handleApiError(validation.error);
+            return handleApiError(validation.error)
         }
 
         const existingCategory = await prisma.category.findFirst({
             where: { name: validation.data.name },
-        });
+        })
 
         if (existingCategory) {
             return NextResponse.json(
                 { message: 'Категория с таким названием уже существует' },
                 { status: 400 }
-            );
+            )
         }
 
         const category = await prisma.category.create({
             data: validation.data,
-        });
+        })
 
         return NextResponse.json(
             {
@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
                 category,
             },
             { status: 201 }
-        );
+        )
     } catch (error) {
-        return handleApiError(error);
+        return handleApiError(error)
     }
 }

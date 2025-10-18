@@ -1,10 +1,9 @@
-import { GROUP_BY_FIELDS } from '@/constants/document';
-import { SORT_FIELDS } from '@/constants/document';
+import { GROUP_BY_FIELDS, SORT_FIELDS } from '@/constants/document'
 
-import { DocumentGroupByArgs } from '../types/document';
-import { AggregationOptions, DocumentFilters } from '../types/filter';
+import type { DocumentGroupByArgs } from '../types/document'
+import type { AggregationOptions, DocumentFilters } from '../types/filter'
 
-import { filterService } from './FilterService';
+import { filterService } from './FilterService'
 
 export class AggregationService {
     /**
@@ -21,7 +20,7 @@ export class AggregationService {
             where: filterService.buildFilterQuery(filters),
             by: [aggregationOptions.groupBy ?? GROUP_BY_FIELDS.AUTHOR_ID],
             _count: aggregationOptions.count ? { _all: true } : undefined,
-        };
+        }
         if (aggregationOptions.sum?.length) {
             groupBy._sum = {
                 fileSize: aggregationOptions.sum.includes(SORT_FIELDS.FILE_SIZE)
@@ -37,11 +36,11 @@ export class AggregationService {
                 )
                     ? true
                     : undefined,
-            };
+            }
         }
 
-        return groupBy;
+        return groupBy
     }
 }
 
-export const aggregationService = new AggregationService();
+export const aggregationService = new AggregationService()

@@ -1,8 +1,6 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-
-import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -13,82 +11,83 @@ import {
     Tabs,
     TextField,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
+import { useState } from 'react'
 
-import { USER_SORTABLE_FIELDS, USER_STATUSES } from '@/constants/user';
-import { useUsers } from '@/lib/hooks/useUsers';
-import {
+import { USER_SORTABLE_FIELDS, USER_STATUSES } from '@/constants/user'
+import { useUsers } from '@/lib/hooks/useUsers'
+import type {
     UserSortableFields,
     UserStatus,
     UserWithDocuments,
-} from '@/lib/types/user';
+} from '@/lib/types/user'
 
-import { CreateUserDialog } from './CreateUserDialog';
-import { DeleteUserDialog } from './DeleteUserDialog';
-import { EditUserDialog } from './EditUserDialog';
-import { UserTable } from './UserTable';
+import { CreateUserDialog } from './CreateUserDialog'
+import { DeleteUserDialog } from './DeleteUserDialog'
+import { EditUserDialog } from './EditUserDialog'
+import { UserTable } from './UserTable'
 
 export function UsersPage() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [status, setStatus] = useState<UserStatus | undefined>(undefined);
+    const [searchTerm, setSearchTerm] = useState('')
+    const [status, setStatus] = useState<UserStatus | undefined>(undefined)
     const [sortBy, setSortBy] = useState<UserSortableFields>(
         USER_SORTABLE_FIELDS[0]
-    );
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    )
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
-    const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false)
+    const [editDialogOpen, setEditDialogOpen] = useState(false)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<UserWithDocuments | null>(
         null
-    );
+    )
 
     const { users, isLoading, error, mutate } = useUsers({
         search: searchTerm,
         status,
         sortBy,
         sortOrder,
-    });
+    })
 
     const handleSort = (field: UserSortableFields) => {
-        const isAsc = sortBy === field && sortOrder === 'asc';
-        setSortOrder(isAsc ? 'desc' : 'asc');
-        setSortBy(field);
-    };
+        const isAsc = sortBy === field && sortOrder === 'asc'
+        setSortOrder(isAsc ? 'desc' : 'asc')
+        setSortBy(field)
+    }
 
     const handleEdit = (user: UserWithDocuments) => {
-        setSelectedUser(user);
-        setEditDialogOpen(true);
-    };
+        setSelectedUser(user)
+        setEditDialogOpen(true)
+    }
 
     const handleDelete = (user: UserWithDocuments) => {
-        setSelectedUser(user);
-        setDeleteDialogOpen(true);
-    };
+        setSelectedUser(user)
+        setDeleteDialogOpen(true)
+    }
 
     const handleCreateSuccess = () => {
-        setCreateDialogOpen(false);
-        mutate();
-    };
+        setCreateDialogOpen(false)
+        mutate()
+    }
 
     const handleEditSuccess = () => {
-        setEditDialogOpen(false);
-        setSelectedUser(null);
-        mutate();
-    };
+        setEditDialogOpen(false)
+        setSelectedUser(null)
+        mutate()
+    }
 
     const handleDeleteSuccess = () => {
-        setDeleteDialogOpen(false);
-        setSelectedUser(null);
-        mutate();
-    };
+        setDeleteDialogOpen(false)
+        setSelectedUser(null)
+        mutate()
+    }
 
     if (error) {
         return (
             <Alert severity='error' sx={{ m: 2 }}>
                 Ошибка загрузки пользователей: {error.message}
             </Alert>
-        );
+        )
     }
 
     return (
@@ -178,5 +177,5 @@ export function UsersPage() {
                 </>
             )}
         </Box>
-    );
+    )
 }

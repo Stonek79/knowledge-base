@@ -1,13 +1,12 @@
-'use client';
+'use client'
 
-import { useCallback, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation'
+import { useCallback, useEffect } from 'react'
+import useSWR from 'swr'
 
-import { usePathname, useRouter } from 'next/navigation';
-import useSWR from 'swr';
-
-import { API_ME_PATH, LOGIN_PAGE_PATH } from '@/constants/api';
-import { logout as logoutAction } from '@/lib/actions/actions';
-import { UserResponse } from '@/lib/types/user';
+import { API_ME_PATH, LOGIN_PAGE_PATH } from '@/constants/api'
+import { logout as logoutAction } from '@/lib/actions/actions'
+import type { UserResponse } from '@/lib/types/user'
 
 const fetcher = (url: string) =>
     fetch(url, {
@@ -18,39 +17,39 @@ const fetcher = (url: string) =>
     }).then(res => {
         if (!res.ok) {
             if (res.status === 401) {
-                return null;
+                return null
             }
-            throw new Error(`HTTP error! status: ${res.status}`);
+            throw new Error(`HTTP error! status: ${res.status}`)
         }
-        return res.json();
-    });
+        return res.json()
+    })
 
 export function useAuth() {
     const { data, error, mutate } = useSWR<UserResponse | null>(
         API_ME_PATH,
         fetcher
-    );
+    )
 
-    const router = useRouter();
-    const pathname = usePathname();
+    const router = useRouter()
+    const pathname = usePathname()
 
     useEffect(() => {
         if (data === null) {
             const returnTo =
                 pathname && pathname !== LOGIN_PAGE_PATH
                     ? `?returnTo=${encodeURIComponent(pathname)}`
-                    : '';
-            router.replace(`${LOGIN_PAGE_PATH}${returnTo}`);
+                    : ''
+            router.replace(`${LOGIN_PAGE_PATH}${returnTo}`)
         }
-    }, [data, pathname, router]);
+    }, [data, pathname, router])
 
     const logout = useCallback(async () => {
         try {
-            await logoutAction(mutate);
+            await logoutAction(mutate)
         } catch (error) {
-            console.error('Ошибка при выходе:', error);
+            console.error('Ошибка при выходе:', error)
         }
-    }, [mutate]);
+    }, [mutate])
 
     return {
         user: data,
@@ -58,5 +57,5 @@ export function useAuth() {
         isError: error,
         logout,
         mutate,
-    };
+    }
 }

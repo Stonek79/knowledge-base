@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import swaggerJsdoc from 'swagger-jsdoc';
+import { NextResponse } from 'next/server'
+import swaggerJsdoc from 'swagger-jsdoc'
 
 export async function GET() {
     const options = {
@@ -22,8 +22,14 @@ export async function GET() {
                         properties: {
                             id: { type: 'string' },
                             username: { type: 'string' },
-                            role: { type: 'string', enum: ['ADMIN', 'USER', 'GUEST'] },
-                            status: { type: 'string', enum: ['ACTIVE', 'PLACEHOLDER'] },
+                            role: {
+                                type: 'string',
+                                enum: ['ADMIN', 'USER', 'GUEST'],
+                            },
+                            status: {
+                                type: 'string',
+                                enum: ['ACTIVE', 'PLACEHOLDER'],
+                            },
                             enabled: { type: 'boolean' },
                             createdAt: { type: 'string', format: 'date-time' },
                         },
@@ -58,8 +64,14 @@ export async function GET() {
                             username: { type: 'string', minLength: 3 },
                             password: { type: 'string', minLength: 6 },
                             confirmPassword: { type: 'string', minLength: 6 },
-                            role: { type: 'string', enum: ['ADMIN', 'USER', 'GUEST'] },
-                            status: { type: 'string', enum: ['ACTIVE', 'PLACEHOLDER'] },
+                            role: {
+                                type: 'string',
+                                enum: ['ADMIN', 'USER', 'GUEST'],
+                            },
+                            status: {
+                                type: 'string',
+                                enum: ['ACTIVE', 'PLACEHOLDER'],
+                            },
                             enabled: { type: 'boolean' },
                         },
                     },
@@ -77,9 +89,18 @@ export async function GET() {
                         properties: {
                             username: { type: 'string', minLength: 3 },
                             newPassword: { type: 'string', minLength: 6 },
-                            confirmNewPassword: { type: 'string', minLength: 6 },
-                            role: { type: 'string', enum: ['ADMIN', 'USER', 'GUEST'] },
-                            status: { type: 'string', enum: ['ACTIVE', 'PLACEHOLDER'] },
+                            confirmNewPassword: {
+                                type: 'string',
+                                minLength: 6,
+                            },
+                            role: {
+                                type: 'string',
+                                enum: ['ADMIN', 'USER', 'GUEST'],
+                            },
+                            status: {
+                                type: 'string',
+                                enum: ['ACTIVE', 'PLACEHOLDER'],
+                            },
                             enabled: { type: 'boolean' },
                         },
                     },
@@ -88,7 +109,10 @@ export async function GET() {
                         properties: {
                             title: { type: 'string' },
                             description: { type: 'string' },
-                            categoryIds: { type: 'array', items: { type: 'string' } },
+                            categoryIds: {
+                                type: 'array',
+                                items: { type: 'string' },
+                            },
                             keywords: { type: 'string' },
                             authorId: { type: 'string' },
                             username: { type: 'string' },
@@ -98,26 +122,41 @@ export async function GET() {
                         type: 'object',
                         properties: {
                             operationId: { type: 'string', format: 'uuid' },
-                            metadata: { 
+                            metadata: {
                                 type: 'object',
                                 properties: {
                                     title: { type: 'string' },
                                     description: { type: 'string' },
                                     authorId: { type: 'string' },
                                     username: { type: 'string' },
-                                    categoryIds: { type: 'array', items: { type: 'string' } },
+                                    categoryIds: {
+                                        type: 'array',
+                                        items: { type: 'string' },
+                                    },
                                     keywords: { type: 'string' },
                                     isConfidential: { type: 'boolean' },
                                     isSecret: { type: 'boolean' },
                                     accessCode: { type: 'string' },
-                                    confidentialAccessUserIds: { type: 'array', items: { type: 'string' } },
-                                }
+                                    confidentialAccessUserIds: {
+                                        type: 'array',
+                                        items: { type: 'string' },
+                                    },
+                                },
                             },
                             replaceMain: { type: 'object' },
-                            addAttachments: { type: 'array', items: { type: 'object' } },
-                            deleteAttachmentIds: { type: 'array', items: { type: 'string' } },
-                            reorder: { type: 'array', items: { type: 'object' } },
-                        }
+                            addAttachments: {
+                                type: 'array',
+                                items: { type: 'object' },
+                            },
+                            deleteAttachmentIds: {
+                                type: 'array',
+                                items: { type: 'string' },
+                            },
+                            reorder: {
+                                type: 'array',
+                                items: { type: 'object' },
+                            },
+                        },
                     },
                     UpdateCategorySchema: {
                         type: 'object',
@@ -154,9 +193,9 @@ export async function GET() {
             ],
         },
         apis: ['./src/app/api/**/*.ts'], // Path to the API routes
-    };
+    }
 
-    const openapiSpecification = swaggerJsdoc(options);
+    const openapiSpecification = swaggerJsdoc(options)
 
-    return NextResponse.json(openapiSpecification);
+    return NextResponse.json(openapiSpecification)
 }

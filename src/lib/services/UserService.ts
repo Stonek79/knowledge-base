@@ -1,10 +1,10 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs'
 
-import { USER_ROLES, USER_STATUSES } from '@/constants/user';
-import { ApiError } from '@/lib/api';
-import { UserRepository } from '@/lib/repositories/userRepository';
-import { ProfileUpdate } from '@/lib/types/profile';
-import { BaseUser } from '@/lib/types/user';
+import { USER_ROLES, USER_STATUSES } from '@/constants/user'
+import { ApiError } from '@/lib/api'
+import { UserRepository } from '@/lib/repositories/userRepository'
+import type { ProfileUpdate } from '@/lib/types/profile'
+import type { BaseUser } from '@/lib/types/user'
 
 /**
  * UserService инкапсулирует бизнес-логику для работы с пользователями.
@@ -17,15 +17,15 @@ export class UserService {
      * @returns - Найденный или созданный объект пользователя.
      */
     public static async findOrCreateAuthor(name: string): Promise<BaseUser> {
-        const trimmedName = name.trim();
+        const trimmedName = name.trim()
         if (!trimmedName) {
-            throw new ApiError('Имя автора не может быть пустым', 400);
+            throw new ApiError('Имя автора не может быть пустым', 400)
         }
 
-        const existingUser = await UserRepository.findByUsername(trimmedName);
+        const existingUser = await UserRepository.findByUsername(trimmedName)
 
         if (existingUser) {
-            return existingUser;
+            return existingUser
         }
 
         // Если не найден, создаем нового пользователя-плейсхолдера
@@ -35,7 +35,7 @@ export class UserService {
             role: USER_ROLES.USER,
             status: USER_STATUSES.PLACEHOLDER,
             enabled: false,
-        });
+        })
     }
 
     /**
@@ -43,12 +43,11 @@ export class UserService {
      * @param userId - ID пользователя.
      */
     public static async getProfile(userId: string) {
-        const userWithProfile =
-            await UserRepository.findUserWithProfile(userId);
+        const userWithProfile = await UserRepository.findUserWithProfile(userId)
         if (!userWithProfile) {
-            throw new ApiError('Пользователь не найден', 404);
+            throw new ApiError('Пользователь не найден', 404)
         }
-        return userWithProfile;
+        return userWithProfile
     }
 
     /**
@@ -57,7 +56,7 @@ export class UserService {
      * @param data - Данные для обновления.
      */
     public static async updateProfile(userId: string, data: ProfileUpdate) {
-        return UserRepository.upsertProfile(userId, data);
+        return UserRepository.upsertProfile(userId, data)
     }
 
     /**
@@ -70,23 +69,23 @@ export class UserService {
         oldPassword: string,
         newPassword: string
     ) {
-        const user = await UserRepository.findById(userId);
+        const user = await UserRepository.findById(userId)
         if (!user?.password) {
             // потенциальная, но крайне невероятная ситуация для пользователя со статусом PLACEHOLDER
-            throw new ApiError('Пользователь не имеет пароля', 400);
+            throw new ApiError('Пользователь не имеет пароля', 400)
         }
 
         const isPasswordCorrect = await bcrypt.compare(
             oldPassword,
             user.password
-        );
+        )
 
         if (!isPasswordCorrect) {
-            throw new ApiError('Неправильный текущий пароль', 400);
+            throw new ApiError('Неправильный текущий пароль', 400)
         }
 
-        const newHashedPassword = await bcrypt.hash(newPassword, 12);
+        const newHashedPassword = await bcrypt.hash(newPassword, 12)
 
-        return UserRepository.updatePassword(userId, newHashedPassword);
+        return UserRepository.updatePassword(userId, newHashedPassword)
     }
 }

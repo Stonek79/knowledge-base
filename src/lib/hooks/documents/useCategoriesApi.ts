@@ -1,8 +1,8 @@
-import useSWR from 'swr';
+import useSWR from 'swr'
 
-import { API_CATEGORIES_PATH } from '@/constants/api';
-import { api, makeSWRFetcher } from '@/lib/api/apiHelper';
-import {
+import { API_CATEGORIES_PATH } from '@/constants/api'
+import { api, makeSWRFetcher } from '@/lib/api/apiHelper'
+import type {
     CategoryBase,
     CategoryResponse,
     CreateCategoryData,
@@ -10,9 +10,9 @@ import {
     DeleteCategoryResult,
     UpdateCategoryData,
     UpdateCategoryResult,
-} from '@/lib/types/document';
+} from '@/lib/types/document'
 
-const fetcher = makeSWRFetcher({ returnNullOn401: false });
+const fetcher = makeSWRFetcher({ returnNullOn401: false })
 
 /**
  * Хук для работы с API категорий документов
@@ -53,9 +53,9 @@ export const useCategoriesApi = () => {
             revalidateOnReconnect: false,
             dedupingInterval: 12 * 60 * 60 * 1000,
         }
-    );
+    )
 
-    const categories = data?.categories || [];
+    const categories = data?.categories || []
 
     /**
      * Создает новую категорию
@@ -84,22 +84,22 @@ export const useCategoriesApi = () => {
         const result = await api.post<CreateCategoryResult>(
             API_CATEGORIES_PATH,
             data
-        );
+        )
 
         // Оптимистично обновляем кэш
         await mutate((currentData: CategoryResponse | undefined) => {
-            if (!currentData) return currentData;
+            if (!currentData) return currentData
             return {
                 ...currentData,
                 categories: [...currentData.categories, result.category].sort(
                     (a: CategoryBase, b: CategoryBase) =>
                         a.name.localeCompare(b.name)
                 ),
-            };
-        }, false);
+            }
+        }, false)
 
-        return result;
-    };
+        return result
+    }
 
     /**
      * Обновляет существующую категорию
@@ -132,10 +132,10 @@ export const useCategoriesApi = () => {
                 description: data.description,
                 color: data.color,
             }
-        );
+        )
 
         await mutate((currentData: CategoryResponse | undefined) => {
-            if (!currentData) return currentData;
+            if (!currentData) return currentData
             return {
                 ...currentData,
                 categories: currentData.categories
@@ -147,11 +147,11 @@ export const useCategoriesApi = () => {
                     .sort((a: CategoryBase, b: CategoryBase) =>
                         a.name.localeCompare(b.name)
                     ),
-            };
-        }, false);
+            }
+        }, false)
 
-        return result;
-    };
+        return result
+    }
 
     /**
      * Удаляет категорию по ID
@@ -172,20 +172,20 @@ export const useCategoriesApi = () => {
     ): Promise<DeleteCategoryResult> => {
         const result = await api.del<DeleteCategoryResult>(
             `${API_CATEGORIES_PATH}/${categoryId}`
-        );
+        )
 
         await mutate((currentData: CategoryResponse | undefined) => {
-            if (!currentData) return currentData;
+            if (!currentData) return currentData
             return {
                 ...currentData,
                 categories: currentData.categories.filter(
                     (cat: CategoryBase) => cat.id !== categoryId
                 ),
-            };
-        }, false);
+            }
+        }, false)
 
-        return result;
-    };
+        return result
+    }
 
     return {
         categories,
@@ -196,5 +196,5 @@ export const useCategoriesApi = () => {
         deleteCategoryApi,
         refetch: () => mutate(),
         mutate,
-    };
-};
+    }
+}

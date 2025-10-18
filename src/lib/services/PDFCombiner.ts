@@ -1,26 +1,29 @@
-import { GOTENBERG_URL, STORAGE_BASE_PATHS } from '@/constants/app';
-import { MIME } from '@/constants/mime';
-import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter';
-import type { SupportedMime } from '@/lib/types/mime';
-import type { PdfCombineRequest, PdfCombineResult } from '@/lib/types/pdf';
+import { GOTENBERG_URL, STORAGE_BASE_PATHS } from '@/constants/app'
+import { MIME } from '@/constants/mime'
+import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter'
+import type { SupportedMime } from '@/lib/types/mime'
+import type { PdfCombineRequest, PdfCombineResult } from '@/lib/types/pdf'
 
-import { attachmentService } from './AttachmentService';
-import { FileStorageService,getFileStorageService } from './FileStorageService';
+import { attachmentService } from './AttachmentService'
+import {
+    type FileStorageService,
+    getFileStorageService,
+} from './FileStorageService'
 
 /**
  * Сервис для объединения PDF документов с приложениями
  * Создает единый PDF из основного документа и всех приложений
  */
 export class PDFCombiner {
-    private gotenberg: GotenbergAdapter;
-    private storage: FileStorageService;
+    private gotenberg: GotenbergAdapter
+    private storage: FileStorageService
 
     constructor(
         private readonly attachments: typeof attachmentService,
         gotenbergUrl: string
     ) {
-        this.gotenberg = new GotenbergAdapter(gotenbergUrl);
-        this.storage = getFileStorageService();
+        this.gotenberg = new GotenbergAdapter(gotenbergUrl)
+        this.storage = getFileStorageService()
     }
     /**
      * Обеспечивает PDF формат (конвертирует если нужно)
@@ -33,11 +36,11 @@ export class PDFCombiner {
         mimeType: SupportedMime
     ): Promise<Buffer> {
         try {
-            const fileBuffer = await this.storage.downloadDocument(filePath);
+            const fileBuffer = await this.storage.downloadDocument(filePath)
 
             // Если уже PDF - возвращаем как есть
             if (mimeType === MIME.PDF) {
-                return fileBuffer;
+                return fileBuffer
             }
 
             // Если Office документ - конвертируем через Gotenberg
@@ -45,18 +48,15 @@ export class PDFCombiner {
                 const result = await this.gotenberg.convertToPdf(
                     fileBuffer,
                     mimeType
-                );
-                return result.buffer;
+                )
+                return result.buffer
             }
 
             // Для остальных типов - предполагаем что уже PDF
-            return fileBuffer;
+            return fileBuffer
         } catch (error) {
-            console.error(
-                `Failed to ensure PDF format for ${filePath}:`,
-                error
-            );
-            throw new Error(`Cannot process file: ${filePath}`);
+            console.error(`Failed to ensure PDF format for ${filePath}:`, error)
+            throw new Error(`Cannot process file: ${filePath}`)
         }
     }
 
@@ -71,17 +71,17 @@ export class PDFCombiner {
         outputFileName: string
     ): Promise<Buffer | null> {
         try {
-            if (pdfBuffers.length === 0 || !pdfBuffers[0]) return null;
-            if (pdfBuffers.length === 1) return pdfBuffers[0]!.buffer;
+            if (pdfBuffers.length === 0 || !pdfBuffers[0]) return null
+            if (pdfBuffers.length === 1) return pdfBuffers[0]?.buffer
 
             const result = await this.gotenberg.mergePdfs(
                 pdfBuffers,
                 outputFileName
-            );
-            return result.buffer;
+            )
+            return result.buffer
         } catch (error) {
-            console.error('Gotenberg PDF merge failed:', error);
-            return null;
+            console.error('Gotenberg PDF merge failed:', error)
+            return null
         }
     }
 
@@ -97,34 +97,34 @@ export class PDFCombiner {
             const mainPdfBuffer = await this.ensurePdfFormat(
                 request.mainDocumentPath,
                 request.mainDocumentMimeType
-            );
-            const mainPdfName = this.generatePdfName(request.mainDocumentPath);
+            )
+            const mainPdfName = this.generatePdfName(request.mainDocumentPath)
 
             // 2. Конвертация приложений в PDF
             const sortedAttachments = request.attachments.sort(
                 (a, b) => a.order - b.order
-            );
+            )
             const attachmentPdfBuffers: Array<{
-                buffer: Buffer;
-                fileName: string;
-            }> = [];
+                buffer: Buffer
+                fileName: string
+            }> = []
 
             for (const attachment of sortedAttachments) {
                 try {
                     const pdfBuffer = await this.ensurePdfFormat(
                         attachment.filePath,
                         attachment.mimeType
-                    );
-                    const pdfName = this.generatePdfName(attachment.filePath);
+                    )
+                    const pdfName = this.generatePdfName(attachment.filePath)
                     attachmentPdfBuffers.push({
                         buffer: pdfBuffer,
                         fileName: pdfName,
-                    });
+                    })
                 } catch (error) {
                     console.warn(
                         `Failed to convert attachment ${attachment.fileName}:`,
                         error
-                    );
+                    )
                 }
             }
 
@@ -135,20 +135,20 @@ export class PDFCombiner {
                     buffer: p.buffer,
                     fileName: `${String(i + 1).padStart(3, '0')}-${p.fileName}`,
                 })),
-            ];
+            ]
 
             const outputFileName =
-                this.generateCombinedFileName(originalDocumentName);
+                this.generateCombinedFileName(originalDocumentName)
             const combinedPdf = await this.mergePdfsWithGotenberg(
                 allPdfs,
                 outputFileName
-            );
+            )
 
             if (!combinedPdf) {
                 return {
                     success: false,
                     error: 'Failed to merge PDFs with Gotenberg',
-                };
+                }
             }
 
             // 4. Сохранение итогового PDF в MinIO
@@ -160,7 +160,7 @@ export class PDFCombiner {
                     size: combinedPdf.length,
                 },
                 { basePath: STORAGE_BASE_PATHS.COMBINED }
-            );
+            )
 
             return {
                 success: true,
@@ -168,13 +168,13 @@ export class PDFCombiner {
                 combinedPdfKey: result.key,
                 fileSize: result.size,
                 originalName: outputFileName,
-            };
+            }
         } catch (error) {
-            console.error('PDF combination failed:', error);
+            console.error('PDF combination failed:', error)
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error',
-            };
+            }
         }
     }
 
@@ -184,9 +184,9 @@ export class PDFCombiner {
      * @returns Имя для PDF
      */
     private generatePdfName(filePath: string): string {
-        const fileName = filePath.split('/').pop() || new Date().toISOString();
-        const baseName = fileName.replace(/\.[^.]+$/, '');
-        return `${baseName}.pdf`;
+        const fileName = filePath.split('/').pop() || new Date().toISOString()
+        const baseName = fileName.replace(/\.[^.]+$/, '')
+        return `${baseName}.pdf`
     }
 
     /**
@@ -195,8 +195,8 @@ export class PDFCombiner {
      * @returns Имя для итогового PDF
      */
     private generateCombinedFileName(originalName: string): string {
-        const baseName = originalName.replace(/\.[^.]+$/, '');
-        return `${baseName}-with-attachments.pdf`;
+        const baseName = originalName.replace(/\.[^.]+$/, '')
+        return `${baseName}-with-attachments.pdf`
     }
 }
 
@@ -204,4 +204,4 @@ export class PDFCombiner {
 export const pdfCombiner = new PDFCombiner(
     attachmentService,
     process.env.GOTENBERG_URL || GOTENBERG_URL
-);
+)

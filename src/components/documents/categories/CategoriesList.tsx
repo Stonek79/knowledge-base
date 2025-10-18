@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
     Box,
@@ -11,14 +11,14 @@ import {
     Skeleton,
     Typography,
     useTheme,
-} from '@mui/material';
+} from '@mui/material'
 
-import { CategoryBase } from '@/lib/types/document';
+import type { CategoryBase } from '@/lib/types/document'
 
 interface CategoriesListProps {
-    categories: CategoryBase[];
-    isLoading?: boolean;
-    onCategoryClick: (categoryId: string) => void;
+    categories: CategoryBase[]
+    isLoading?: boolean
+    onCategoryClick: (categoryId: string) => void
 }
 
 export function CategoriesList({
@@ -26,8 +26,8 @@ export function CategoriesList({
     isLoading,
     onCategoryClick,
 }: CategoriesListProps) {
-    const theme = useTheme();
-    const isDark = theme.palette.mode === 'dark';
+    const theme = useTheme()
+    const isDark = theme.palette.mode === 'dark'
 
     if (isLoading) {
         return (
@@ -37,13 +37,14 @@ export function CategoriesList({
                         Категории
                     </Typography>
                     <Box sx={{ mt: 2 }}>
-                        {[...Array(4)].map((_, i) => (
-                            <Skeleton key={i} height={40} />
-                        ))}
+                        <Skeleton height={40} />
+                        <Skeleton height={40} />
+                        <Skeleton height={40} />
+                        <Skeleton height={40} />
                     </Box>
                 </CardContent>
             </Card>
-        );
+        )
     }
 
     return (
@@ -112,5 +113,5 @@ export function CategoriesList({
                 </List>
             </CardContent>
         </Card>
-    );
+    )
 }

@@ -1,10 +1,7 @@
-'use client';
+'use client'
 
-
-import { useEffect, useState } from 'react';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload as UploadIcon } from '@mui/icons-material';
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Upload as UploadIcon } from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -12,36 +9,37 @@ import {
     CircularProgress,
     Stack,
     Typography,
-} from '@mui/material';
-import { useForm } from 'react-hook-form';
+} from '@mui/material'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 
-import { ATTACHMENT_TYPE } from '@/constants/document';
-import { MIME } from '@/constants/mime';
-import { USER_ROLES } from '@/constants/user';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { useUsers } from '@/lib/hooks/useUsers';
-import { uploadFormSchema } from '@/lib/schemas/document';
-import { BaseAttachment } from '@/lib/types/attachment';
-import { DocumentWithAuthor, UploadFormInput } from '@/lib/types/document';
-import { SupportedMime } from '@/lib/types/mime';
+import { ATTACHMENT_TYPE } from '@/constants/document'
+import { MIME } from '@/constants/mime'
+import { USER_ROLES } from '@/constants/user'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { useUsers } from '@/lib/hooks/useUsers'
+import { uploadFormSchema } from '@/lib/schemas/document'
+import type { BaseAttachment } from '@/lib/types/attachment'
+import type { DocumentWithAuthor, UploadFormInput } from '@/lib/types/document'
+import type { SupportedMime } from '@/lib/types/mime'
 
-import { ConfidentialAccessControl } from '../access/ConfidentialAccessControl';
-import { AttachmentManager } from '../attachments/AttachmentManager';
-import { DocumentViewer } from '../viewer/DocumentViewer';
+import { ConfidentialAccessControl } from '../access/ConfidentialAccessControl'
+import { AttachmentManager } from '../attachments/AttachmentManager'
+import { DocumentViewer } from '../viewer/DocumentViewer'
 
-import { DragDropZone } from './DragDropZone';
-import { FilePreview } from './FilePreview';
-import { MetadataForm } from './MetadataForm';
-import { UploadProgress } from './UploadProgress';
+import { DragDropZone } from './DragDropZone'
+import { FilePreview } from './FilePreview'
+import { MetadataForm } from './MetadataForm'
+import { UploadProgress } from './UploadProgress'
 
 // Type guard, чтобы TypeScript понимал, с каким объектом мы работаем
 function isBaseAttachment(item: unknown): item is BaseAttachment {
-    return !!item && typeof item === 'object' && 'id' in item;
+    return !!item && typeof item === 'object' && 'id' in item
 }
 
 // Хелпер для создания уникального "временного" ID для новых файлов
 function getFileId(file: File): string {
-    return `new_${file.name}_${file.lastModified}`;
+    return `new_${file.name}_${file.lastModified}`
 }
 
 export async function validateDocxFile(
@@ -55,26 +53,26 @@ export async function validateDocxFile(
         return {
             valid: false,
             error: 'Поддерживаются только DOCX, DOC и PDF файлы',
-        };
+        }
     if (file.size > 2 * 1024 * 1024)
-        return { valid: false, error: 'Размер файла не должен превышать 2MB' };
-    return { valid: true };
+        return { valid: false, error: 'Размер файла не должен превышать 2MB' }
+    return { valid: true }
 }
 
 interface DocumentUploadFormProps {
     onSubmit?: (data: {
-        metadata: Omit<UploadFormInput, 'file' | 'attachments'>;
-        mainFile: File | null;
-        attachments: (File | BaseAttachment)[];
-    }) => Promise<void>;
-    onCancel?: () => void;
-    isLoading?: boolean;
-    onClose?: () => void;
-    initialData?: Omit<UploadFormInput, 'file'>;
-    mode?: 'create' | 'edit';
-    initialAttachments?: BaseAttachment[];
-    document?: DocumentWithAuthor;
-    onRemoveAttachment?(id: string): void;
+        metadata: Omit<UploadFormInput, 'file' | 'attachments'>
+        mainFile: File | null
+        attachments: (File | BaseAttachment)[]
+    }) => Promise<void>
+    onCancel?: () => void
+    isLoading?: boolean
+    onClose?: () => void
+    initialData?: Omit<UploadFormInput, 'file'>
+    mode?: 'create' | 'edit'
+    initialAttachments?: BaseAttachment[]
+    document?: DocumentWithAuthor
+    onRemoveAttachment?(id: string): void
 }
 
 export function DocumentUploadForm({
@@ -88,16 +86,16 @@ export function DocumentUploadForm({
     mode,
     document,
 }: DocumentUploadFormProps) {
-    const { user } = useAuth();
-    const { users, isLoading: usersLoading } = useUsers();
-    const [uploadProgress, setUploadProgress] = useState(0);
+    const { user } = useAuth()
+    const { users, isLoading: usersLoading } = useUsers()
+    const [uploadProgress, setUploadProgress] = useState(0)
     const [attachments, setAttachments] = useState<
         (BaseAttachment & { file?: File })[]
-    >(initialAttachments || []);
-    const [mainFile, setMainFile] = useState<File | null>(null);
-    const [isViewerOpen, setIsViewerOpen] = useState(false);
+    >(initialAttachments || [])
+    const [mainFile, setMainFile] = useState<File | null>(null)
+    const [isViewerOpen, setIsViewerOpen] = useState(false)
 
-    const isAdmin = user?.role === USER_ROLES.ADMIN;
+    const isAdmin = user?.role === USER_ROLES.ADMIN
 
     const {
         control,
@@ -123,85 +121,85 @@ export function DocumentUploadForm({
             confidentialAccessUserIds:
                 initialData?.confidentialAccessUserIds || [],
         },
-    });
+    })
 
     useEffect(() => {
-        setAttachments(initialAttachments || []);
-    }, [initialAttachments]);
+        setAttachments(initialAttachments || [])
+    }, [initialAttachments])
 
     // Устанавливаем дефолтные значения для списка доступа в режиме создания
     useEffect(() => {
         if (mode === 'create' && !usersLoading && users.length > 0) {
-            const enabledUsers = users.filter(u => u.enabled);
-            const author = user?.id ? [user.id] : [];
+            const enabledUsers = users.filter(u => u.enabled)
+            const author = user?.id ? [user.id] : []
             const defaultIds = Array.from(
                 new Set([...author, ...enabledUsers.map(u => u.id)])
-            );
-            setValue('confidentialAccessUserIds', defaultIds);
+            )
+            setValue('confidentialAccessUserIds', defaultIds)
         }
-    }, [mode, usersLoading, users, user, setValue]);
+    }, [mode, usersLoading, users, user, setValue])
 
-    const isUser = user?.role === USER_ROLES.USER;
+    const isUser = user?.role === USER_ROLES.USER
 
-    const canUpload = isAdmin || isUser;
-    const isUploadingState = isLoading !== undefined ? isLoading : isSubmitting;
+    const canUpload = isAdmin || isUser
+    const isUploadingState = isLoading !== undefined ? isLoading : isSubmitting
 
     const handleFileSelect = async (file: File) => {
-        clearErrors('file');
-        const { valid, error } = await validateDocxFile(file);
+        clearErrors('file')
+        const { valid, error } = await validateDocxFile(file)
         if (!valid) {
-            setError('file', { message: error });
-            return;
+            setError('file', { message: error })
+            return
         }
 
-        setMainFile(file); // Сохраняем в локальный стейт
+        setMainFile(file) // Сохраняем в локальный стейт
         // Автозаполнение названия из имени файла
-        const baseName = file.name.replace(/\.[^.]+$/i, '');
-        setValue('title', baseName);
-    };
+        const baseName = file.name.replace(/\.[^.]+$/i, '')
+        setValue('title', baseName)
+    }
 
     const handleFileRemove = () => {
-        setMainFile(null);
-        setValue('title', '');
-        clearErrors(['file']);
-    };
+        setMainFile(null)
+        setValue('title', '')
+        clearErrors(['file'])
+    }
 
     /** Переместить вложение вверх по локальному списку */
     const handleMoveUp = (id: string) => {
         setAttachments(prev => {
-            const list = [...prev];
-            const i = list.findIndex(a => a.id === id);
-            if (i <= 0) return prev;
-            const prevItem = list[i - 1];
-            const currItem = list[i];
-            if (!prevItem || !currItem) return prev;
-            list[i - 1] = currItem;
-            list[i] = prevItem;
-            return list;
-        });
-    };
+            const list = [...prev]
+            const i = list.findIndex(a => a.id === id)
+            if (i <= 0) return prev
+            const prevItem = list[i - 1]
+            const currItem = list[i]
+            if (!prevItem || !currItem) return prev
+            list[i - 1] = currItem
+            list[i] = prevItem
+            return list
+        })
+    }
 
     /** Переместить вложение вниз по локальному списку */
     const handleMoveDown = (id: string) => {
         setAttachments(prev => {
-            const list = [...prev];
-            const i = list.findIndex(a => a.id === id);
-            if (i < 0 || i >= list.length - 1) return prev;
-            const currItem = list[i];
-            const nextItem = list[i + 1];
-            if (!currItem || !nextItem) return prev;
-            list[i] = nextItem;
-            list[i + 1] = currItem;
-            return list;
-        });
-    };
+            const list = [...prev]
+            const i = list.findIndex(a => a.id === id)
+            if (i < 0 || i >= list.length - 1) return prev
+            const currItem = list[i]
+            const nextItem = list[i + 1]
+            if (!currItem || !nextItem) return prev
+            list[i] = nextItem
+            list[i + 1] = currItem
+            return list
+        })
+    }
 
     const onSubmitForm = (data: UploadFormInput) => {
         if (isAdmin && !data.authorId && !data.username) {
             setError('authorId', {
                 message: 'Администратор должен выбрать автора документа.',
-            });
-            return;
+            })
+            return
         }
 
         // Если родитель передал onSubmit, вызываем его с собранным пакетом
@@ -221,28 +219,28 @@ export function DocumentUploadForm({
                 },
                 mainFile: mainFile, // Наш локальный стейт для основного файла
                 attachments: attachments.map(att => att.file ?? att), // Наш локальный стейт для приложений
-            };
+            }
 
-            void onSubmit(submissionData);
+            void onSubmit(submissionData)
         }
-    };
+    }
 
     const handleCancel = () => {
         if (onClose) {
-            onClose();
+            onClose()
         } else if (onCancel) {
-            onCancel();
+            onCancel()
         }
-        reset();
-        setUploadProgress(0);
-    };
+        reset()
+        setUploadProgress(0)
+    }
 
     if (!canUpload) {
         return (
             <Alert severity='warning'>
                 У вас нет прав для загрузки документов
             </Alert>
-        );
+        )
     }
 
     return (
@@ -285,9 +283,13 @@ export function DocumentUploadForm({
                 {/* Ошибки валидации */}
                 {Object.keys(errors).length > 0 && (
                     <Alert severity='error'>
-                        {Object.values(errors).map((error, index) => (
-                            <div key={index}>{error?.message as string}</div>
-                        ))}
+                        {Object.keys(errors)
+                            .filter(key => key !== 'root') // Исключаем общую ошибку, она отображается отдельно
+                            .map(([key, error]) => (
+                                <div key={key}>
+                                    {error ?? 'Неизвестная ошибка'}
+                                </div>
+                            ))}
                     </Alert>
                 )}
 
@@ -310,20 +312,20 @@ export function DocumentUploadForm({
                             attachmentType: ATTACHMENT_TYPE.ATTACHMENT,
                             createdAt: new Date(),
                             file: file,
-                        };
-                        setAttachments(prev => [...prev, newAttachment]);
+                        }
+                        setAttachments(prev => [...prev, newAttachment])
                     }}
                     onRemove={id => {
                         // Сообщаем родителю, что этот ID нужно будет удалить при коммите
                         if (onRemoveAttachment) {
-                            const item = attachments.find(a => a.id === id);
+                            const item = attachments.find(a => a.id === id)
                             // Вызываем колбэк только для существующих, а не для только что добавленных файлов
                             if (item && isBaseAttachment(item) && !item.file) {
-                                onRemoveAttachment(id);
+                                onRemoveAttachment(id)
                             }
                         }
                         // В любом случае удаляем из локального UI
-                        setAttachments(prev => prev.filter(a => a.id !== id));
+                        setAttachments(prev => prev.filter(a => a.id !== id))
                     }}
                     onMoveUp={handleMoveUp}
                     onMoveDown={handleMoveDown}
@@ -392,5 +394,5 @@ export function DocumentUploadForm({
                 )}
             </Stack>
         </Box>
-    );
+    )
 }

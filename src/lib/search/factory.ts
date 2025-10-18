@@ -1,7 +1,7 @@
-import { SearchEngine } from '@/constants/document';
+import { SearchEngine } from '@/constants/document'
 
-import { DocumentIndexer } from './indexer';
-import { getFlexSearch } from './singleton';
+import { DocumentIndexer } from './indexer'
+import { getFlexSearch } from './singleton'
 
 export class SearchFactory {
     static createIndexer(
@@ -11,10 +11,10 @@ export class SearchFactory {
             // case SearchEngine.ELASTICSEARCH:
             //     return new ElasticsearchIndexer();
             case SearchEngine.FLEXSEARCH:
-                console.log('[FLEXSEARCH]', engine);
-                return getFlexSearch();
+                console.log('[FLEXSEARCH]', engine)
+                return getFlexSearch()
             default:
-                return new DocumentIndexer();
+                return new DocumentIndexer()
         }
     }
 }

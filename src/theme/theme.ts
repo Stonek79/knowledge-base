@@ -1,36 +1,36 @@
-'use client';
+'use client'
 
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
+import '@fontsource/roboto/300.css'
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/500.css'
+import '@fontsource/roboto/700.css'
 
-import { createTheme,type ThemeOptions } from '@mui/material/styles';
+import { createTheme, type ThemeOptions } from '@mui/material/styles'
 
 // 1. Определяем структуру наших кастомных цветов.
 interface ChatColors {
-    myMessageBackground: string;
-    otherMessageBackground: string;
-    chatBackground: string;
+    myMessageBackground: string
+    otherMessageBackground: string
+    chatBackground: string
 }
 
 // 2. Расширяем интерфейсы Theme и ThemeOptions, добавляя `chat` в корень.
 declare module '@mui/material/styles' {
     interface Theme {
-        chat: ChatColors;
+        chat: ChatColors
     }
     interface ThemeOptions {
-        chat?: ChatColors;
+        chat?: ChatColors
     }
 
     interface PaletteOptions {
-        msgOutBg?: string;
-        msgInBg?: string;
+        msgOutBg?: string
+        msgInBg?: string
     }
 
     interface Palette {
-        msgOutBg: string;
-        msgInBg: string;
+        msgOutBg: string
+        msgInBg: string
     }
 }
 
@@ -42,7 +42,7 @@ const commonSettings: ThemeOptions = {
             },
         },
     },
-};
+}
 
 // 3. Создаем темы, добавляя объект `chat` на верхний уровень.
 export const lightTheme = createTheme({
@@ -62,7 +62,7 @@ export const lightTheme = createTheme({
         otherMessageBackground: '#FFFFFF',
         chatBackground: '#ECE5DD',
     },
-});
+})
 
 export const darkTheme = createTheme({
     ...commonSettings,
@@ -81,4 +81,4 @@ export const darkTheme = createTheme({
         otherMessageBackground: '#212121',
         chatBackground: '#0E1621',
     },
-});
+})

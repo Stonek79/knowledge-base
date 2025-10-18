@@ -1,12 +1,12 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { isSupportedMime } from '@/utils/mime';
+import { isSupportedMime } from '@/utils/mime'
 
 export const attachmentReorderItemSchema = z.object({
     attachmentId: z.string().optional(),
     clientId: z.string(),
     order: z.number().int().min(0),
-});
+})
 
 export const stagedFileSchema = z.object({
     tempKey: z.string().min(1),
@@ -16,7 +16,7 @@ export const stagedFileSchema = z.object({
     }),
     size: z.number().int().positive(),
     clientId: z.string(),
-});
+})
 
 export const metadataPatchSchema = z
     .object({
@@ -35,7 +35,7 @@ export const metadataPatchSchema = z
         message:
             'Необходимо указать автора (либо выбрать существующего, либо ввести имя нового)',
         path: ['authorId'], // Путь для отображения ошибки
-    });
+    })
 
 export const composeChangeSetSchema = z.object({
     operationId: z.uuid(),
@@ -44,4 +44,4 @@ export const composeChangeSetSchema = z.object({
     addAttachments: z.array(stagedFileSchema).optional(),
     deleteAttachmentIds: z.array(z.string()).optional(),
     reorder: z.array(attachmentReorderItemSchema).optional(),
-});
+})

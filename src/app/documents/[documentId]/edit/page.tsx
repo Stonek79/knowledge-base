@@ -1,5 +1,5 @@
-import { DocumentEditPage } from '@/components/documents/DocumentEditPage';
+import { DocumentEditPage } from '@/components/documents/DocumentEditPage'
 
 export default function DocumentEdit() {
-    return <DocumentEditPage />;
+    return <DocumentEditPage />
 }

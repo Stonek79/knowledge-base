@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/app/layout.tsx",
+    "src/app/**/page.tsx",
+    "src/app/api/**/route.ts",
+    "src/middleware.ts",
+    "scripts/**/*.ts",
+    "scripts/**/*.mjs",
+    "next.config.ts"
+  ],
+  "project": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "ignoreDependencies": [
+    "pg",
+    "esbuild-plugin-tsconfig-paths"
+  ]
+}

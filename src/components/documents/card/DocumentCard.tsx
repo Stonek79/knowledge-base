@@ -1,26 +1,28 @@
-import { MoreVert as MoreIcon } from '@mui/icons-material';
-import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
-import { IconButton } from '@mui/material';
+import { MoreVert as MoreIcon } from '@mui/icons-material'
+import {
+    Box,
+    Card,
+    CardContent,
+    Chip,
+    IconButton,
+    Typography,
+} from '@mui/material'
 
-import { DocumentWithAuthor } from '@/lib/types/document';
+import type { DocumentWithAuthor } from '@/lib/types/document'
 
 interface DocumentCardProps {
-    document: DocumentWithAuthor;
+    document: DocumentWithAuthor
     handleMenuOpen: (
         event: React.MouseEvent<HTMLElement>,
         document: DocumentWithAuthor
-    ) => void;
+    ) => void
 }
 export const DocumentCard = ({
     document,
     handleMenuOpen,
 }: DocumentCardProps) => {
-
     return (
-        <Card
-            key={document.id}
-            sx={{ mb: 2, width: '100%', height: '8em' }}
-        >
+        <Card key={document.id} sx={{ mb: 2, width: '100%', height: '8em' }}>
             <CardContent>
                 <Box
                     sx={{
@@ -53,7 +55,11 @@ export const DocumentCard = ({
                             <Typography
                                 variant='caption'
                                 color='text.secondary'
-                                sx={{ display: 'flex', gap: 1, alignItems: 'center' }}
+                                sx={{
+                                    display: 'flex',
+                                    gap: 1,
+                                    alignItems: 'center',
+                                }}
                             >
                                 <span>Автор: {document.author.username}</span>
                                 <span>Создан:</span>
@@ -74,5 +80,5 @@ export const DocumentCard = ({
                 </Box>
             </CardContent>
         </Card>
-    );
-};
+    )
+}

@@ -1,8 +1,6 @@
-'use client';
+'use client'
 
-import React, { useCallback, useState } from 'react';
-
-import { FitScreen, ZoomIn, ZoomOut } from '@mui/icons-material';
+import { FitScreen, ZoomIn, ZoomOut } from '@mui/icons-material'
 import {
     Alert,
     Box,
@@ -12,18 +10,19 @@ import {
     Toolbar,
     Tooltip,
     Typography,
-} from '@mui/material';
-import { Document, Page, pdfjs } from 'react-pdf';
+} from '@mui/material'
+import { useCallback, useState } from 'react'
+import { Document, Page, pdfjs } from 'react-pdf'
 
 // Настройка worker для PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.js',
     import.meta.url
-).toString();
+).toString()
 
 interface PDFDocumentViewerProps {
-    documentPath: string;
-    height?: string | number;
+    documentPath: string
+    height?: string | number
 }
 
 /**
@@ -43,41 +42,41 @@ export function PDFDocumentViewer({
     documentPath,
     height = '90dvh',
 }: PDFDocumentViewerProps) {
-    const [numPages, setNumPages] = useState<number>(0);
-    const [scale, setScale] = useState<number>(1.0);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    const [numPages, setNumPages] = useState<number>(0)
+    const [scale, setScale] = useState<number>(1.0)
+    const [loading, setLoading] = useState<boolean>(true)
+    const [error, setError] = useState<string | null>(null)
 
     const onDocumentLoadSuccess = useCallback(
         ({ numPages }: { numPages: number }) => {
-            setNumPages(numPages);
-            setLoading(false);
-            setError(null);
+            setNumPages(numPages)
+            setLoading(false)
+            setError(null)
         },
         []
-    );
+    )
 
     const onDocumentLoadError = useCallback((error: Error) => {
-        console.error('Ошибка загрузки PDF:', error);
-        setError('Не удалось загрузить PDF документ');
-        setLoading(false);
-    }, []);
+        console.error('Ошибка загрузки PDF:', error)
+        setError('Не удалось загрузить PDF документ')
+        setLoading(false)
+    }, [])
 
     const onPageLoadError = useCallback((error: Error) => {
-        console.error('Ошибка загрузки страницы:', error);
-    }, []);
+        console.error('Ошибка загрузки страницы:', error)
+    }, [])
 
     const zoomIn = useCallback(() => {
-        setScale(prev => Math.min(prev + 0.2, 3.0));
-    }, []);
+        setScale(prev => Math.min(prev + 0.2, 3.0))
+    }, [])
 
     const zoomOut = useCallback(() => {
-        setScale(prev => Math.max(prev - 0.2, 0.5));
-    }, []);
+        setScale(prev => Math.max(prev - 0.2, 0.5))
+    }, [])
 
     const fitToWidth = useCallback(() => {
-        setScale(1.0);
-    }, []);
+        setScale(1.0)
+    }, [])
 
     if (error) {
         return (
@@ -93,7 +92,7 @@ export function PDFDocumentViewer({
                     {error}
                 </Alert>
             </Box>
-        );
+        )
     }
 
     return (
@@ -189,7 +188,7 @@ export function PDFDocumentViewer({
                     error=''
                 >
                     {!loading &&
-                        Array.from(new Array(numPages), (el, index) => (
+                        Array.from(new Array(numPages), (_, index) => (
                             <Box
                                 key={`page_${index + 1}`}
                                 sx={{ mb: 2, boxShadow: 3 }}
@@ -208,5 +207,5 @@ export function PDFDocumentViewer({
                 </Document>
             </Box>
         </Box>
-    );
+    )
 }

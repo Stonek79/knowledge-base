@@ -1,18 +1,16 @@
-import type { ApiErrorPayload } from '@/lib/api/apiError';
+import type { ApiErrorPayload } from '@/lib/api/apiError'
 
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | { [key: string]: JsonValue } | JsonValue[];
+type JsonPrimitive = string | number | boolean | null
+type JsonValue = JsonPrimitive | { [key: string]: JsonValue } | JsonValue[]
 
 /** @internal */
 function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /** @internal */
 function isStringArray(value: unknown): value is string[] {
-    return (
-        Array.isArray(value) && value.every(item => typeof item === 'string')
-    );
+    return Array.isArray(value) && value.every(item => typeof item === 'string')
 }
 
 /**
@@ -28,28 +26,28 @@ function extractPayload(
     const payload: ApiErrorPayload = {
         message: fallbackMessage || 'Request failed',
         errors: null,
-    };
+    }
 
-    if (!isRecord(data)) return payload;
+    if (!isRecord(data)) return payload
 
-    const msg = data['message'];
-    const alt = data['error'];
+    const msg = data?.message
+    const alt = data?.error
     if (typeof msg === 'string') {
-        payload.message = msg;
+        payload.message = msg
     } else if (typeof alt === 'string') {
-        payload.message = alt;
+        payload.message = alt
     }
 
-    const err = data['errors'];
+    const err = data?.errors
     if (isRecord(err)) {
-        const normalized: Record<string, string[]> = {};
+        const normalized: Record<string, string[]> = {}
         for (const [key, val] of Object.entries(err)) {
-            if (isStringArray(val)) normalized[key] = val;
+            if (isStringArray(val)) normalized[key] = val
         }
-        payload.errors = Object.keys(normalized).length ? normalized : null;
+        payload.errors = Object.keys(normalized).length ? normalized : null
     }
 
-    return payload;
+    return payload
 }
 
 /**
@@ -89,8 +87,8 @@ export class ApiHttpError extends Error {
         public status: number,
         public payload: ApiErrorPayload
     ) {
-        super(payload.message);
-        this.name = 'ApiHttpError';
+        super(payload.message)
+        this.name = 'ApiHttpError'
     }
 }
 
@@ -101,9 +99,9 @@ export class ApiHttpError extends Error {
  */
 async function parseJsonSafe(res: Response): Promise<JsonValue | null> {
     try {
-        return await res.json();
+        return await res.json()
     } catch {
-        return null;
+        return null
     }
 }
 
@@ -122,47 +120,44 @@ export async function request<T>(
     url: string,
     init: RequestInit = {}
 ): Promise<T> {
-    const headersInit = init.headers;
-    const headers: Record<string, string> = {};
+    const headersInit = init.headers
+    const headers: Record<string, string> = {}
     if (headersInit instanceof Headers) {
         headersInit.forEach((v, k) => {
-            headers[k] = v;
-        });
+            headers[k] = v
+        })
     } else if (Array.isArray(headersInit)) {
-        for (const [k, v] of headersInit) headers[k] = v;
+        for (const [k, v] of headersInit) headers[k] = v
     } else if (headersInit && typeof headersInit === 'object') {
         for (const [k, v] of Object.entries(headersInit)) {
-            if (typeof v === 'string') headers[k] = v;
+            if (typeof v === 'string') headers[k] = v
         }
     }
 
     const isFormData =
-        typeof FormData !== 'undefined' && init.body instanceof FormData;
+        typeof FormData !== 'undefined' && init.body instanceof FormData
     const hasContentType = Object.keys(headers).some(
         h => h.toLowerCase() === 'content-type'
-    );
+    )
     if (!isFormData && !hasContentType) {
-        headers['Content-Type'] = 'application/json';
+        headers['Content-Type'] = 'application/json'
     }
 
     const res = await fetch(url, {
         credentials: 'include',
         headers,
         ...init,
-    });
+    })
 
-    if (res.status === 204) return undefined as unknown as T;
+    if (res.status === 204) return undefined as unknown as T
 
-    const data = await parseJsonSafe(res);
+    const data = await parseJsonSafe(res)
     if (!res.ok) {
-        const payload = extractPayload(
-            data,
-            res.statusText || 'Request failed'
-        );
-        throw new ApiHttpError(res.status, payload);
+        const payload = extractPayload(data, res.statusText || 'Request failed')
+        throw new ApiHttpError(res.status, payload)
     }
 
-    return (data ?? undefined) as T;
+    return (data ?? undefined) as T
 }
 
 /**
@@ -196,7 +191,7 @@ export const api = {
         }),
     del: <T>(url: string, init?: RequestInit) =>
         request<T>(url, { ...init, method: 'DELETE' }),
-};
+}
 
 /**
  * Фабрика fetcher для SWR.
@@ -211,15 +206,15 @@ export const makeSWRFetcher =
     (opts?: { returnNullOn401?: boolean } | undefined) =>
     async <T>(url: string) => {
         try {
-            return await api.get<T>(url);
+            return await api.get<T>(url)
         } catch (e) {
             if (e instanceof ApiHttpError && e.status === 401) {
-                if (opts?.returnNullOn401) return null as unknown as T;
-                return Promise.reject(e);
+                if (opts?.returnNullOn401) return null as unknown as T
+                return Promise.reject(e)
             }
-            throw e;
+            throw e
         }
-    };
+    }
 
 /**
  * Скачивает бинарный файл и инициирует сохранение в браузере.
@@ -235,34 +230,34 @@ export async function downloadBlob(
     fallbackFileName?: string,
     init?: Omit<RequestInit, 'credentials'>
 ): Promise<void> {
-    const res = await fetch(url, { credentials: 'include', ...init });
+    const res = await fetch(url, { credentials: 'include', ...init })
     if (!res.ok) {
-        const text = await res.text().catch(() => '');
+        const text = await res.text().catch(() => '')
         throw new ApiHttpError(res.status, {
             message: text || res.statusText,
             errors: null,
-        });
+        })
     }
 
-    const blob = await res.blob();
-    const cd = res.headers.get('Content-Disposition') ?? '';
-    const m = cd.match(/filename\*?=(?:UTF-8''|)["']?([^;"']+)/i);
+    const blob = await res.blob()
+    const cd = res.headers.get('Content-Disposition') ?? ''
+    const m = cd.match(/filename\*?=(?:UTF-8''|)["']?([^;"']+)/i)
     const fileName = m?.[1]
         ? decodeURIComponent(m[1])
-        : (fallbackFileName ?? 'download');
+        : (fallbackFileName ?? 'download')
 
-    const a = document.createElement('a');
-    const objectUrl = URL.createObjectURL(blob);
-    a.href = objectUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(objectUrl);
+    const a = document.createElement('a')
+    const objectUrl = URL.createObjectURL(blob)
+    a.href = objectUrl
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(objectUrl)
 }
 
-type QueryPrimitive = string | number | boolean | null | undefined | Date;
-type QueryValue = QueryPrimitive | QueryPrimitive[];
+type QueryPrimitive = string | number | boolean | null | undefined | Date
+type QueryValue = QueryPrimitive | QueryPrimitive[]
 
 /**
  * Собирает query-строку из объекта параметров.
@@ -271,22 +266,24 @@ type QueryValue = QueryPrimitive | QueryPrimitive[];
  * - null/undefined пропускаются
  */
 export function buildQuery(params: Record<string, QueryValue>): string {
-    const sp = new URLSearchParams();
+    const sp = new URLSearchParams()
 
     const append = (key: string, v: QueryPrimitive): void => {
-        if (v === null || v === undefined) return;
-        const val = v instanceof Date ? v.toISOString() : String(v);
-        sp.append(key, val);
-    };
+        if (v === null || v === undefined) return
+        const val = v instanceof Date ? v.toISOString() : String(v)
+        sp.append(key, val)
+    }
 
     for (const [k, v] of Object.entries(params)) {
         if (Array.isArray(v)) {
-            v.forEach(item => append(k, item));
+            v.forEach(item => {
+                append(k, item)
+            })
         } else {
-            append(k, v);
+            append(k, v)
         }
     }
-    return sp.toString();
+    return sp.toString()
 }
 
 /**
@@ -304,17 +301,17 @@ export function buildQuery(params: Record<string, QueryValue>): string {
 export async function withRetry<T>(
     fn: () => Promise<T>,
     opts?: {
-        retries?: number;
-        baseMs?: number;
-        maxMs?: number;
-        jitter?: boolean;
-        retryOn?: (err: unknown) => boolean;
+        retries?: number
+        baseMs?: number
+        maxMs?: number
+        jitter?: boolean
+        retryOn?: (err: unknown) => boolean
     }
 ): Promise<T> {
-    const retries = opts?.retries ?? 3;
-    const baseMs = opts?.baseMs ?? 200;
-    const maxMs = opts?.maxMs ?? 2000;
-    const jitter = opts?.jitter ?? true;
+    const retries = opts?.retries ?? 3
+    const baseMs = opts?.baseMs ?? 200
+    const maxMs = opts?.maxMs ?? 2000
+    const jitter = opts?.jitter ?? true
     const retryOn =
         opts?.retryOn ??
         ((err: unknown) => {
@@ -322,23 +319,23 @@ export async function withRetry<T>(
                 return (
                     err.status === 429 ||
                     (err.status >= 500 && err.status <= 599)
-                );
+                )
             }
             // сетевые/транзиентные ошибки
-            return true;
-        });
+            return true
+        })
 
-    let attempt = 0;
-     
+    let attempt = 0
+
     while (true) {
         try {
-            return await fn();
+            return await fn()
         } catch (e) {
-            if (attempt >= retries || !retryOn(e)) throw e;
-            const exp = Math.min(maxMs, baseMs * 2 ** attempt);
-            const delay = jitter ? Math.random() * exp : exp;
-            await new Promise(r => setTimeout(r, delay));
-            attempt += 1;
+            if (attempt >= retries || !retryOn(e)) throw e
+            const exp = Math.min(maxMs, baseMs * 2 ** attempt)
+            const delay = jitter ? Math.random() * exp : exp
+            await new Promise(r => setTimeout(r, delay))
+            attempt += 1
         }
     }
 }
@@ -362,63 +359,63 @@ export function uploadFormDataWithProgress<T>(
     formData: FormData,
     onProgress?: (percent: number) => void,
     opts?: {
-        method?: 'POST' | 'PUT' | 'PATCH';
-        withCredentials?: boolean;
-        headers?: Record<string, string>;
-        signal?: AbortSignal;
+        method?: 'POST' | 'PUT' | 'PATCH'
+        withCredentials?: boolean
+        headers?: Record<string, string>
+        signal?: AbortSignal
     }
 ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open(opts?.method ?? 'POST', url, true);
-        xhr.withCredentials = opts?.withCredentials ?? true;
+        const xhr = new XMLHttpRequest()
+        xhr.open(opts?.method ?? 'POST', url, true)
+        xhr.withCredentials = opts?.withCredentials ?? true
 
         // Content-Type для FormData выставляет сам браузер (boundary)
         if (opts?.headers) {
             for (const [k, v] of Object.entries(opts.headers))
-                xhr.setRequestHeader(k, v);
+                xhr.setRequestHeader(k, v)
         }
 
         if (xhr.upload && onProgress) {
             xhr.upload.onprogress = ev => {
-                if (!ev.lengthComputable) return;
-                const pct = Math.round((ev.loaded / ev.total) * 100);
-                onProgress(pct);
-            };
+                if (!ev.lengthComputable) return
+                const pct = Math.round((ev.loaded / ev.total) * 100)
+                onProgress(pct)
+            }
         }
 
         if (opts?.signal) {
             const abort = () => {
-                xhr.abort();
+                xhr.abort()
                 reject(
                     new ApiHttpError(499, {
                         message: 'Request aborted',
                         errors: null,
                     })
-                );
-            };
-            if (opts.signal.aborted) return abort();
-            opts.signal.addEventListener('abort', abort, { once: true });
+                )
+            }
+            if (opts.signal.aborted) return abort()
+            opts.signal.addEventListener('abort', abort, { once: true })
         }
 
         xhr.onreadystatechange = () => {
-            if (xhr.readyState !== 4) return;
-            const ct = xhr.getResponseHeader('Content-Type') ?? '';
-            const isJson = ct.includes('application/json');
+            if (xhr.readyState !== 4) return
+            const ct = xhr.getResponseHeader('Content-Type') ?? ''
+            const isJson = ct.includes('application/json')
             const parse = (): unknown => {
                 try {
                     return isJson
                         ? JSON.parse(xhr.responseText)
-                        : xhr.responseText;
+                        : xhr.responseText
                 } catch {
-                    return null;
+                    return null
                 }
-            };
+            }
 
             if (xhr.status >= 200 && xhr.status < 300) {
-                resolve(parse() as T);
+                resolve(parse() as T)
             } else {
-                const data = parse();
+                const data = parse()
                 const payload: ApiErrorPayload = {
                     message:
                         isRecord(data) && typeof data.message === 'string'
@@ -432,17 +429,17 @@ export function uploadFormDataWithProgress<T>(
                                   )
                               ) as Record<string, string[]>)
                             : null,
-                };
-                reject(new ApiHttpError(xhr.status, payload));
+                }
+                reject(new ApiHttpError(xhr.status, payload))
             }
-        };
+        }
 
         xhr.onerror = () => {
             reject(
                 new ApiHttpError(0, { message: 'Network error', errors: null })
-            );
-        };
+            )
+        }
 
-        xhr.send(formData);
-    });
+        xhr.send(formData)
+    })
 }

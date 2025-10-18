@@ -1,20 +1,20 @@
-import { ALLOWED_UPLOAD_MIME, DOCUMENT_FORMAT, MIME } from '@/constants/mime';
-import { MimeType, SupportedMime } from '@/lib/types/mime';
+import { ALLOWED_UPLOAD_MIME, DOCUMENT_FORMAT, MIME } from '@/constants/mime'
+import type { MimeType, SupportedMime } from '@/lib/types/mime'
 
 /**
  * Узкий guard для строкового MIME → SupportedMime.
  */
 export function isSupportedMime(mime: string): mime is SupportedMime {
-    return ALLOWED_UPLOAD_MIME.includes(mime);
+    return ALLOWED_UPLOAD_MIME.includes(mime)
 }
 
 export function mimeMapper(type: SupportedMime): MimeType {
     switch (type) {
         case MIME.DOCX:
-            return DOCUMENT_FORMAT.DOCX;
+            return DOCUMENT_FORMAT.DOCX
         case MIME.DOC:
-            return DOCUMENT_FORMAT.DOC;
+            return DOCUMENT_FORMAT.DOC
         case MIME.PDF:
-            return DOCUMENT_FORMAT.PDF;
+            return DOCUMENT_FORMAT.PDF
     }
 }

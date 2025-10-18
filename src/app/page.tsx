@@ -1,6 +1,6 @@
-import { WelcomePageContent } from '@/components/home';
+import { WelcomePageContent } from '@/components/home'
 
-import styles from './page.module.css';
+import styles from './page.module.css'
 
 export default function Home() {
     return (
@@ -12,5 +12,5 @@ export default function Home() {
                 <p>Footer</p>
             </footer>
         </div>
-    );
+    )
 }

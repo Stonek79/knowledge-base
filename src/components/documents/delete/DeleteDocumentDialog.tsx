@@ -1,6 +1,4 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 import {
     Alert,
@@ -12,19 +10,20 @@ import {
     DialogContent,
     DialogTitle,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
+import { useState } from 'react'
 
-import { DocumentStatus } from '@/lib/types/document';
+import type { DocumentStatus } from '@/lib/types/document'
 
 interface DeleteDocumentDialogProps {
-    open: boolean;
-    document: { id: string; title: string; deletedAt: boolean } | null;
-    view: DocumentStatus;
-    onClose: () => void;
-    onSoftDelete?: (documentId: string) => Promise<void>;
-    onHardDelete?: (documentId: string) => Promise<void>;
-    onRestore?: (documentId: string) => Promise<void>;
-    isAdmin?: boolean;
+    open: boolean
+    document: { id: string; title: string; deletedAt: boolean } | null
+    view: DocumentStatus
+    onClose: () => void
+    onSoftDelete?: (documentId: string) => Promise<void>
+    onHardDelete?: (documentId: string) => Promise<void>
+    onRestore?: (documentId: string) => Promise<void>
+    isAdmin?: boolean
 }
 
 export function DeleteDocumentDialog({
@@ -37,45 +36,45 @@ export function DeleteDocumentDialog({
     onRestore,
     isAdmin = false,
 }: DeleteDocumentDialogProps) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const handleAction = async (
         action: 'softDelete' | 'hardDelete' | 'restore'
     ) => {
-        if (!document) return;
+        if (!document) return
 
         const actionMap = {
             softDelete: onSoftDelete,
             hardDelete: onHardDelete,
             restore: onRestore,
-        };
+        }
 
-        const actionToRun = actionMap[action];
-        if (!actionToRun) return;
+        const actionToRun = actionMap[action]
+        if (!actionToRun) return
 
-        setIsLoading(true);
-        setError(null);
+        setIsLoading(true)
+        setError(null)
 
         try {
-            await actionToRun(document.id);
+            await actionToRun(document.id)
         } catch (err) {
             setError(
                 err instanceof Error
                     ? err.message
                     : `Ошибка выполнения действия`
-            );
+            )
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     const handleClose = () => {
-        setError(null);
-        onClose();
-    };
+        setError(null)
+        onClose()
+    }
 
-    const isDeletedView = view === 'deleted';
+    const isDeletedView = view === 'deleted'
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
@@ -153,5 +152,5 @@ export function DeleteDocumentDialog({
                 </Box>
             </DialogActions>
         </Dialog>
-    );
+    )
 }

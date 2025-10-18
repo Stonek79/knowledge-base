@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 /**
  * Схема валидации опций поиска
@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const searchOptionsSchema = z.object({
     limit: z.number().int().min(1).max(1000).optional(),
     offset: z.number().int().min(0).optional(),
-});
+})
 
 /**
  * Схема валидации опций поиска для будущих движков (Elasticsearch)
@@ -28,7 +28,7 @@ export const extendedSearchOptionsSchema = z.object({
     sortOrder: z.enum(['asc', 'desc']).optional(),
     highlight: z.boolean().optional(),
     explain: z.boolean().optional(),
-});
+})
 
 /**
  * Схема валидации фильтров поиска
@@ -51,7 +51,7 @@ export const searchFiltersSchema = z.object({
             max: z.number().int().min(0),
         })
         .optional(),
-});
+})
 
 /**
  * Схема валидации подсвеченного фрагмента
@@ -61,7 +61,7 @@ export const highlightSchema = z.object({
     field: z.string(),
     position: z.number().int().min(0),
     length: z.number().int().min(1),
-});
+})
 
 /**
  * Схема валидации метаданных документа
@@ -76,7 +76,7 @@ export const documentMetadataSchema = z.object({
     tags: z.array(z.string()),
     fileSize: z.number().int().min(0),
     mimeType: z.string(),
-});
+})
 
 /**
  * Схема валидации результата поиска
@@ -89,7 +89,7 @@ export const searchResultSchema = z.object({
     highlights: z.array(highlightSchema),
     metadata: documentMetadataSchema,
     source: z.enum(['text', 'metadata', 'combined']),
-});
+})
 
 /**
  * Схема валидации документа для индексации
@@ -101,7 +101,7 @@ export const searchDocumentSchema = z.object({
     content: z.string(),
     metadata: documentMetadataSchema,
     keywords: z.array(z.string()).default([]),
-});
+})
 
 /**
  * Схема валидации статуса индекса
@@ -112,7 +112,7 @@ export const indexStatusSchema = z.object({
     lastUpdated: z.date(),
     status: z.enum(['ready', 'indexing', 'error']),
     errors: z.array(z.string()).optional(),
-});
+})
 
 /**
  * Схема валидации опций индексации
@@ -121,7 +121,7 @@ export const indexOptionsSchema = z.object({
     update: z.boolean().optional(),
     wait: z.boolean().optional(),
     batch: z.boolean().optional(),
-});
+})
 
 /**
  * Схема валидации конфигурации поискового движка
@@ -132,7 +132,7 @@ export const searchEngineConfigSchema = z.object({
     cache: z.union([z.boolean(), z.number().int().min(1)]).optional(),
     language: z.string().optional(),
     threshold: z.number().min(0).max(1).optional(),
-});
+})
 
 /**
  * Схема валидации результатов поиска с пагинацией
@@ -143,7 +143,7 @@ export const searchResultsSchema = z.object({
     page: z.number().int().min(1),
     limit: z.number().int().min(1),
     hasMore: z.boolean(),
-});
+})
 
 /**
  * Схема валидации статистики поиска
@@ -154,4 +154,4 @@ export const searchStatsSchema = z.object({
     lastIndexUpdate: z.date().optional(),
     searchCount: z.number().int().min(0),
     averageResponseTime: z.number().min(0),
-});
+})

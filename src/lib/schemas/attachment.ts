@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { ATTACHMENT_TYPE } from '@/constants/document';
-import { MIME } from '@/constants/mime';
+import { ATTACHMENT_TYPE } from '@/constants/document'
+import { MIME } from '@/constants/mime'
 
 export const baseAttachmentSchema = z.object({
     id: z.string().min(1),
@@ -11,7 +11,7 @@ export const baseAttachmentSchema = z.object({
     order: z.number().int().min(0).optional(),
     attachmentType: z.enum(ATTACHMENT_TYPE).default(ATTACHMENT_TYPE.ATTACHMENT),
     createdAt: z.date(),
-});
+})
 
 export const createAttachmentSchema = z.object({
     id: z.string().min(1),
@@ -23,7 +23,7 @@ export const createAttachmentSchema = z.object({
     createdAt: z.date(),
     documentId: z.string().min(1),
     filePath: z.string().min(1),
-});
+})
 
 export const attachmentMetadataSchema = z.object({
     fileName: z.string().min(1).max(255),
@@ -31,13 +31,13 @@ export const attachmentMetadataSchema = z.object({
     fileSize: z.number().int().min(1),
     attachmentType: z.enum(ATTACHMENT_TYPE).default(ATTACHMENT_TYPE.ATTACHMENT),
     order: z.number().int().min(0).optional(),
-});
+})
 
 export const attachmentUploadSchema = z.object({
     file: z.any().optional(),
     attachmentType: z.enum(ATTACHMENT_TYPE).default(ATTACHMENT_TYPE.ATTACHMENT),
     order: z.number().int().min(0).optional(),
-});
+})
 
 export const attachmentsReorderSchema = z.object({
     items: z
@@ -48,4 +48,4 @@ export const attachmentsReorderSchema = z.object({
             })
         )
         .min(1),
-});
+})

@@ -1,28 +1,27 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { GOTENBERG_URL } from '@/constants/app';
-import { SearchEngine } from '@/constants/document';
-import { USER_ROLES } from '@/constants/user';
-import { DocumentProcessor } from '@/core/documents/DocumentProcessor';
-import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter';
-import { ApiError } from '@/lib/api';
-import { indexingQueue } from '@/lib/queues/indexing';
-import { DocumentRepository } from '@/lib/repositories/documentRepository';
-import { documentListSchema } from '@/lib/schemas/document';
-import { uploadFormSchema } from '@/lib/schemas/document';
-import { SearchFactory } from '@/lib/search/factory';
-import { getFileStorageService } from '@/lib/services/FileStorageService';
-import { settingsService } from '@/lib/services/SettingsService';
-import {
+import { GOTENBERG_URL } from '@/constants/app'
+import { SearchEngine } from '@/constants/document'
+import { USER_ROLES } from '@/constants/user'
+import { DocumentProcessor } from '@/core/documents/DocumentProcessor'
+import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter'
+import { ApiError } from '@/lib/api'
+import { indexingQueue } from '@/lib/queues/indexing'
+import { DocumentRepository } from '@/lib/repositories/documentRepository'
+import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document'
+import { SearchFactory } from '@/lib/search/factory'
+import { getFileStorageService } from '@/lib/services/FileStorageService'
+import { settingsService } from '@/lib/services/SettingsService'
+import type {
     DocumentFilters,
     DocumentWithAuthor,
     UploadFormData,
     WhereDocumentInput,
-} from '@/lib/types/document';
-import { SupportedMime } from '@/lib/types/mime';
-import { UserResponse } from '@/lib/types/user';
-import { FileUtils } from '@/utils/files';
-import { isSupportedMime, mimeMapper } from '@/utils/mime';
+} from '@/lib/types/document'
+import type { SupportedMime } from '@/lib/types/mime'
+import type { UserResponse } from '@/lib/types/user'
+import { FileUtils } from '@/utils/files'
+import { isSupportedMime, mimeMapper } from '@/utils/mime'
 
 /**
  * DocumentService инкапсулирует бизнес-логику для работы с документами.
@@ -35,28 +34,28 @@ export class DocumentService {
      * @returns - Созданный объект документа.
      */
     public static async createDocument(formData: FormData, user: UserResponse) {
-        let createdFileKey: string | null = null;
-        let createdPdfKey: string | null = null;
+        let createdFileKey: string | null = null
+        let createdPdfKey: string | null = null
 
         try {
             if (user.role === USER_ROLES.GUEST) {
-                throw new ApiError('Forbidden', 403);
+                throw new ApiError('Forbidden', 403)
             }
 
             // Валидация и преобразование FormData в типизированный объект
-            const rawData = Object.fromEntries(formData.entries());
-            const validation = uploadFormSchema.safeParse(rawData);
+            const rawData = Object.fromEntries(formData.entries())
+            const validation = uploadFormSchema.safeParse(rawData)
             if (!validation.success) {
                 throw new ApiError(
                     'Ошибка валидации данных',
                     400,
                     z.flattenError(validation.error).fieldErrors
-                );
+                )
             }
             const data: UploadFormData = {
                 ...validation.data,
                 file: formData.get('file') as File, // Zod не может обработать File, добавляем вручную
-            };
+            }
 
             const {
                 file,
@@ -65,7 +64,7 @@ export class DocumentService {
                 description,
                 categoryIds,
                 keywords,
-            } = data;
+            } = data
 
             if (
                 !authorId ||
@@ -74,58 +73,58 @@ export class DocumentService {
                 throw new ApiError(
                     'Вы можете загружать документы только для себя',
                     403
-                );
+                )
             }
 
             const [maxFileSize, allowedMimeTypes] = await Promise.all([
                 settingsService.getMaxFileSize(),
                 settingsService.getAllowedMimeTypes(),
-            ]);
+            ])
 
             if (!file || !(file instanceof File)) {
-                throw new ApiError('Файл не найден', 400);
+                throw new ApiError('Файл не найден', 400)
             }
 
             if (
                 !allowedMimeTypes.includes(file.type) ||
                 !isSupportedMime(file.type)
             ) {
-                throw new ApiError('Unsupported file type', 415);
+                throw new ApiError('Unsupported file type', 415)
             }
-            const mime: SupportedMime = file.type;
+            const mime: SupportedMime = file.type
 
-            const buffer = Buffer.from(await file.arrayBuffer());
+            const buffer = Buffer.from(await file.arrayBuffer())
             if (buffer.byteLength > maxFileSize) {
                 throw new ApiError(
                     `Файл слишком большой. Макс. ${Math.round(
                         maxFileSize / (1024 * 1024)
                     )}MB`,
                     413
-                );
+                )
             }
 
-            const fileValidation = await FileUtils.validateFile(buffer, mime);
+            const fileValidation = await FileUtils.validateFile(buffer, mime)
             if (!fileValidation.valid) {
                 throw new ApiError(
                     fileValidation.error || 'Ошибка валидации данных',
                     400
-                );
+                )
             }
 
-            const hash = await FileUtils.generateFileHash(buffer);
+            const hash = await FileUtils.generateFileHash(buffer)
             const existingDocument = await DocumentRepository.findUnique({
                 where: { hash },
-            });
+            })
             if (existingDocument) {
                 throw new ApiError(
                     'Документ с таким содержимым уже существует',
                     409
-                );
+                )
             }
 
-            const gotenbergUrl = process.env.GOTENBERG_URL || GOTENBERG_URL;
-            const adapter = new GotenbergAdapter(gotenbergUrl);
-            const processor = new DocumentProcessor(adapter);
+            const gotenbergUrl = process.env.GOTENBERG_URL || GOTENBERG_URL
+            const adapter = new GotenbergAdapter(gotenbergUrl)
+            const processor = new DocumentProcessor(adapter)
             const processed = await processor.processUpload(
                 buffer,
                 mime,
@@ -133,12 +132,12 @@ export class DocumentService {
                 {
                     enableOcr: true,
                 }
-            );
+            )
 
             const filePath =
-                processed.storage?.originalKey ?? processed.original.path;
-            createdFileKey = processed.storage?.originalKey ?? null;
-            createdPdfKey = processed.storage?.pdfKey ?? null;
+                processed.storage?.originalKey ?? processed.original.path
+            createdFileKey = processed.storage?.originalKey ?? null
+            createdPdfKey = processed.storage?.pdfKey ?? null
 
             const newDocument = await DocumentRepository.interactiveTransaction(
                 async tx => {
@@ -174,7 +173,7 @@ export class DocumentService {
                             },
                             categories: { include: { category: true } },
                         },
-                    });
+                    })
 
                     if (processed.storage?.pdfKey) {
                         const conv = await tx.convertedDocument.create({
@@ -189,31 +188,31 @@ export class DocumentService {
                                 ).size,
                                 originalFile: filePath,
                             },
-                        });
+                        })
                         await tx.document.update({
                             where: { id: doc.id },
                             data: { mainPdfId: conv.id },
-                        });
+                        })
                     }
 
-                    return doc;
+                    return doc
                 }
-            );
+            )
 
             await indexingQueue.add('index-document', {
                 documentId: newDocument.id,
-            });
+            })
 
-            return newDocument;
+            return newDocument
         } catch (error) {
             // Rollback: удаляем загруженные файлы в случае ошибки
             if (createdPdfKey) {
-                void getFileStorageService().deleteDocument(createdPdfKey);
+                void getFileStorageService().deleteDocument(createdPdfKey)
             }
             if (createdFileKey) {
-                void getFileStorageService().deleteDocument(createdFileKey);
+                void getFileStorageService().deleteDocument(createdFileKey)
             }
-            throw error; // Пробрасываем ошибку дальше для обработки в API роуте
+            throw error // Пробрасываем ошибку дальше для обработки в API роуте
         }
     }
 
@@ -227,13 +226,13 @@ export class DocumentService {
         params: DocumentFilters,
         user: UserResponse
     ) {
-        const validation = documentListSchema.safeParse(params);
+        const validation = documentListSchema.safeParse(params)
         if (!validation.success) {
             throw new ApiError(
                 'Invalid parameters',
                 400,
                 z.flattenError(validation.error).fieldErrors
-            );
+            )
         }
 
         const {
@@ -245,15 +244,15 @@ export class DocumentService {
             authorId,
             dateFrom,
             dateTo,
-        } = validation.data;
+        } = validation.data
 
         // 1. Формирование условий доступа
         const whereConditions: WhereDocumentInput[] =
-            this.buildAccessConditions(user);
+            DocumentService.buildAccessConditions(user)
 
         // 2. Добавление фильтров из запроса
         if (authorId) {
-            whereConditions.push({ authorId: authorId });
+            whereConditions.push({ authorId: authorId })
         }
         if (categoryIds) {
             whereConditions.push({
@@ -262,22 +261,22 @@ export class DocumentService {
                         categoryId: { in: categoryIds },
                     },
                 },
-            });
+            })
         }
 
         if (dateFrom) {
             whereConditions.push({
                 createdAt: { gte: new Date(dateFrom) },
-            });
+            })
         }
-        
+
         if (dateTo) {
             whereConditions.push({
                 createdAt: { lte: new Date(dateTo) },
-            });
+            })
         }
 
-        const where: WhereDocumentInput = { AND: whereConditions };
+        const where: WhereDocumentInput = { AND: whereConditions }
 
         // 3. Получение данных из репозитория
         const [documents, total] = await Promise.all([
@@ -300,10 +299,10 @@ export class DocumentService {
                 skip: (page - 1) * limit,
             }),
             DocumentRepository.count({ where }),
-        ]);
+        ])
 
         // 4. Формирование ответа
-        const totalPages = Math.ceil(total / limit);
+        const totalPages = Math.ceil(total / limit)
         return {
             documents,
             pagination: {
@@ -314,7 +313,7 @@ export class DocumentService {
                 hasNextPage: page < totalPages,
                 hasPrevPage: page > 1,
             },
-        };
+        }
     }
 
     /**
@@ -325,10 +324,10 @@ export class DocumentService {
     private static buildAccessConditions(
         user: UserResponse
     ): WhereDocumentInput[] {
-        const conditions: WhereDocumentInput[] = [{ isSecret: false }];
+        const conditions: WhereDocumentInput[] = [{ isSecret: false }]
 
         if (user.role === USER_ROLES.GUEST) {
-            conditions.push({ isPublished: true });
+            conditions.push({ isPublished: true })
         }
 
         if (user.role !== USER_ROLES.ADMIN) {
@@ -338,10 +337,10 @@ export class DocumentService {
                     { authorId: user.id },
                     { confidentialAccessUsers: { some: { userId: user.id } } },
                 ],
-            });
+            })
         }
 
-        return conditions;
+        return conditions
     }
 
     /**
@@ -355,33 +354,33 @@ export class DocumentService {
         user: UserResponse
     ) {
         const { q, page, limit, categoryIds, authorId, dateFrom, dateTo } =
-            await params;
+            await params
 
         // 1. Условия доступа и базовые фильтры
-        const whereConditions = this.buildAccessConditions(user);
+        const whereConditions = DocumentService.buildAccessConditions(user)
         if (authorId) {
-            whereConditions.push({ authorId });
+            whereConditions.push({ authorId })
         }
         if (categoryIds) {
             whereConditions.push({
                 categories: { some: { categoryId: { in: categoryIds } } },
-            });
+            })
         }
 
-        const baseWhere: WhereDocumentInput = { AND: whereConditions };
+        const baseWhere: WhereDocumentInput = { AND: whereConditions }
 
         // 2. Полнотекстовый поиск
-        if (q && q.trim()) {
+        if (q?.trim()) {
             // Поиск через FlexSearch + пагинация в БД
             const searchEngine =
                 (process.env
                     .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-                SearchEngine.FLEXSEARCH;
-            const indexer = SearchFactory.createIndexer(searchEngine);
+                SearchEngine.FLEXSEARCH
+            const indexer = SearchFactory.createIndexer(searchEngine)
 
             // Проверяем и переиндексируем если нужно
             if (indexer.isEmpty()) {
-                const allDocuments = await DocumentRepository.findMany({
+                const allDocuments = (await DocumentRepository.findMany({
                     include: {
                         author: {
                             select: {
@@ -394,8 +393,8 @@ export class DocumentService {
                         categories: { include: { category: true } },
                         confidentialAccessUsers: true,
                     },
-                }) as DocumentWithAuthor[];
-                await indexer.reindexAll(allDocuments);
+                })) as DocumentWithAuthor[]
+                await indexer.reindexAll(allDocuments)
             }
 
             // ✅ Передаем все доступные фильтры из запроса
@@ -410,10 +409,10 @@ export class DocumentService {
                 ...(dateTo && {
                     dateTo: new Date(dateTo),
                 }),
-            };
+            }
 
             // Получаем все релевантные документы из FlexSearch
-            const searchResults = await indexer.search(q, searchFilters);
+            const searchResults = await indexer.search(q, searchFilters)
 
             if (searchResults.length === 0) {
                 return {
@@ -426,11 +425,11 @@ export class DocumentService {
                         hasNextPage: false,
                         hasPrevPage: false,
                     },
-                };
+                }
             }
 
             // Получаем ID документов в порядке релевантности
-            const documentIds = searchResults.map(result => result.id);
+            const documentIds = searchResults.map(result => result.id)
 
             // Пагинируем найденные документы в БД
             const documents = await DocumentRepository.findMany({
@@ -450,33 +449,33 @@ export class DocumentService {
                         },
                     },
                 },
-            });
+            })
 
             // 3. Сливаем: { ...searchResult, ...document }
             const mergedDocuments = searchResults
                 .map(searchResult => {
                     const fullDoc = documents.find(
                         d => d.id === searchResult.id
-                    );
-                    if (!fullDoc) return null;
+                    )
+                    if (!fullDoc) return null
 
                     return {
                         ...fullDoc, // Полные данные документа
                         relevance: searchResult.relevance, // Релевантность из поиска
                         highlights: searchResult.highlights, // Подсветки из поиска
                         isSearchResult: true, // Флаг что это поиск
-                    };
+                    }
                 })
-                .filter(Boolean);
+                .filter(Boolean)
 
             // 4. Сохраняем порядок релевантности + применяем пагинацию
             const paginatedResults = mergedDocuments.slice(
                 (page - 1) * limit,
                 page * limit
-            );
+            )
 
-            const total = mergedDocuments?.length;
-            const totalPages = Math.ceil(total / limit);
+            const total = mergedDocuments?.length
+            const totalPages = Math.ceil(total / limit)
 
             return {
                 documents: paginatedResults,
@@ -488,10 +487,10 @@ export class DocumentService {
                     hasNextPage: page < totalPages,
                     hasPrevPage: page > 1,
                 },
-            };
+            }
         } else {
-            const result = this.getDocuments(params, user);
-            return result;
+            const result = DocumentService.getDocuments(params, user)
+            return result
         }
     }
 }

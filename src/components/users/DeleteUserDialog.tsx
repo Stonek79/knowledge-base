@@ -1,6 +1,4 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 import {
     Alert,
@@ -10,16 +8,17 @@ import {
     DialogContent,
     DialogTitle,
     Typography,
-} from '@mui/material';
+} from '@mui/material'
+import { useState } from 'react'
 
-import { deleteUser } from '@/lib/actions/users';
-import { UserWithDocuments } from '@/lib/types/user';
+import { deleteUser } from '@/lib/actions/users'
+import type { UserWithDocuments } from '@/lib/types/user'
 
 interface DeleteUserDialogProps {
-    open: boolean;
-    user: UserWithDocuments;
-    onClose: () => void;
-    onSuccess: () => void;
+    open: boolean
+    user: UserWithDocuments
+    onClose: () => void
+    onSuccess: () => void
 }
 
 export function DeleteUserDialog({
@@ -28,26 +27,26 @@ export function DeleteUserDialog({
     onClose,
     onSuccess,
 }: DeleteUserDialogProps) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const handleDelete = async () => {
-        setIsLoading(true);
-        setError(null);
+        setIsLoading(true)
+        setError(null)
 
         try {
-            await deleteUser(user.id);
-            onSuccess();
+            await deleteUser(user.id)
+            onSuccess()
         } catch (err: unknown) {
             if (err instanceof Error) {
-                setError(err.message);
+                setError(err.message)
             } else {
-                setError('Произошла неизвестная ошибка');
+                setError('Произошла неизвестная ошибка')
             }
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
@@ -86,5 +85,5 @@ export function DeleteUserDialog({
                 </Button>
             </DialogActions>
         </Dialog>
-    );
+    )
 }

@@ -6,6 +6,7 @@ export const NAVIGATION = {
         DOCUMENTS: 'Документы',
         SETTINGS: 'Настройки',
         CATEGORIES: 'Категории',
+        DOCS: 'API документация'
     },
 
     // Пути
@@ -15,6 +16,7 @@ export const NAVIGATION = {
         DOCUMENTS: '/admin/documents',
         SETTINGS: '/admin/settings',
         CATEGORIES: '/admin/categories',
+        DOCS: '/admin/api-docs'
     },
 
     // Иконки (для Sidebar)
@@ -24,5 +26,6 @@ export const NAVIGATION = {
         DOCUMENTS: 'DescriptionIcon',
         SETTINGS: 'SettingsIcon',
         CATEGORIES: 'CategoriesIcon',
+        DOCS: 'ApiDocsIcon'
     },
-} as const;
+} as const

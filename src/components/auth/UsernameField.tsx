@@ -1,18 +1,18 @@
-'use client';
+'use client'
 
-import TextField, { TextFieldProps } from '@mui/material/TextField';
+import TextField, { type TextFieldProps } from '@mui/material/TextField'
 
 type UsernameFieldProps = Omit<
     TextFieldProps,
     'name' | 'label' | 'autoComplete' | 'type'
->;
+>
 
 export function UsernameField(props: UsernameFieldProps) {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (props.onChange) {
-            props.onChange(event);
+            props.onChange(event)
         }
-    };
+    }
 
     return (
         <TextField
@@ -26,5 +26,5 @@ export function UsernameField(props: UsernameFieldProps) {
             {...props}
             onChange={handleChange}
         />
-    );
+    )
 }

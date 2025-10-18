@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { profileVisibilityDefaults } from '@/constants/user';
+import { profileVisibilityDefaults } from '@/constants/user'
 
 export const profileVisibilitySettingsSchema = z.object({
     fullName: z.boolean(),
@@ -12,7 +12,7 @@ export const profileVisibilitySettingsSchema = z.object({
     manager: z.boolean(),
     birthday: z.boolean(),
     aboutMe: z.boolean(),
-});
+})
 
 export const profileSchema = z.object({
     id: z.string().optional(),
@@ -34,7 +34,7 @@ export const profileSchema = z.object({
     visibilitySettings: profileVisibilitySettingsSchema.default(
         profileVisibilityDefaults
     ),
-});
+})
 
 /**
  * Схема для валидации данных при обновлении профиля пользователя.
@@ -54,11 +54,11 @@ export const profileUpdateSchema = z.object({
     birthday: z.date().nullable().optional(),
     aboutMe: z.string().nullable().optional(),
     visibilitySettings: profileVisibilitySettingsSchema.partial().optional(),
-});
+})
 
 export const profileUpdateApiScheme = profileUpdateSchema.extend({
     birthday: z.coerce.date().nullable().optional(),
-});
+})
 
 /**
  * Схема для валидации формы смены пароля.
@@ -81,4 +81,4 @@ export const changePasswordSchema = z
     .refine(data => data.newPassword === data.confirmPassword, {
         message: 'Пароли не совпадают',
         path: ['confirmPassword'], // Указываем, к какому полю относится ошибка
-    });
+    })

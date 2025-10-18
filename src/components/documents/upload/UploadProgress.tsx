@@ -1,13 +1,12 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-
-import { Box, CircularProgress, Paper, Typography } from '@mui/material';
+import { Box, CircularProgress, Paper, Typography } from '@mui/material'
+import { useEffect, useState } from 'react'
 
 interface UploadProgressProps {
-    progress: number;
-    message?: string;
-    isProcessing?: boolean;
+    progress: number
+    message?: string
+    isProcessing?: boolean
 }
 
 const FUNNY_MESSAGES = [
@@ -20,7 +19,7 @@ const FUNNY_MESSAGES = [
     'Почти готово! Последние штрихи...',
     'Проверяем орфографию (шутка)...',
     'Договариваемся с файловой системой...',
-];
+]
 
 export function UploadProgress({
     progress,
@@ -29,24 +28,22 @@ export function UploadProgress({
 }: UploadProgressProps) {
     const [currentMessage, setCurrentMessage] = useState(
         message || FUNNY_MESSAGES[0]
-    );
+    )
 
     useEffect(() => {
         if (isProcessing && !message) {
-            let index = 0;
+            let index = 0
             const interval = setInterval(() => {
-                setCurrentMessage(
-                    FUNNY_MESSAGES[index % FUNNY_MESSAGES.length]
-                );
-                index++;
-            }, 3000);
-            return () => clearInterval(interval);
+                setCurrentMessage(FUNNY_MESSAGES[index % FUNNY_MESSAGES.length])
+                index++
+            }, 3000)
+            return () => clearInterval(interval)
         } else if (message) {
-            setCurrentMessage(message);
+            setCurrentMessage(message)
         }
         // Добавляем return для всех остальных случаев
-        return undefined;
-    }, [isProcessing, message]);
+        return undefined
+    }, [isProcessing, message])
 
     return (
         <Paper variant='outlined' sx={{ p: 2 }}>
@@ -63,5 +60,5 @@ export function UploadProgress({
                 </Typography>
             </Box>
         </Paper>
-    );
+    )
 }

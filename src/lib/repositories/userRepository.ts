@@ -1,45 +1,45 @@
-import { profileVisibilityDefaults } from '@/constants/user';
-import { prisma } from '@/lib/prisma';
-import { PrismaProfile, Profile, ProfileUpdate } from '@/lib/types/profile';
-import {
+import { profileVisibilityDefaults } from '@/constants/user'
+import { prisma } from '@/lib/prisma'
+import type { PrismaProfile, Profile, ProfileUpdate } from '@/lib/types/profile'
+import type {
     BaseUser,
     CreateUserData,
     UserResponse,
     UserWithProfile,
-} from '@/lib/types/user';
+} from '@/lib/types/user'
 
 import {
     profileSchema,
     profileVisibilitySettingsSchema,
-} from '../schemas/profile';
+} from '../schemas/profile'
 
 const normalizeVisibilitySettings = (
     rawSettings: unknown
 ): Record<string, boolean> => {
     const parsed = profileVisibilitySettingsSchema
         .partial()
-        .parse(rawSettings ?? {});
+        .parse(rawSettings ?? {})
 
     return {
         ...profileVisibilityDefaults,
         ...parsed,
-    };
-};
+    }
+}
 
 const mapPrismaProfile = (profile: PrismaProfile | null): Profile | null => {
     if (!profile) {
-        return null;
+        return null
     }
 
     const visibilitySettings = normalizeVisibilitySettings(
         profile.visibilitySettings
-    );
+    )
 
     return profileSchema.parse({
         ...profile,
         visibilitySettings,
-    });
-};
+    })
+}
 
 /**
  * UserRepository инкапсулирует логику прямого доступа к данным для моделей User и Profile.
@@ -52,7 +52,7 @@ export class UserRepository {
     public static async findById(userId: string): Promise<UserResponse | null> {
         return prisma.user.findUnique({
             where: { id: userId },
-        });
+        })
     }
 
     /**
@@ -69,7 +69,7 @@ export class UserRepository {
                     mode: 'insensitive',
                 },
             },
-        });
+        })
     }
 
     /**
@@ -79,7 +79,7 @@ export class UserRepository {
     public static async createUser(
         data: CreateUserData
     ): Promise<UserResponse> {
-        return prisma.user.create({ data });
+        return prisma.user.create({ data })
     }
 
     /**
@@ -95,20 +95,20 @@ export class UserRepository {
             include: {
                 profile: true,
             },
-        });
+        })
 
         if (!user) {
-            return null;
+            return null
         }
 
-        const mappedProfile = mapPrismaProfile(user.profile);
+        const mappedProfile = mapPrismaProfile(user.profile)
 
         const userWithProfile: UserWithProfile = {
             ...user,
             profile: mappedProfile,
-        };
+        }
 
-        return userWithProfile;
+        return userWithProfile
     }
 
     /**
@@ -120,32 +120,32 @@ export class UserRepository {
         userId: string,
         data: ProfileUpdate
     ): Promise<Profile> {
-        const { visibilitySettings, ...restOfData } = data;
+        const { visibilitySettings, ...restOfData } = data
 
         const existingProfile = await prisma.profile.findUnique({
             where: { userId },
             select: { visibilitySettings: true },
-        });
+        })
 
         const persistedSettings = normalizeVisibilitySettings(
             existingProfile?.visibilitySettings
-        );
+        )
 
         const incomingSettings = visibilitySettings
             ? profileVisibilitySettingsSchema
                   .partial()
                   .parse(visibilitySettings)
-            : {};
+            : {}
 
         const mergedSettings = {
             ...persistedSettings,
             ...incomingSettings,
-        };
+        }
 
         const profileDataForDb = {
             ...restOfData,
             visibilitySettings: mergedSettings,
-        };
+        }
 
         const result = await prisma.profile.upsert({
             where: { userId },
@@ -154,15 +154,15 @@ export class UserRepository {
                 userId,
                 ...profileDataForDb,
             },
-        });
+        })
 
-        const mappedProfile = mapPrismaProfile(result);
+        const mappedProfile = mapPrismaProfile(result)
 
         if (!mappedProfile) {
-            throw new Error('Не удалось собрать профиль пользователя');
+            throw new Error('Не удалось собрать профиль пользователя')
         }
 
-        return mappedProfile;
+        return mappedProfile
     }
 
     /**
@@ -174,6 +174,6 @@ export class UserRepository {
         return prisma.user.update({
             where: { id: userId },
             data: { password: hashedPassword },
-        });
+        })
     }
 }

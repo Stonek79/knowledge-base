@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react'
 
-import {
+import type {
     CategoryBase,
     CreateCategoryData,
     UpdateCategoryData,
-} from '@/lib/types/document';
+} from '@/lib/types/document'
 
-import { useCategoriesApi } from './useCategoriesApi';
+import { useCategoriesApi } from './useCategoriesApi'
 
 /**
  * Основной хук для работы с категориями документов
@@ -54,14 +54,14 @@ import { useCategoriesApi } from './useCategoriesApi';
  * ```
  */
 export const useCategories = () => {
-    const api = useCategoriesApi();
+    const api = useCategoriesApi()
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [success, setSuccess] = useState<string | null>(null)
     const [currentOperation, setCurrentOperation] = useState<
         'create' | 'update' | 'delete' | null
-    >(null);
+    >(null)
 
     const executeOperation = useCallback(
         async <T>(
@@ -69,28 +69,28 @@ export const useCategories = () => {
             operationFn: () => Promise<T>,
             successMessage: string
         ): Promise<T> => {
-            setIsLoading(true);
-            setCurrentOperation(operation);
-            setError(null);
-            setSuccess(null);
+            setIsLoading(true)
+            setCurrentOperation(operation)
+            setError(null)
+            setSuccess(null)
 
             try {
-                const result = await operationFn();
-                setSuccess(successMessage);
-                setTimeout(() => setSuccess(null), 3000);
-                return result;
+                const result = await operationFn()
+                setSuccess(successMessage)
+                setTimeout(() => setSuccess(null), 3000)
+                return result
             } catch (err) {
                 const errorMessage =
-                    err instanceof Error ? err.message : 'Неизвестная ошибка';
-                setError(errorMessage);
-                throw err;
+                    err instanceof Error ? err.message : 'Неизвестная ошибка'
+                setError(errorMessage)
+                throw err
             } finally {
-                setIsLoading(false);
-                setCurrentOperation(null);
+                setIsLoading(false)
+                setCurrentOperation(null)
             }
         },
         []
-    );
+    )
 
     const onCreateCategory = useCallback(
         async (data: CreateCategoryData) => {
@@ -98,10 +98,10 @@ export const useCategories = () => {
                 'create',
                 () => api.createCategoryApi(data),
                 'Категория успешно создана'
-            );
+            )
         },
         [api, executeOperation]
-    );
+    )
 
     const onUpdateCategory = useCallback(
         async (data: UpdateCategoryData) => {
@@ -109,10 +109,10 @@ export const useCategories = () => {
                 'update',
                 () => api.updateCategoryApi(data),
                 'Категория успешно обновлена'
-            );
+            )
         },
         [api, executeOperation]
-    );
+    )
 
     const onDeleteCategory = useCallback(
         async (categoryId: string) => {
@@ -120,63 +120,62 @@ export const useCategories = () => {
                 'delete',
                 () => api.deleteCategoryApi(categoryId),
                 'Категория успешно удалена'
-            );
+            )
         },
         [api, executeOperation]
-    );
+    )
 
     const createCategory = useCallback(
         (data: CreateCategoryData) => onCreateCategory(data),
         [onCreateCategory]
-    );
+    )
 
     const updateCategory = useCallback(
         (data: UpdateCategoryData) => onUpdateCategory(data),
         [onUpdateCategory]
-    );
+    )
 
     const deleteCategory = useCallback(
         (categoryId: string) => onDeleteCategory(categoryId),
         [onDeleteCategory]
-    );
+    )
 
     const clearMessages = useCallback(() => {
-        setError(null);
-        setSuccess(null);
-    }, []);
+        setError(null)
+        setSuccess(null)
+    }, [])
 
     const getCategoryById = useCallback(
         (categoryId: string): CategoryBase | undefined => {
             return api.categories.find(
                 (cat: CategoryBase) => cat.id === categoryId
-            );
+            )
         },
         [api.categories]
-    );
+    )
 
     const searchCategories = useCallback(
         (query: string): CategoryBase[] => {
-            if (!query.trim()) return api.categories;
+            if (!query.trim()) return api.categories
 
-            const lowerQuery = query.toLowerCase();
+            const lowerQuery = query.toLowerCase()
             return api.categories.filter(
                 (cat: CategoryBase) =>
                     cat.name.toLowerCase().includes(lowerQuery) ||
-                    (cat.description &&
-                        cat.description.toLowerCase().includes(lowerQuery))
-            );
+                    cat.description?.toLowerCase().includes(lowerQuery)
+            )
         },
         [api.categories]
-    );
+    )
 
     // Автоматическая очистка при размонтировании
     useEffect(() => {
         return () => {
-            setError(null);
-            setSuccess(null);
-            setCurrentOperation(null);
-        };
-    }, []);
+            setError(null)
+            setSuccess(null)
+            setCurrentOperation(null)
+        }
+    }, [])
 
     return {
         categories: api.categories,
@@ -193,5 +192,5 @@ export const useCategories = () => {
         searchCategories,
         clearMessages,
         refetch: api.refetch,
-    };
-};
+    }
+}

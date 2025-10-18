@@ -1,17 +1,17 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-import { SearchEngine } from '@/constants/document';
-import { USER_ROLES } from '@/constants/user';
-import { ApiError } from '@/lib/api';
-import { DocumentRepository } from '@/lib/repositories/documentRepository';
-import { documentListSchema } from '@/lib/schemas/document';
-import { SearchFactory } from '@/lib/search/factory';
-import {
+import { SearchEngine } from '@/constants/document'
+import { USER_ROLES } from '@/constants/user'
+import { ApiError } from '@/lib/api'
+import { DocumentRepository } from '@/lib/repositories/documentRepository'
+import { documentListSchema } from '@/lib/schemas/document'
+import { SearchFactory } from '@/lib/search/factory'
+import type {
     DocumentFilters,
     DocumentWithAuthor,
     WhereDocumentInput,
-} from '@/lib/types/document';
-import { UserResponse } from '@/lib/types/user';
+} from '@/lib/types/document'
+import type { UserResponse } from '@/lib/types/user'
 
 /**
  * DocumentQueryService инкапсулирует логику для чтения и поиска документов.
@@ -58,35 +58,35 @@ export class DocumentQueryService {
                 confidentialAccessUsers: true,
                 mainPdf: { select: { id: true, filePath: true } },
             },
-        });
+        })
 
         if (!document) {
-            throw new ApiError('Документ не найден', 404);
+            throw new ApiError('Документ не найден', 404)
         }
 
         if (user.role !== USER_ROLES.ADMIN && document?.deletedAt) {
-            return null;
+            return null
         }
 
         // Проверка доступа
         if (document.isConfidential) {
-            const isAuthor = user.id === document.authorId;
-            const isAdmin = user.role === USER_ROLES.ADMIN;
+            const isAuthor = user.id === document.authorId
+            const isAdmin = user.role === USER_ROLES.ADMIN
             const hasAccess = await DocumentRepository.hasConfidentialAccess(
                 user.id,
                 document.id
-            );
+            )
 
             if (!isAuthor && !isAdmin && !hasAccess) {
                 throw new ApiError(
                     'Доступ к конфиденциальному документу запрещен',
                     403
-                );
+                )
             }
         }
 
         if (user.role === USER_ROLES.GUEST && !document.isPublished) {
-            throw new ApiError('Доступ запрещен', 403);
+            throw new ApiError('Доступ запрещен', 403)
         }
 
         // Увеличение счетчика просмотров (кроме админов)
@@ -94,10 +94,10 @@ export class DocumentQueryService {
             await DocumentRepository.update({
                 where: { id },
                 data: { viewCount: { increment: 1 } },
-            });
+            })
         }
 
-        return document;
+        return document
     }
 
     /**
@@ -119,34 +119,34 @@ export class DocumentQueryService {
             dateFrom,
             dateTo,
             status,
-        } = await params;
+        } = await params
 
         // 1. Условия доступа и базовые фильтры
-        const whereConditions = this.buildAccessConditions(user);
+        const whereConditions = DocumentQueryService.buildAccessConditions(user)
         if (authorId) {
-            whereConditions.push({ authorId });
+            whereConditions.push({ authorId })
         }
         if (categoryIds) {
             whereConditions.push({
                 categories: { some: { categoryId: { in: categoryIds } } },
-            });
+            })
         }
 
         // Явно управляем статусом документов
         if (user.role !== USER_ROLES.ADMIN) {
-            whereConditions.push({ deletedAt: null });
+            whereConditions.push({ deletedAt: null })
         }
 
-        const baseWhere: WhereDocumentInput = { AND: whereConditions };
+        const baseWhere: WhereDocumentInput = { AND: whereConditions }
 
         // 2. Полнотекстовый поиск
-        if (q && q.trim()) {
+        if (q?.trim()) {
             // Поиск через FlexSearch + пагинация в БД
             const searchEngine =
                 (process.env
                     .SEARCH_ENGINE as (typeof SearchEngine)[keyof typeof SearchEngine]) ||
-                SearchEngine.FLEXSEARCH;
-            const indexer = SearchFactory.createIndexer(searchEngine);
+                SearchEngine.FLEXSEARCH
+            const indexer = SearchFactory.createIndexer(searchEngine)
 
             // Проверяем и переиндексируем если нужно
             if (indexer.isEmpty()) {
@@ -163,8 +163,8 @@ export class DocumentQueryService {
                         categories: { include: { category: true } },
                         confidentialAccessUsers: true,
                     },
-                })) as DocumentWithAuthor[];
-                await indexer.reindexAll(allDocuments);
+                })) as DocumentWithAuthor[]
+                await indexer.reindexAll(allDocuments)
             }
 
             // ✅ Передаем все доступные фильтры из запроса
@@ -180,10 +180,10 @@ export class DocumentQueryService {
                     dateTo: new Date(dateTo),
                 }),
                 ...(status && { status }),
-            };
+            }
 
             // Получаем все релевантные документы из FlexSearch
-            const searchResults = await indexer.search(q, searchFilters);
+            const searchResults = await indexer.search(q, searchFilters)
 
             if (searchResults.length === 0) {
                 return {
@@ -196,11 +196,11 @@ export class DocumentQueryService {
                         hasNextPage: false,
                         hasPrevPage: false,
                     },
-                };
+                }
             }
 
             // Получаем ID документов в порядке релевантности
-            const documentIds = searchResults.map(result => result.id);
+            const documentIds = searchResults.map(result => result.id)
 
             // Пагинируем найденные документы в БД
             const documents = await DocumentRepository.findMany({
@@ -220,33 +220,33 @@ export class DocumentQueryService {
                         },
                     },
                 },
-            });
+            })
 
             // 3. Сливаем: { ...searchResult, ...document }
             const mergedDocuments = searchResults
                 .map(searchResult => {
                     const fullDoc = documents.find(
                         d => d.id === searchResult.id
-                    );
-                    if (!fullDoc) return null;
+                    )
+                    if (!fullDoc) return null
 
                     return {
                         ...fullDoc, // Полные данные документа
                         relevance: searchResult.relevance, // Релевантность из поиска
                         highlights: searchResult.highlights, // Подсветки из поиска
                         isSearchResult: true, // Флаг что это поиск
-                    };
+                    }
                 })
-                .filter(Boolean);
+                .filter(Boolean)
 
             // 4. Сохраняем порядок релевантности + применяем пагинацию
             const paginatedResults = mergedDocuments.slice(
                 (page - 1) * limit,
                 page * limit
-            );
+            )
 
-            const total = mergedDocuments?.length;
-            const totalPages = Math.ceil(total / limit);
+            const total = mergedDocuments?.length
+            const totalPages = Math.ceil(total / limit)
 
             return {
                 documents: paginatedResults,
@@ -258,10 +258,10 @@ export class DocumentQueryService {
                     hasNextPage: page < totalPages,
                     hasPrevPage: page > 1,
                 },
-            };
+            }
         } else {
-            const result = this.getDocuments(params, user);
-            return result;
+            const result = DocumentQueryService.getDocuments(params, user)
+            return result
         }
     }
 
@@ -275,14 +275,14 @@ export class DocumentQueryService {
         params: DocumentFilters,
         user: UserResponse
     ) {
-        const data = await params;
-        const validation = documentListSchema.safeParse(data);
+        const data = await params
+        const validation = documentListSchema.safeParse(data)
         if (!validation.success) {
             throw new ApiError(
                 'Invalid parameters',
                 400,
                 z.flattenError(validation.error).fieldErrors
-            );
+            )
         }
 
         const {
@@ -295,15 +295,15 @@ export class DocumentQueryService {
             dateFrom,
             dateTo,
             status,
-        } = validation.data;
+        } = validation.data
 
         // 1. Формирование условий доступа
         const whereConditions: WhereDocumentInput[] =
-            this.buildAccessConditions(user);
+            DocumentQueryService.buildAccessConditions(user)
 
         // 2. Добавление фильтров из запроса
         if (authorId) {
-            whereConditions.push({ authorId: authorId });
+            whereConditions.push({ authorId: authorId })
         }
         if (categoryIds) {
             whereConditions.push({
@@ -312,30 +312,30 @@ export class DocumentQueryService {
                         categoryId: { in: categoryIds },
                     },
                 },
-            });
+            })
         }
 
         if (dateFrom) {
-            whereConditions.push({ createdAt: { gte: new Date(dateFrom) } });
+            whereConditions.push({ createdAt: { gte: new Date(dateFrom) } })
         }
 
         if (dateTo) {
-            whereConditions.push({ createdAt: { lte: new Date(dateTo) } });
+            whereConditions.push({ createdAt: { lte: new Date(dateTo) } })
         }
 
         if (status && status === 'deleted' && user.role === USER_ROLES.ADMIN) {
-            whereConditions.push({ deletedAt: { not: null } });
+            whereConditions.push({ deletedAt: { not: null } })
         } else if (
             status &&
             status === 'active' &&
             user.role === USER_ROLES.ADMIN
         ) {
-            whereConditions.push({ deletedAt: null });
+            whereConditions.push({ deletedAt: null })
         } else if (!status && user.role !== USER_ROLES.ADMIN) {
-            whereConditions.push({ deletedAt: null });
+            whereConditions.push({ deletedAt: null })
         }
 
-        const where: WhereDocumentInput = { AND: whereConditions };
+        const where: WhereDocumentInput = { AND: whereConditions }
 
         // 3. Получение данных из репозитория
         const [documents, total] = await Promise.all([
@@ -358,10 +358,10 @@ export class DocumentQueryService {
                 skip: (page - 1) * limit,
             }),
             DocumentRepository.count({ where }),
-        ]);
+        ])
 
         // 4. Формирование ответа
-        const totalPages = Math.ceil(total / limit);
+        const totalPages = Math.ceil(total / limit)
         return {
             documents,
             pagination: {
@@ -372,7 +372,7 @@ export class DocumentQueryService {
                 hasNextPage: page < totalPages,
                 hasPrevPage: page > 1,
             },
-        };
+        }
     }
 
     /**
@@ -383,10 +383,10 @@ export class DocumentQueryService {
     private static buildAccessConditions(
         user: UserResponse
     ): WhereDocumentInput[] {
-        const conditions: WhereDocumentInput[] = [{ isSecret: false }];
+        const conditions: WhereDocumentInput[] = [{ isSecret: false }]
 
         if (user.role === USER_ROLES.GUEST) {
-            conditions.push({ isPublished: true });
+            conditions.push({ isPublished: true })
         }
 
         if (user.role !== USER_ROLES.ADMIN) {
@@ -396,9 +396,9 @@ export class DocumentQueryService {
                     { authorId: user.id },
                     { confidentialAccessUsers: { some: { userId: user.id } } },
                 ],
-            });
+            })
         }
 
-        return conditions;
+        return conditions
     }
 }

@@ -1,37 +1,37 @@
-'use client';
+'use client'
 
-import CategoryIcon from '@mui/icons-material/Category';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import DescriptionIcon from '@mui/icons-material/Description';
-import PeopleIcon from '@mui/icons-material/People';
-import SettingsIcon from '@mui/icons-material/Settings';
-import { useMediaQuery, useTheme } from '@mui/material';
-import Divider from '@mui/material/Divider';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Toolbar from '@mui/material/Toolbar';
-import { usePathname, useRouter } from 'next/navigation';
+import ApiIcon from '@mui/icons-material/Api'
+import CategoryIcon from '@mui/icons-material/Category'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import DashboardIcon from '@mui/icons-material/Dashboard'
+import DescriptionIcon from '@mui/icons-material/Description'
+import PeopleIcon from '@mui/icons-material/People'
+import SettingsIcon from '@mui/icons-material/Settings'
+import { useMediaQuery, useTheme } from '@mui/material'
+import Divider from '@mui/material/Divider'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import Toolbar from '@mui/material/Toolbar'
+import { usePathname, useRouter } from 'next/navigation'
+import { NAVIGATION } from '@/constants/navigation'
 
-import { NAVIGATION } from '@/constants/navigation';
-
-const DRAWER_WIDTH = 240;
+const DRAWER_WIDTH = 240
 
 interface SidebarProps {
-    open: boolean;
-    onToggle: () => void;
+    open: boolean
+    onToggle: () => void
 }
 
 export function Sidebar({ open, onToggle }: SidebarProps) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const router = useRouter()
+    const pathname = usePathname()
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
     const menuItems = [
         {
@@ -58,16 +58,21 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
             text: NAVIGATION.SECTIONS.CATEGORIES,
             icon: <CategoryIcon />,
             path: NAVIGATION.PATHS.CATEGORIES,
-        }
-    ];
+        },
+        {
+            text: NAVIGATION.SECTIONS.DOCS,
+            icon: <ApiIcon />,
+            path: NAVIGATION.PATHS.DOCS
+        },
+    ]
 
     const handleNavigation = (path: string) => {
-        router.push(path);
+        router.push(path)
         // Закрываем drawer на мобильных после навигации
         if (isMobile) {
-            onToggle();
+            onToggle()
         }
-    };
+    }
 
     const drawerContent = (
         <>
@@ -108,7 +113,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
                 ))}
             </List>
         </>
-    );
+    )
 
     return (
         <>
@@ -146,5 +151,5 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
                 {drawerContent}
             </Drawer>
         </>
-    );
+    )
 }

@@ -10,7 +10,7 @@ export const attachmentReorderItemSchema = z.object({
 
 export const stagedFileSchema = z.object({
     tempKey: z.string().min(1),
-    originalName: z.string().min(1),
+    fileName: z.string().min(1),
     mimeType: z.string().refine(isSupportedMime, {
         message: 'Unsupported MIME type',
     }),

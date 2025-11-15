@@ -6,6 +6,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import DescriptionIcon from '@mui/icons-material/Description'
 import PeopleIcon from '@mui/icons-material/People'
+import LogsIcon from '@mui/icons-material/ReceiptLong'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { useMediaQuery, useTheme } from '@mui/material'
 import Divider from '@mui/material/Divider'
@@ -60,9 +61,14 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
             path: NAVIGATION.PATHS.CATEGORIES,
         },
         {
+            text: NAVIGATION.SECTIONS.LOGS,
+            icon: <LogsIcon />,
+            path: NAVIGATION.PATHS.LOGS,
+        },
+        {
             text: NAVIGATION.SECTIONS.DOCS,
             icon: <ApiIcon />,
-            path: NAVIGATION.PATHS.DOCS
+            path: NAVIGATION.PATHS.DOCS,
         },
     ]
 

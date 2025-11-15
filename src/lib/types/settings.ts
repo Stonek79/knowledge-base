@@ -12,4 +12,5 @@ export type AppSettings = Pick<
     | 'allowedMimeTypes'
     | 'enableOcr'
     | 'ocrLanguages'
+    | 'auditLogRetentionDays'
 >

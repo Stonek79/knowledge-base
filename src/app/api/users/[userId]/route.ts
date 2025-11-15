@@ -1,10 +1,13 @@
 import bcrypt from 'bcryptjs'
 import { type NextRequest, NextResponse } from 'next/server'
-
-import { USER_STATUSES } from '@/constants/user'
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
+import { USER_ROLES, USER_STATUSES } from '@/constants/user'
+import { getCurrentUser } from '@/lib/actions/users'
 import { ApiError, handleApiError } from '@/lib/api'
 import { prisma } from '@/lib/prisma'
 import { updateUserSchema } from '@/lib/schemas/user'
+import auditLogService from '@/lib/services/AuditLogService'
+import type { UpdatedDetails } from '@/lib/types/audit-log'
 import type { UpdateUserData } from '@/lib/types/user'
 
 /**
@@ -43,6 +46,21 @@ export async function PUT(
     try {
         const { userId } = await params
         const body = await req.json()
+        const actor = await getCurrentUser(req)
+
+        if (!actor) {
+            return handleApiError(new ApiError('Unauthorized', 401), {
+                status: 401,
+                message: 'Unauthorized',
+            })
+        }
+
+        if (actor.id !== userId && actor.role !== USER_ROLES.ADMIN) {
+            return handleApiError(new ApiError('Forbidden', 403), {
+                status: 403,
+                message: 'Forbidden',
+            })
+        }
 
         // Валидация входных данных
         const validation = updateUserSchema.safeParse(body)
@@ -54,25 +72,26 @@ export async function PUT(
             })
         }
 
+        // Проверка существования пользователя
+        const existingUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                username: true,
+                role: true,
+                enabled: true,
+                status: true,
+            },
+        })
+
+        if (!existingUser) {
+            throw new ApiError('Пользователь не найден', 404)
+        }
+
         const { username, newPassword, role, enabled, status } = validation.data
 
         // Использование транзакции для атомарности
         const result = await prisma.$transaction(async tx => {
-            // Проверка существования пользователя
-            const existingUser = await tx.user.findUnique({
-                where: { id: userId },
-                select: {
-                    id: true,
-                    username: true,
-                    role: true,
-                    enabled: true,
-                },
-            })
-
-            if (!existingUser) {
-                throw new ApiError('Пользователь не найден', 404)
-            }
-
             // Проверка уникальности username (если изменяется)
             if (username && username !== existingUser.username) {
                 const userWithSameName = await tx.user.findUnique({
@@ -119,6 +138,71 @@ export async function PUT(
                 },
             })
 
+            // Формируем массив изменений для лога
+            const changes: UpdatedDetails[] = []
+
+            if (
+                updateData.username &&
+                updateData.username !== existingUser.username
+            ) {
+                changes.push({
+                    field: 'username',
+                    oldValue: existingUser.username,
+                    newValue: updateData.username,
+                })
+            }
+
+            if (updateData.role && updateData.role !== existingUser.role) {
+                changes.push({
+                    field: 'role',
+                    oldValue: existingUser.role,
+                    newValue: updateData.role,
+                })
+            }
+
+            if (updateData.password) {
+                changes.push({
+                    field: 'password',
+                    oldValue: '[скрыто]',
+                    newValue: '[скрыто]',
+                })
+            }
+
+            if (
+                updateData.status &&
+                existingUser.status &&
+                updateData.status !== existingUser.status
+            ) {
+                changes.push({
+                    field: 'status',
+                    oldValue: existingUser.status,
+                    newValue: updateData.status,
+                })
+            }
+
+            if (
+                typeof updateData.enabled === 'boolean' &&
+                updateData.enabled !== existingUser.enabled
+            ) {
+                changes.push({
+                    field: 'enabled',
+                    oldValue: existingUser.enabled,
+                    newValue: updateData.enabled,
+                })
+            }
+
+            if (changes.length > 0) {
+                await auditLogService.log(
+                    {
+                        userId: actor.id,
+                        action: ACTION_TYPE.USER_UPDATED,
+                        targetId: userId,
+                        targetType: TARGET_TYPE.USER,
+                        details: { changes },
+                    },
+                    tx
+                )
+            }
             return user
         })
 
@@ -152,15 +236,42 @@ export async function PUT(
  *       404:
  *         description: User not found
  */
-export async function DELETE({ params }: { params: { userId: string } }) {
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: { userId: string } }
+) {
     try {
         const { userId } = await params
+        const actor = await getCurrentUser(req)
+
+        if (!actor) {
+            return handleApiError(new ApiError('Unauthorized', 401), {
+                status: 401,
+                message: 'Unauthorized',
+            })
+        }
+
+        if (actor.role !== USER_ROLES.ADMIN) {
+            return handleApiError(new ApiError('Forbidden', 403), {
+                status: 403,
+                message: 'Forbidden',
+            })
+        }
+
+        if (actor.id === userId) {
+            return handleApiError(new ApiError('Forbidden', 400), {
+                status: 400,
+                message: 'Администратор не может удалить сам себя',
+            })
+        }
 
         const result = await prisma.$transaction(async tx => {
             const userWithStats = await tx.user.findUnique({
                 where: { id: userId },
                 select: {
                     username: true,
+                    status: true,
+                    enabled: true,
                     _count: {
                         select: {
                             authoredDocuments: true,
@@ -185,13 +296,51 @@ export async function DELETE({ params }: { params: { userId: string } }) {
                         status: USER_STATUSES.PLACEHOLDER,
                     },
                 })
+
+                await auditLogService.log(
+                    {
+                        userId: actor.id,
+                        action: ACTION_TYPE.USER_UPDATED,
+                        targetId: userId,
+                        targetType: TARGET_TYPE.USER,
+                        details: {
+                            changes: [
+                                {
+                                    field: 'enabled',
+                                    oldValue: userWithStats.enabled,
+                                    newValue: false,
+                                },
+                                {
+                                    field: 'status',
+                                    oldValue: userWithStats.status,
+                                    newValue: USER_STATUSES.PLACEHOLDER,
+                                },
+                            ],
+                        },
+                    },
+                    tx
+                )
                 return {
                     action: 'deactivated',
                     username: userWithStats.username,
                     message: `Пользователь "${userWithStats.username}" не может быть удален, так как связан с документами. Учетная запись была деактивирована.`,
                 }
             } else {
+                await auditLogService.log(
+                    {
+                        userId: actor.id,
+                        action: ACTION_TYPE.USER_DELETED,
+                        targetId: userId,
+                        targetType: TARGET_TYPE.USER,
+                        details: {
+                            deletedUserId: userId,
+                            deletedUsername: userWithStats.username,
+                        },
+                    },
+                    tx
+                )
                 await tx.user.delete({ where: { id: userId } })
+                
                 return {
                     action: 'deleted',
                     message: 'Пользователь успешно удален',

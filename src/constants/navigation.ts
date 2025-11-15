@@ -6,6 +6,7 @@ export const NAVIGATION = {
         DOCUMENTS: 'Документы',
         SETTINGS: 'Настройки',
         CATEGORIES: 'Категории',
+        LOGS: 'Логи',
         DOCS: 'API документация'
     },
 
@@ -16,6 +17,7 @@ export const NAVIGATION = {
         DOCUMENTS: '/admin/documents',
         SETTINGS: '/admin/settings',
         CATEGORIES: '/admin/categories',
+        LOGS: '/admin/logs',
         DOCS: '/admin/api-docs'
     },
 
@@ -26,6 +28,7 @@ export const NAVIGATION = {
         DOCUMENTS: 'DescriptionIcon',
         SETTINGS: 'SettingsIcon',
         CATEGORIES: 'CategoriesIcon',
+        LOGS: 'LogsIcon',
         DOCS: 'ApiDocsIcon'
     },
 } as const

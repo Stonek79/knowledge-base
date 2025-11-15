@@ -11,6 +11,7 @@ export const DOCUMENTS_BASE_PATH = '/documents'
 export const CATEGORIES_BASE_PATH = '/categories'
 export const SEARCH_BASE_PATH = '/search'
 export const PROFILE_BASE_PATH = '/profile'
+export const LOGS_BASE_PATH = '/logs'
 
 // === Client-side Pages ===
 export const LOGIN_PAGE_PATH = `${AUTH_BASE_PATH}/login` // /auth/login
@@ -27,6 +28,7 @@ export const CATEGORY_PAGE_PATH = (categoryId: string) =>
     `${CATEGORIES_BASE_PATH}/${categoryId}` // /categories/categoryId
 export const CATEGORY_EDIT_PAGE_PATH = (categoryId: string) =>
     `${CATEGORIES_BASE_PATH}/${categoryId}/edit` // /categories/categoryId/edit
+export const ADMIN_LOGS_PATH = `${ADMIN_PREFIX}${LOGS_BASE_PATH}` // /admin/logs
 
 // === API Routes ===
 
@@ -74,3 +76,7 @@ export const API_CATEGORIES_PATH = `${API_PREFIX}${CATEGORIES_BASE_PATH}` // /ap
 
 // Search
 export const API_SEARCH_PATH = `${API_PREFIX}${DOCUMENTS_BASE_PATH}${SEARCH_BASE_PATH}` // /api/documents/search
+
+// Admin
+export const API_ADMIN_LOGS_PATH = `${API_PREFIX}${ADMIN_PREFIX}${LOGS_BASE_PATH}` // /api/admin/logs
+//

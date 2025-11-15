@@ -3,33 +3,39 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import DescriptionIcon from '@mui/icons-material/Description'
 import PeopleIcon from '@mui/icons-material/People'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Grid from '@mui/material/Grid'
-import Typography from '@mui/material/Typography'
-import useSWR from 'swr'
-
-import { API_DOCUMENTS_PATH, API_USERS_PATH } from '@/constants/api'
-
-interface StatsData {
-    totalUsers: number
-    totalDocuments: number
-    activeUsers: number
-    recentActivity: number
-}
+import {
+    Box,
+    Card,
+    CardContent,
+    Grid,
+    Skeleton,
+    Typography,
+} from '@mui/material'
+import { subDays } from 'date-fns'
+import { useMemo } from 'react'
+import { useDocuments } from '@/lib/hooks/documents/useDocuments'
+import { useAuditLogs } from '@/lib/hooks/useAuditLogs'
+import { useUsers } from '@/lib/hooks/useUsers'
 
 export function DashboardStats() {
-    const { data: usersData } = useSWR(API_USERS_PATH)
-    const { data: documentsData } = useSWR(API_DOCUMENTS_PATH)
+    const { isLoading: usersLoading, total: totalUsers } = useUsers({
+        limit: 1,
+    })
+    const { total: totalDocuments, isLoading: documentsLoading } = useDocuments(
+        { limit: 1 }
+    )
 
-    // Временные данные (потом заменим на реальные API)
-    const stats: StatsData = {
-        totalUsers: usersData?.length || 0,
-        totalDocuments: documentsData?.length || 0,
-        activeUsers: 5, // TODO: Реальная статистика
-        recentActivity: 12, // TODO: Реальная статистика
+    const sevenDaysAgo = useMemo(() => subDays(new Date(), 7), [])
+    const { total: auditLogsTotal, isLoading: auditLogsLoading } = useAuditLogs(
+        { limit: 1, startDate: sevenDaysAgo.toISOString() }
+    )
+
+    const isLoading = usersLoading || documentsLoading || auditLogsLoading
+
+    const stats = {
+        totalUsers,
+        totalDocuments,
+        recentActivity: auditLogsTotal,
     }
 
     const statCards = [
@@ -37,7 +43,6 @@ export function DashboardStats() {
             title: 'Всего пользователей',
             value: stats.totalUsers,
             icon: <PeopleIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
-            color: 'primary.main',
         },
         {
             title: 'Всего документов',
@@ -47,15 +52,6 @@ export function DashboardStats() {
                     sx={{ fontSize: 40, color: 'secondary.main' }}
                 />
             ),
-            color: 'secondary.main',
-        },
-        {
-            title: 'Активных пользователей',
-            value: stats.activeUsers,
-            icon: (
-                <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main' }} />
-            ),
-            color: 'success.main',
         },
         {
             title: 'Активность за неделю',
@@ -63,7 +59,6 @@ export function DashboardStats() {
             icon: (
                 <AccessTimeIcon sx={{ fontSize: 40, color: 'warning.main' }} />
             ),
-            color: 'warning.main',
         },
     ]
 
@@ -91,7 +86,11 @@ export function DashboardStats() {
                                         component='div'
                                         sx={{ fontWeight: 'bold' }}
                                     >
-                                        {card.value}
+                                        {isLoading ? (
+                                            <Skeleton width={80} />
+                                        ) : (
+                                            card.value
+                                        )}
                                     </Typography>
                                 </Box>
                                 {card.icon}

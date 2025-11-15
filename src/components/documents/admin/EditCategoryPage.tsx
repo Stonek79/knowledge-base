@@ -14,16 +14,16 @@ import {
     TextField,
     Typography,
 } from '@mui/material'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-
 import { useCategories } from '@/lib/hooks/documents/useCategories'
 import { updateCategorySchema } from '@/lib/schemas/document'
 import type { UpdateCategoryData } from '@/lib/types/document'
 
 export function EditCategoryPage() {
-    const params = useParams()
-    const categoryId = params.categoryId as string
+    const router = useRouter()
+    const params = useParams<{ categoryId: string }>()
+    const categoryId = params.categoryId
 
     const {
         updateCategory,
@@ -31,9 +31,13 @@ export function EditCategoryPage() {
         operationError,
         operationSuccess,
         categories,
+        clearMessages,
     } = useCategories()
 
     const category = categories?.find(c => c.id === categoryId)
+
+    console.log('[CATEGORY]', category)
+    console.log('[ID]', categoryId)
 
     const {
         register,
@@ -52,17 +56,19 @@ export function EditCategoryPage() {
         },
     })
 
+    const handleReset = () => {
+        reset()
+        clearMessages()
+    }
+
     const onSubmit = async (data: UpdateCategoryData) => {
         try {
-            await updateCategory(data)
-            reset()
+            await updateCategory({ ...data, id: categoryId })
+            handleReset()
+            router.back()
         } catch (error) {
             console.error('Failed to update category:', error)
         }
-    }
-
-    const handleReset = () => {
-        reset()
     }
 
     const nameValue = watch('name')
@@ -122,6 +128,17 @@ export function EditCategoryPage() {
                         disabled={operationLoading}
                         placeholder='Введите описание категории (необязательно)'
                     />
+
+                    <TextField
+                        label='Цвет'
+                        type='color'
+                        sx={{
+                            width: '200px',
+                        }}
+                        {...register('color')}
+                        disabled={operationLoading}
+                    />
+
                     <FormControlLabel
                         control={<Switch {...register('isDefault')} />}
                         label='По умолчанию'
@@ -134,6 +151,13 @@ export function EditCategoryPage() {
                             justifyContent: 'flex-end',
                         }}
                     >
+                        <Button
+                            type='button'
+                            onClick={() => router.back()}
+                            variant='outlined'
+                        >
+                            Назад
+                        </Button>
                         <Button
                             type='button'
                             onClick={handleReset}

@@ -199,7 +199,7 @@ export function AdminCategoriesList() {
                                                     size='small'
                                                     onClick={() =>
                                                         handleViewCategory(
-                                                            category.id
+                                                            category?.id
                                                         )
                                                     }
                                                 >
@@ -218,8 +218,9 @@ export function AdminCategoriesList() {
                                             </Tooltip>
                                             <Tooltip
                                                 title={
-                                                    category._count.documents >
-                                                        0 || category.isDefault
+                                                    category?._count
+                                                        ?.documents > 0 ||
+                                                    category?.isDefault
                                                         ? 'Нельзя удалить категорию, так как она используется в документах'
                                                         : 'Удалить'
                                                 }
@@ -234,8 +235,8 @@ export function AdminCategoriesList() {
                                                             )
                                                         }
                                                         disabled={
-                                                            category._count
-                                                                .documents >
+                                                            category?._count
+                                                                ?.documents >
                                                                 0 ||
                                                             category.isDefault
                                                         }

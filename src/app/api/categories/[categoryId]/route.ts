@@ -1,10 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server'
-
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES } from '@/constants/user'
 import { getCurrentUser } from '@/lib/actions/users'
 import { handleApiError } from '@/lib/api/apiError'
 import { prisma } from '@/lib/prisma'
 import { updateCategorySchema } from '@/lib/schemas/document'
+import { auditLogService } from '@/lib/services/AuditLogService'
+import type { UpdatedDetails } from '@/lib/types/audit-log'
 
 /**
  * @swagger
@@ -92,9 +94,60 @@ export async function PUT(
             return handleApiError(validation.error)
         }
 
-        const category = await prisma.category.update({
-            where: { id: params.categoryId },
-            data: validation.data,
+        const category = await prisma.$transaction(async tx => {
+            const categoryBeforeUpdate = await tx.category.findUnique({
+                where: { id: params.categoryId },
+            })
+
+            if (!categoryBeforeUpdate) {
+                throw new Error('Категория не найдена')
+            }
+
+            const updatedCategory = await tx.category.update({
+                where: { id: params.categoryId },
+                data: validation.data,
+            })
+
+            const changes: UpdatedDetails[] = []
+            if (
+                validation.data.name &&
+                validation.data.name !== categoryBeforeUpdate.name
+            ) {
+                changes.push({
+                    field: 'name',
+                    oldValue: categoryBeforeUpdate.name,
+                    newValue: validation.data.name,
+                })
+            }
+            if (
+                validation.data.color &&
+                validation.data.color !== categoryBeforeUpdate.color
+            ) {
+                changes.push({
+                    field: 'color',
+                    oldValue: categoryBeforeUpdate.color,
+                    newValue: validation.data.color,
+                })
+            }
+
+            if (changes.length > 0) {
+                await auditLogService.log(
+                    {
+                        userId: user.id,
+                        action: ACTION_TYPE.CATEGORY_UPDATED,
+                        targetId: params.categoryId,
+                        targetType: TARGET_TYPE.CATEGORY,
+                        details: {
+                            changes,
+                            categoryId: params.categoryId,
+                            categoryName: updatedCategory.name,
+                        },
+                    },
+                    tx
+                )
+            }
+
+            return updatedCategory
         })
 
         return NextResponse.json({
@@ -150,20 +203,38 @@ export async function DELETE(
             )
         }
 
-        const category = await prisma.category.findUnique({
-            where: { id: params.categoryId },
-            select: { isDefault: true },
-        })
+        await prisma.$transaction(async tx => {
+            const categoryToDelete = await tx.category.findUnique({
+                where: { id: params.categoryId },
+            })
 
-        if (category?.isDefault) {
-            return NextResponse.json(
-                { message: 'Нельзя удалить системную категорию по умолчанию' },
-                { status: 400 }
+            if (!categoryToDelete) {
+                return
+            }
+
+            if (categoryToDelete.isDefault) {
+                throw new Error(
+                    'Нельзя удалить системную категорию по умолчанию'
+                )
+            }
+
+            await auditLogService.log(
+                {
+                    userId: user.id,
+                    action: ACTION_TYPE.CATEGORY_DELETED,
+                    targetId: params.categoryId,
+                    targetType: TARGET_TYPE.CATEGORY,
+                    details: {
+                        categoryId: categoryToDelete.id,
+                        categoryName: categoryToDelete.name,
+                    },
+                },
+                tx
             )
-        }
 
-        await prisma.category.delete({
-            where: { id: params.categoryId },
+            await tx.category.delete({
+                where: { id: params.categoryId },
+            })
         })
 
         return NextResponse.json({ message: 'Категория успешно удалена' })

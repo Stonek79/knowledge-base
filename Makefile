@@ -84,6 +84,9 @@ seed-dev:
 
 init-dev: migrate-dev seed-dev
 
+prisma-studio:
+	docker compose --env-file $(ENV_FILE_DEV) -f docker-compose.yml -f docker-compose.dev.yml run --rm -p 5555:5555 worker npx prisma studio
+
 migrate-prod:
 	docker compose --env-file $(ENV_FILE_PROD) -f docker-compose.yml -f docker-compose.prod.yml run --rm app npx prisma migrate deploy
 

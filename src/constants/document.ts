@@ -1,14 +1,3 @@
-export const DEFAULT_CATEGORIES = [
-    { name: 'Допуслуги', color: '#2196F3', isDefault: true },
-    {
-        name: 'Кадры и персонал',
-        color: '#4CAF50',
-        isDefault: true,
-    },
-    { name: 'Бухгалтерия', color: '#FF9800', isDefault: true },
-    { name: 'Прочее', color: '#FF9800', isDefault: true },
-]
-
 export const SYSTEM_SETTINGS = {
     MAX_FILE_SIZE: 'max_file_size', // 2097152 байт (2MB)
     ALLOWED_MIME_TYPES: 'allowed_mime_types',

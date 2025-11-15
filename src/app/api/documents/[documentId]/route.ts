@@ -127,7 +127,7 @@ export async function PUT(
             user,
             authorId
         )
-
+        
         return NextResponse.json({
             message: 'Документ успешно обновлен',
             document: updatedDocument,

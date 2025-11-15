@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { GOTENBERG_URL } from '@/constants/app'
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { SearchEngine } from '@/constants/document'
 import { USER_ROLES } from '@/constants/user'
 import { DocumentProcessor } from '@/core/documents/DocumentProcessor'
@@ -10,6 +11,7 @@ import { indexingQueue } from '@/lib/queues/indexing'
 import { DocumentRepository } from '@/lib/repositories/documentRepository'
 import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document'
 import { SearchFactory } from '@/lib/search/factory'
+import { auditLogService } from '@/lib/services/AuditLogService'
 import { getFileStorageService } from '@/lib/services/FileStorageService'
 import { settingsService } from '@/lib/services/SettingsService'
 import type {
@@ -174,6 +176,28 @@ export class DocumentService {
                             categories: { include: { category: true } },
                         },
                     })
+
+                    await auditLogService.log(
+                        {
+                            userId: user.id, // ID создателя (actor)
+                            action: ACTION_TYPE.DOCUMENT_CREATED,
+                            targetId: doc.id,
+                            targetType: TARGET_TYPE.DOCUMENT,
+                            details: {
+                                documentId: doc.id,
+                                documentName: doc.title,
+                                categoryIds: doc.categories.map(
+                                    c => c.categoryId
+                                ),
+                                categoryNames: doc.categories.map(
+                                    c => c.category.name
+                                ),
+                                authorId: doc.authorId,
+                                authorName: doc.author.username,
+                            },
+                        },
+                        tx
+                    )
 
                     if (processed.storage?.pdfKey) {
                         const conv = await tx.convertedDocument.create({

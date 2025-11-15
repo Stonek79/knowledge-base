@@ -1,4 +1,5 @@
 export const COOKIE_NAME = 'token'
+export const COOKIE_SESSION_ID_NAME = 'session_id'
 
 export const GOTENBERG_URL = 'http://gotenberg:3000'
 

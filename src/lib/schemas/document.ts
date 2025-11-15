@@ -38,16 +38,16 @@ export const updateDocumentSchema = z
     })
 
 export const documentListSchema = z.object({
-    page: z.number().min(1).default(1),
-    limit: z.number().min(1).max(100).default(10),
+    page: z.number().min(1).default(1).optional(),
+    limit: z.number().min(1).max(100).default(10).optional(),
     categoryIds: z.array(z.string()).optional(),
     authorId: z.string().optional(),
     dateFrom: z.string().optional(),
     dateTo: z.string().optional(),
     sortBy: z
         .enum(['title', 'createdAt', 'updatedAt', 'viewCount', 'downloadCount'])
-        .default('createdAt'),
-    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+        .default('createdAt').optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
     q: z.string().optional(),
     status: z.enum(DOCUMENT_STATUS).optional(),
 })

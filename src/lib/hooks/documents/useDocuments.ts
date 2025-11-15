@@ -77,6 +77,7 @@ export const useDocuments = (filters: DocumentFilters) => {
     // Мемоизируем результаты
     const documents = useMemo(() => data?.documents || [], [data?.documents])
     const pagination = useMemo(() => data?.pagination, [data?.pagination])
+    const total = pagination?.total || 0
 
     // Мемоизируем функцию обновления
     const refetch = useCallback(() => mutate(), [mutate])
@@ -88,5 +89,6 @@ export const useDocuments = (filters: DocumentFilters) => {
         isLoading,
         mutate,
         refetch,
+        total,
     }
 }

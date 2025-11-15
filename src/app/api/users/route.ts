@@ -1,11 +1,12 @@
 import bcrypt from 'bcryptjs'
 import { type NextRequest, NextResponse } from 'next/server'
-
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES, USER_STATUSES } from '@/constants/user'
 import { getCurrentUser } from '@/lib/actions/users'
 import { ApiError, handleApiError } from '@/lib/api'
 import { prisma } from '@/lib/prisma'
 import { createUserSchema, usersListSchema } from '@/lib/schemas/user'
+import { auditLogService } from '@/lib/services/AuditLogService'
 import type {
     CreateUserResponse,
     UsersListResponse,
@@ -212,6 +213,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
+        const actor = await getCurrentUser(req)
+
+        if (!actor) {
+            return handleApiError(new ApiError('Unauthorized', 401), {
+                status: 401,
+                message: 'Unauthorized',
+            })
+        }
 
         const validation = createUserSchema.safeParse(body)
 
@@ -269,6 +278,20 @@ export async function POST(req: NextRequest) {
                     },
                 },
             })
+
+            await auditLogService.log(
+                {
+                    userId: actor.id,
+                    targetId: result.id,
+                    action: ACTION_TYPE.USER_CREATED,
+                    targetType: TARGET_TYPE.USER,
+                    details: {
+                        createdUserId: user.id,
+                        createdUsername: user.username,
+                    },
+                },
+                tx
+            )
 
             return user
         })

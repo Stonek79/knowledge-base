@@ -59,6 +59,27 @@ async function main() {
         })
     }
     console.log('Default categories created/updated.')
+
+    // 3. Create/Update System Settings
+    await prisma.systemSettings.upsert({
+        where: { id: 'singleton' },
+        update: {},
+        create: {
+            id: 'singleton',
+            maxFileSize: 2097152, // 2MB
+            maxFilesPerUpload: 10,
+            allowedMimeTypes: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ],
+            enableOcr: true,
+            ocrLanguages: ['rus', 'eng'],
+            auditLogRetentionDays: 180,
+        },
+    })
+    console.log('System settings created/updated.')
+
     const staffCategory = await prisma.category.findUnique({
         where: { name: 'Кадры и персонал' },
     })

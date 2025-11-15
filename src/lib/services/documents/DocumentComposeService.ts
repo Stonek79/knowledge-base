@@ -1,14 +1,16 @@
 import { STORAGE_BASE_PATHS } from '@/constants/app'
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES } from '@/constants/user'
 import { ApiError } from '@/lib/api/apiError'
 import { indexingQueue } from '@/lib/queues/indexing'
 import { DocumentRepository } from '@/lib/repositories/documentRepository'
+import { auditLogService } from '@/lib/services/AuditLogService'
+import type { UpdatedDetails } from '@/lib/types/audit-log'
 import type { ComposeChangeSet } from '@/lib/types/compose'
 import type { SupportedMime } from '@/lib/types/mime'
 import type { UserResponse } from '@/lib/types/user'
 import { hashPassword } from '@/utils/auth'
 import { isSupportedMime } from '@/utils/mime'
-
 import { getFileStorageService } from '../FileStorageService'
 import { pdfCombiner } from '../PDFCombiner'
 
@@ -70,11 +72,11 @@ export class DocumentComposeService {
                         data: {
                             title:
                                 data.metadata?.title ??
-                                data.replaceMain.originalName,
+                                data.replaceMain.fileName,
                             description: data.metadata?.description ?? null,
                             content: '', // будет заполнено воркером
                             filePath: main.key,
-                            fileName: data.replaceMain.originalName,
+                            fileName: data.replaceMain.fileName,
                             fileSize: main.size,
                             mimeType: mainMime,
                             hash: (await import('node:crypto'))
@@ -155,7 +157,7 @@ export class DocumentComposeService {
                             const newAttachment = await tx.attachment.create({
                                 data: {
                                     documentId: doc.id,
-                                    fileName: att.originalName,
+                                    fileName: att.fileName,
                                     fileSize: promotedAtt.size,
                                     mimeType: attMime,
                                     filePath: promotedAtt.key,
@@ -250,6 +252,28 @@ export class DocumentComposeService {
                         })
                     }
 
+                    await auditLogService.log(
+                        {
+                            userId: creator.id, // ID создателя (actor)
+                            action: ACTION_TYPE.DOCUMENT_CREATED,
+                            targetId: doc.id,
+                            targetType: TARGET_TYPE.DOCUMENT,
+                            details: {
+                                documentId: doc.id,
+                                documentName: doc.title,
+                                categoryIds: doc.categories.map(
+                                    c => c.categoryId
+                                ),
+                                categoryNames: doc.categories.map(
+                                    c => c.category.name
+                                ),
+                                authorId: doc.authorId,
+                                authorName: doc.author.username,
+                            },
+                        },
+                        tx
+                    )
+
                     return doc
                 },
                 {
@@ -303,24 +327,19 @@ export class DocumentComposeService {
         try {
             const result = await DocumentRepository.interactiveTransaction(
                 async tx => {
-                    // 0) загрузить документ и проверить права
                     const existing = await tx.document.findUnique({
                         where: { id: documentId },
-                        select: {
-                            id: true,
-                            authorId: true,
-                            creatorId: true,
-                            filePath: true,
-                            fileName: true,
-                            mimeType: true,
-                            mainPdf: {
-                                select: { id: true, filePath: true },
-                            },
+                        include: {
+                            categories: true,
+                            mainPdf: true,
+                            attachments: true,
                         },
                     })
+
                     if (!existing) {
                         throw new ApiError('Document not found', 404)
                     }
+
                     // USER может менять только свои документы
                     if (
                         user.role !== USER_ROLES.ADMIN &&
@@ -331,7 +350,7 @@ export class DocumentComposeService {
                     }
 
                     // 1) metadata
-                    if (data.metadata) {
+                    if (data?.metadata) {
                         const keywords =
                             data.metadata.keywords
                                 ?.split(',')
@@ -388,7 +407,7 @@ export class DocumentComposeService {
                     }
 
                     // 2) replaceMain (опционально)
-                    if (data.replaceMain) {
+                    if (data?.replaceMain) {
                         if (!isSupportedMime(data.replaceMain.mimeType)) {
                             throw new ApiError(
                                 'Unsupported main file type',
@@ -411,7 +430,7 @@ export class DocumentComposeService {
                             where: { id: documentId },
                             data: {
                                 filePath: promotedMain.key,
-                                fileName: data.replaceMain.originalName,
+                                fileName: data.replaceMain.fileName,
                                 fileSize: promotedMain.size,
                                 mimeType: mainMime,
                                 authorId: authorId,
@@ -422,7 +441,7 @@ export class DocumentComposeService {
                     const clientIdToAttachmentId: Record<string, string> = {}
 
                     // 3) addAttachments (опционально)
-                    if (data.addAttachments?.length) {
+                    if (data?.addAttachments?.length) {
                         for (const att of data.addAttachments) {
                             if (!isSupportedMime(att.mimeType)) {
                                 throw new ApiError(
@@ -443,7 +462,7 @@ export class DocumentComposeService {
                             const newAttachment = await tx.attachment.create({
                                 data: {
                                     documentId,
-                                    fileName: att.originalName,
+                                    fileName: att.fileName,
                                     fileSize: promotedAtt.size,
                                     mimeType: attMime,
                                     filePath: promotedAtt.key,
@@ -457,7 +476,7 @@ export class DocumentComposeService {
                     }
 
                     // 4) deleteAttachmentIds (опционально)
-                    if (data.deleteAttachmentIds?.length) {
+                    if (data?.deleteAttachmentIds?.length) {
                         console.log(
                             '[DEBUG] Attachment Deletion: Received IDs to delete:',
                             data.deleteAttachmentIds
@@ -485,7 +504,7 @@ export class DocumentComposeService {
                     }
 
                     // 5) reorder (опционально)
-                    if (data.reorder?.length) {
+                    if (data?.reorder?.length) {
                         const existingIdsFromClient = data.reorder
                             .map(item => item.attachmentId)
                             .filter((id): id is string => !!id)
@@ -543,6 +562,17 @@ export class DocumentComposeService {
                             mainPdf: {
                                 select: { id: true, filePath: true },
                             },
+                            categories: {
+                                select: { categoryId: true },
+                            },
+                            title: true,
+                            description: true,
+                            authorId: true,
+                            isConfidential: true,
+                            isSecret: true,
+                            keywords: true,
+                            confidentialAccessUsers: true,
+                            attachments: true,
                         },
                     })
                     if (!doc) {
@@ -635,6 +665,136 @@ export class DocumentComposeService {
                             })
                         }
                     }
+
+                    // --- Логирование изменений ---
+                    const changes: UpdatedDetails[] = []
+
+                    // 1. Сравнение метаданных
+                    if (data?.metadata) {
+                        if (
+                            data.metadata?.title &&
+                            data.metadata?.title !== existing.title
+                        ) {
+                            changes.push({
+                                field: 'title',
+                                oldValue: existing.title,
+                                newValue: doc.title,
+                            })
+                        }
+                        if (
+                            data.metadata?.description &&
+                            data.metadata?.description !== existing.description
+                        ) {
+                            changes.push({
+                                field: 'description',
+                                oldValue: existing.description,
+                                newValue: doc.description,
+                            })
+                        }
+                        if (authorId && authorId !== existing.authorId) {
+                            changes.push({
+                                field: 'authorId',
+                                oldValue: existing.authorId,
+                                newValue: authorId,
+                            })
+                        }
+                        if (
+                            data?.metadata?.keywords &&
+                            data?.metadata?.keywords.trim() !==
+                                existing.keywords.join(',').trim()
+                        ) {
+                            changes.push({
+                                field: '',
+                                oldValue: existing?.keywords.join('|'),
+                                newValue: doc?.keywords.join('|'),
+                            })
+                        }
+
+                        // Сравнение категорий
+                        if (data.metadata?.categoryIds) {
+                            const oldCategoryIds = existing.categories
+                                .map(c => c.categoryId)
+                                .sort()
+                            const newCategoryIds = (
+                                data.metadata?.categoryIds || []
+                            ).sort()
+                            if (
+                                JSON.stringify(oldCategoryIds) !==
+                                JSON.stringify(newCategoryIds)
+                            ) {
+                                changes.push({
+                                    field: 'categories',
+                                    oldValue: oldCategoryIds,
+                                    newValue: newCategoryIds,
+                                })
+                            }
+                        }
+                    }
+
+                    // 2. Логирование замены основного файла
+                    if (data?.replaceMain) {
+                        changes.push({
+                            field: 'mainFile',
+                            oldValue: existing.fileName,
+                            newValue: data?.replaceMain?.fileName,
+                        })
+                    }
+
+                    // 3. Логирование добавленных вложений
+                    if (
+                        data?.addAttachments &&
+                        data?.addAttachments?.length > 0
+                    ) {
+                        changes.push({
+                            field: 'attachmentsAdded',
+                            newValue: data?.addAttachments?.map(
+                                a => a.fileName
+                            ),
+                        })
+                    }
+
+                    // 4. Логирование удаленных вложений
+                    if (
+                        data?.deleteAttachmentIds &&
+                        data?.deleteAttachmentIds?.length > 0
+                    ) {
+                        const deletedAttachmentNames = existing.attachments
+                            .filter(att =>
+                                data.deleteAttachmentIds?.includes(att.id)
+                            )
+                            .map(att => att.fileName)
+                        changes.push({
+                            field: 'attachmentsDeleted',
+                            oldValue: deletedAttachmentNames,
+                        })
+                    }
+
+                    // 5. Логирование изменения порядка
+                    if (data?.reorder && data?.reorder?.length > 0) {
+                        changes.push({
+                            field: 'attachmentsReordered',
+                            newValue: true,
+                        })
+                    }
+
+                    // Финальный вызов сервиса логирования, если были изменения
+                    if (changes.length > 0) {
+                        await auditLogService.log(
+                            {
+                                userId: user.id,
+                                action: ACTION_TYPE.DOCUMENT_UPDATED,
+                                targetId: documentId,
+                                targetType: TARGET_TYPE.DOCUMENT,
+                                details: {
+                                    documentId: documentId,
+                                    documentName: doc.title,
+                                    changes,
+                                },
+                            },
+                            tx
+                        )
+                    }
+
                     return doc
                 },
                 {

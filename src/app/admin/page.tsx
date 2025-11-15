@@ -2,12 +2,8 @@ import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
 
-import {
-    DashboardStats,
-    QuickActions,
-    RecentActivity,
-} from '@/components/admin'
-
+import { DashboardStats } from '@/components/admin/DashboardStats'
+import { RecentActivity } from '@/components/admin/RecentActivity'
 /**
  * Главная страница (дашборд) админ-панели.
  * Здесь будет отображаться основная информация и статистика для администратора.
@@ -24,9 +20,6 @@ export default async function AdminDashboardPage() {
 
                 {/* Статистика */}
                 <DashboardStats />
-
-                {/* Быстрые действия */}
-                <QuickActions />
 
                 {/* Последние действия */}
                 <RecentActivity />

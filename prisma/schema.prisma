@@ -176,10 +176,11 @@ model ConvertedDocument {
 
 // Настройки системы
 model SystemSettings {
-    id                String   @id @default("singleton")
-    maxFileSize       Int      @default(2097152) // Максимальный размер файла (2MB)
-    maxFilesPerUpload Int      @default(10) // Максимальное количество файлов на загрузку
-    allowedMimeTypes  String[] // Разрешенные типы файлов
+    id                    String   @id @default("singleton")
+    maxFileSize           Int      @default(2097152) // Максимальный размер файла (2MB)
+    maxFilesPerUpload     Int      @default(10) // Максимальное количество файлов на загрузку
+    allowedMimeTypes      String[] // Разрешенные типы файлов
+    auditLogRetentionDays Int      @default(180) // Срок хранения логов в днях
 
     enableOcr    Boolean  @default(true) // Включен ли OCR
     ocrLanguages String[] @default(["rus", "eng"]) // Языки OCR

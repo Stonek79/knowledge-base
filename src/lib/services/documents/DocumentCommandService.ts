@@ -2,14 +2,17 @@ import { unlink } from 'node:fs/promises'
 import { isAbsolute } from 'node:path'
 
 import { GOTENBERG_URL } from '@/constants/app'
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES } from '@/constants/user'
 import { DocumentProcessor } from '@/core/documents/DocumentProcessor'
 import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter'
 import { ApiError } from '@/lib/api'
 import { indexingQueue } from '@/lib/queues/indexing'
 import { DocumentRepository } from '@/lib/repositories/documentRepository'
+import { auditLogService } from '@/lib/services/AuditLogService'
 import { getFileStorageService } from '@/lib/services/FileStorageService'
 import { settingsService } from '@/lib/services/SettingsService'
+import type { UpdatedDetails } from '@/lib/types/audit-log'
 import type {
     CreateDocumentServiceData,
     UpdateDocumentData,
@@ -160,6 +163,28 @@ export class DocumentCommandService {
                         },
                     })
 
+                    await auditLogService.log(
+                        {
+                            userId: user.id, // ID создателя (actor)
+                            action: ACTION_TYPE.DOCUMENT_CREATED,
+                            targetId: doc.id,
+                            targetType: TARGET_TYPE.DOCUMENT,
+                            details: {
+                                documentId: doc.id,
+                                documentName: doc.title,
+                                categoryIds: doc.categories.map(
+                                    c => c.categoryId
+                                ),
+                                categoryNames: doc.categories.map(
+                                    c => c.category.name
+                                ),
+                                authorId: doc.authorId,
+                                authorName: doc.author.username,
+                            },
+                        },
+                        tx
+                    )
+
                     if (processed.storage?.pdfKey) {
                         const conv = await tx.convertedDocument.create({
                             data: {
@@ -214,48 +239,133 @@ export class DocumentCommandService {
         user: UserResponse,
         authorId: string | undefined
     ) {
-        const document = await DocumentRepository.findUnique({
-            where: { id },
-        })
-        if (!document) {
-            throw new ApiError('Документ не найден', 404)
-        }
+        // Выполняем обновление и логирование в одной транзакции
+        const updatedDocument = await DocumentRepository.interactiveTransaction(
+            async tx => {
+                const documentBeforeUpdate = await tx.document.findUnique({
+                    where: { id },
+                    select: {
+                        title: true,
+                        description: true,
+                        authorId: true,
+                        creatorId: true,
+                        categories: {
+                            select: {
+                                categoryId: true,
+                            },
+                        },
+                    },
+                })
 
-        if (
-            user.role !== USER_ROLES.ADMIN &&
-            user.role === USER_ROLES.USER &&
-            document.authorId !== user.id &&
-            document.creatorId !== user.id
-        ) {
-            throw new ApiError('Можно редактировать только свои документы', 403)
-        }
+                if (!documentBeforeUpdate) {
+                    throw new ApiError('Документ не найден', 404)
+                }
 
-        const updatedDocument = await DocumentRepository.update({
-            where: { id },
-            data: {
-                title: data.title,
-                description: data.description,
-                keywords:
-                    data.keywords
-                        ?.split(',')
-                        .map(s => s.trim())
-                        .filter(Boolean) || undefined,
-                authorId: authorId,
-                categories: data.categoryIds
-                    ? {
-                          deleteMany: {},
-                          create: data.categoryIds.map(categoryId => ({
-                              categoryId,
-                          })),
-                      }
-                    : undefined,
-            },
-            include: {
-                author: true,
-                creator: true,
-                categories: { include: { category: true } },
-            },
-        })
+                if (
+                    user.role !== USER_ROLES.ADMIN &&
+                    user.role === USER_ROLES.USER &&
+                    documentBeforeUpdate.authorId !== user.id &&
+                    documentBeforeUpdate.creatorId !== user.id
+                ) {
+                    throw new ApiError(
+                        'Можно редактировать только свои документы',
+                        403
+                    )
+                }
+
+                const doc = await tx.document.update({
+                    where: { id },
+                    data: {
+                        title: data.title,
+                        description: data.description,
+                        keywords:
+                            data.keywords
+                                ?.split(',')
+                                .map(s => s.trim())
+                                .filter(Boolean) || undefined,
+                        authorId: authorId,
+                        categories: data.categoryIds
+                            ? {
+                                  deleteMany: {},
+                                  create: data.categoryIds.map(categoryId => ({
+                                      categoryId,
+                                  })),
+                              }
+                            : undefined,
+                    },
+                    include: {
+                        author: true,
+                        creator: true,
+                        categories: { include: { category: true } },
+                    },
+                })
+
+                console.log('[TRANSACTION DOC UPDATE]', doc)
+
+                // --- Логирование изменений ---
+                const changes: UpdatedDetails[] = []
+
+                if (data.title && data.title !== documentBeforeUpdate.title) {
+                    changes.push({
+                        field: 'title',
+                        oldValue: documentBeforeUpdate.title,
+                        newValue: data.title,
+                    })
+                }
+                if (
+                    data.description &&
+                    data.description !== documentBeforeUpdate.description
+                ) {
+                    changes.push({
+                        field: 'description',
+                        oldValue: documentBeforeUpdate.description,
+                        newValue: data.description,
+                    })
+                }
+                if (authorId && authorId !== documentBeforeUpdate.authorId) {
+                    changes.push({
+                        field: 'authorId',
+                        oldValue: documentBeforeUpdate.authorId,
+                        newValue: authorId,
+                    })
+                }
+
+                // Сравнение категорий
+                const oldCategoryIds = documentBeforeUpdate?.categories
+                    .map(c => c.categoryId)
+                    .sort()
+                const newCategoryIds = (data.categoryIds || []).sort()
+                if (
+                    JSON.stringify(oldCategoryIds) !==
+                    JSON.stringify(newCategoryIds)
+                ) {
+                    changes.push({
+                        field: 'categories',
+                        oldValue: oldCategoryIds,
+                        newValue: newCategoryIds,
+                    })
+                }
+
+                if (changes.length > 0) {
+                    await auditLogService.log(
+                        {
+                            userId: user.id,
+                            action: ACTION_TYPE.DOCUMENT_UPDATED,
+                            targetId: id,
+                            targetType: TARGET_TYPE.DOCUMENT,
+                            details: {
+                                changes,
+                                documentId: id,
+                                documentName: doc.title,
+                            },
+                        },
+                        tx
+                    )
+                }
+
+                return doc
+            }
+        )
 
         await indexingQueue.add('index-document', {
             documentId: updatedDocument.id,
@@ -273,31 +383,54 @@ export class DocumentCommandService {
     public static async softDeleteDocument(id: string, user: UserResponse) {
         // Сначала мы должны найти документ, чтобы проверить права доступа.
         // Наш Prisma-клиент расширен, поэтому findUnique не вернет уже "удаленные" документы.
-        const document = await DocumentRepository.findUnique({
-            where: { id },
-            select: { authorId: true, creatorId: true },
-        })
+        await DocumentRepository.interactiveTransaction(async tx => {
+            const document = await tx.document.findUnique({
+                where: { id },
+                select: {
+                    title: true,
+                    authorId: true,
+                    creatorId: true,
+                },
+            })
 
-        if (!document) {
-            throw new ApiError('Документ не найден', 404)
-        }
+            if (!document) {
+                throw new ApiError('Документ не найден', 404)
+            }
 
-        if (
-            document.authorId !== user.id &&
-            document.creatorId !== user.id &&
-            user.role !== USER_ROLES.ADMIN
-        ) {
-            throw new ApiError('Вы можете удалять только свои документы', 403)
-        }
+            if (
+                document.authorId !== user.id &&
+                document.creatorId !== user.id &&
+                user.role !== USER_ROLES.ADMIN
+            ) {
+                throw new ApiError(
+                    'Вы можете удалять только свои документы',
+                    403
+                )
+            }
 
-        // Выполняем "мягкое" удаление через update
-        await DocumentRepository.update({
-            where: { id },
-            data: {
-                deletedAt: new Date(),
-                viewCount: 0,
-                isPublished: false,
-            },
+            // Выполняем "мягкое" удаление через update
+            await auditLogService.log(
+                {
+                    userId: user.id,
+                    action: ACTION_TYPE.DOCUMENT_DELETED_SOFT,
+                    targetId: id,
+                    targetType: TARGET_TYPE.DOCUMENT,
+                    details: {
+                        documentId: id,
+                        documentName: document.title,
+                    },
+                },
+                tx
+            )
+
+            await tx.document.update({
+                where: { id },
+                data: {
+                    deletedAt: new Date(),
+                    viewCount: 0,
+                    isPublished: false,
+                },
+            })
         })
 
         // Удаляем документ из поискового индекса
@@ -338,6 +471,20 @@ export class DocumentCommandService {
                     403
                 )
             }
+
+            await auditLogService.log(
+                {
+                    userId: user.id,
+                    action: ACTION_TYPE.DOCUMENT_DELETED_HARD,
+                    targetId: id,
+                    targetType: TARGET_TYPE.DOCUMENT,
+                    details: {
+                        documentId: id,
+                        documentName: snapshot.title,
+                    },
+                },
+                tx
+            )
 
             const converted = await tx.convertedDocument.findMany({
                 where: { id: snapshot.id },

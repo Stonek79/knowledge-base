@@ -1,11 +1,12 @@
 import { z } from 'zod'
-
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { SearchEngine } from '@/constants/document'
 import { USER_ROLES } from '@/constants/user'
 import { ApiError } from '@/lib/api'
 import { DocumentRepository } from '@/lib/repositories/documentRepository'
 import { documentListSchema } from '@/lib/schemas/document'
 import { SearchFactory } from '@/lib/search/factory'
+import { auditLogService } from '@/lib/services/AuditLogService'
 import type {
     DocumentFilters,
     DocumentWithAuthor,
@@ -91,9 +92,26 @@ export class DocumentQueryService {
 
         // Увеличение счетчика просмотров (кроме админов)
         if (user.role !== USER_ROLES.ADMIN) {
-            await DocumentRepository.update({
-                where: { id },
-                data: { viewCount: { increment: 1 } },
+            await DocumentRepository.interactiveTransaction(async tx => {
+                await tx.document.update({
+                    where: { id },
+                    data: { viewCount: { increment: 1 } },
+                })
+
+                // Логирование просмотра документа
+                await auditLogService.log(
+                    {
+                        userId: user.id,
+                        action: ACTION_TYPE.DOCUMENT_VIEWED,
+                        targetId: document.id,
+                        targetType: TARGET_TYPE.DOCUMENT,
+                        details: {
+                            documentId: document.id,
+                            documentName: document.title,
+                        },
+                    },
+                    tx
+                )
             })
         }
 

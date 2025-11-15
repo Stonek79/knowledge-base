@@ -15,6 +15,7 @@ const DEFAULTS: AppSettings = {
     allowedMimeTypes: [...ALLOWED_UPLOAD_MIME],
     enableOcr: true,
     ocrLanguages: ['rus', 'eng'],
+    auditLogRetentionDays: 180, // Добавлено новое значение по умолчанию
 }
 
 const CACHE_TTL_MS = 60_000
@@ -31,6 +32,7 @@ const CACHE_TTL_MS = 60_000
  * getAllowedMimeTypes() — возвращает разрешенные MIME-типы
  * isOcrEnabled() — возвращает, включен ли OCR
  * getOcrLanguages() — возвращает языки OCR
+ * getAuditLogRetentionDays() — возвращает срок хранения логов аудита
  *
  * @example {ts}
  * const settings = await settingsService.get();
@@ -74,6 +76,9 @@ class SettingsService {
                 normalized.ocrLanguages && normalized.ocrLanguages.length > 0
                     ? normalized.ocrLanguages
                     : DEFAULTS.ocrLanguages,
+            auditLogRetentionDays:
+                normalized.auditLogRetentionDays ??
+                DEFAULTS.auditLogRetentionDays, // Добавлено новое поле
         }
         this.cache = { value: settings, loadedAt: Date.now() }
         return settings
@@ -104,6 +109,10 @@ class SettingsService {
 
     async getOcrLanguages(): Promise<string[]> {
         return (await this.get()).ocrLanguages
+    }
+
+    async getAuditLogRetentionDays(): Promise<number> {
+        return (await this.get()).auditLogRetentionDays || 180
     }
 }
 

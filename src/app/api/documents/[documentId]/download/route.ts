@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server'
-
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { MIME } from '@/constants/mime'
 import { getCurrentUser } from '@/lib/actions/users'
 import { prisma } from '@/lib/prisma'
+import { auditLogService } from '@/lib/services/AuditLogService'
 import { getFileStorageService } from '@/lib/services/FileStorageService'
 
 export const runtime = 'nodejs'
@@ -159,6 +160,17 @@ export async function GET(
                 { status: resolved.status }
             )
         }
+
+        await auditLogService.log({
+            userId: user.id,
+            action: ACTION_TYPE.DOCUMENT_DOWNLOADED,
+            targetId: documentId,
+            targetType: TARGET_TYPE.DOCUMENT,
+            details: {
+                documentId: documentId,
+                documentName: resolved.fileName,
+            },
+        })
 
         const fileBuffer = await getFileStorageService().downloadDocument(
             resolved.filePath

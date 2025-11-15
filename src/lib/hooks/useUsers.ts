@@ -42,6 +42,7 @@ export function useUsers(filters?: UseUsersProps) {
         users: data?.users || [],
         total: data?.pagination?.total || 0,
         isLoading,
+        pagination: data?.pagination,
         error,
         mutate,
     }

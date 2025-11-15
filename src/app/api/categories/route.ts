@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server'
-
+import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES } from '@/constants/user'
 import { getCurrentUser } from '@/lib/actions/users'
 import { handleApiError } from '@/lib/api/apiError'
 import { prisma } from '@/lib/prisma'
 import { createCategorySchema } from '@/lib/schemas/document'
+import { auditLogService } from '@/lib/services/AuditLogService'
 
 /**
  * @swagger
@@ -81,8 +82,26 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const category = await prisma.category.create({
-            data: validation.data,
+        const category = await prisma.$transaction(async tx => {
+            const newCategory = await tx.category.create({
+                data: validation.data,
+            })
+
+            await auditLogService.log(
+                {
+                    userId: user.id,
+                    action: ACTION_TYPE.CATEGORY_CREATED,
+                    targetId: newCategory.id,
+                    targetType: TARGET_TYPE.CATEGORY,
+                    details: {
+                        categoryId: newCategory.id,
+                        categoryName: newCategory.name,
+                    },
+                },
+                tx
+            )
+
+            return newCategory
         })
 
         return NextResponse.json(

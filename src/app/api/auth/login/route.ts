@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { COOKIE_SESSION_ID_NAME } from '@/constants/app'
 import { handleApiError } from '@/lib/api'
 import { AuthService } from '@/lib/auth/AuthService'
 
@@ -47,6 +48,14 @@ export async function POST(req: Request) {
 
         // 3. Устанавливаем httpOnly cookie с помощью метода сервиса
         AuthService.setTokenCookie(response, token)
+
+        // 4. Устанавливаем session_id cookie для отслеживания активной сессии браузера
+        response.cookies.set(COOKIE_SESSION_ID_NAME, 'true', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+        })
 
         return response
     } catch (error) {

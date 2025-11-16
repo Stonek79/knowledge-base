@@ -1,7 +1,6 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
 import {
     Alert,
     Button,
@@ -11,17 +10,16 @@ import {
     DialogTitle,
     FormControl,
     FormControlLabel,
-    IconButton,
-    InputAdornment,
     InputLabel,
     MenuItem,
     Select,
     Switch,
     TextField,
 } from '@mui/material'
-import { type MouseEvent, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useId, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
+import { PasswordField } from '@/components/auth/PasswordField'
 import {
     USER_ROLES,
     USER_ROLES_LABELS,
@@ -45,14 +43,11 @@ export function CreateUserDialog({
 }: CreateUserDialogProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [showPassword, setShowPassword] = useState(false)
-
-    const handleClickShowPassword = () => setShowPassword(show => !show)
-    const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault()
-    }
+    const passId = useId()
+    const confirmPassId = useId()
 
     const {
+        control,
         register,
         handleSubmit,
         reset,
@@ -106,45 +101,37 @@ export function CreateUserDialog({
                         helperText={errors.username?.message}
                     />
 
-                    <TextField
-                        {...register('password')}
-                        label='Пароль'
-                        type={showPassword ? 'text' : 'password'}
-                        fullWidth
-                        margin='normal'
-                        error={!!errors.password}
-                        helperText={errors.password?.message}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position='end'>
-                                        <IconButton
-                                            aria-label='Показать/скрыть пароль'
-                                            onClick={handleClickShowPassword}
-                                            onMouseDown={
-                                                handleMouseDownPassword
-                                            }
-                                            edge='end'
-                                        >
-                                            {showPassword ? (
-                                                <VisibilityOff />
-                                            ) : (
-                                                <Visibility />
-                                            )}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            },
-                        }}
+                    <Controller
+                        name='password'
+                        control={control}
+                        defaultValue=''
+                        render={({ field }) => (
+                            <PasswordField
+                                {...field}
+                                id={passId}
+                                name='password'
+                                label='Пароль'
+                                autoCompletePolicy='new-password'
+                                error={!!errors.password}
+                                helperText={errors.password?.message}
+                            />
+                        )}
                     />
-                    <TextField
-                        {...register('confirmPassword')}
-                        type={showPassword ? 'text' : 'password'}
-                        label='Подтверждение пароля'
-                        fullWidth
-                        margin='normal'
-                        error={!!errors.confirmPassword}
-                        helperText={errors.confirmPassword?.message}
+                    <Controller
+                        name='confirmPassword'
+                        control={control}
+                        defaultValue=''
+                        render={({ field }) => (
+                            <PasswordField
+                                {...field}
+                                id={confirmPassId}
+                                name='confirmPassword'
+                                label='Подтверждение пароля'
+                                autoCompletePolicy='new-password'
+                                error={!!errors.confirmPassword}
+                                helperText={errors.confirmPassword?.message}
+                            />
+                        )}
                     />
 
                     <FormControl fullWidth margin='normal'>

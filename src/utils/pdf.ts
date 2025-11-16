@@ -1,7 +1,3 @@
-// import { type PDFDocumentProxy, getDocument } from 'pdfjs-dist';
-// import 'pdfjs-dist/build/pdf.worker.mjs';
-// import type { TextContent, TextItem } from 'pdfjs-dist/types/src/display/api';
-
 // Типы скопированы из библиотеки pdfjs-dist для ускорения и простоты, подумать над другим решением для более правильного подхода
 
 /**

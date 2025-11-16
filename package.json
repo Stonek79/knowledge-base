@@ -21,19 +21,23 @@
         "build:worker": "node scripts/build-worker.mjs",
         "watch:worker": "node scripts/build-worker.mjs --watch",
         "start:worker:dev": "nodemon",
-        "dev:worker": "pnpm build:worker && concurrently \"npm:watch:worker\" \"npm:start:worker:dev\""
+        "dev:worker": "pnpm build:worker && concurrently \"npm:watch:worker\" \"npm:start:worker:dev\"",
+        "prepare": "husky"
     },
     "prisma": {
         "seed": "node prisma/seed.js"
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx}": "biome check --write --files-ignore-unknown=true"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
         "@fontsource/roboto": "^5.2.6",
         "@hookform/resolvers": "^5.2.1",
-        "@mui/icons-material": "^7.2.0",
-        "@mui/material": "^7.2.0",
-        "@mui/material-nextjs": "^7.2.0",
+        "@mui/icons-material": "^7.3.4",
+        "@mui/material": "^7.3.4",
+        "@mui/material-nextjs": "^7.3.3",
         "@mui/x-date-pickers": "^8.12.0",
         "@prisma/client": "^6.16.2",
         "@types/swagger-jsdoc": "^6.0.4",
@@ -43,15 +47,15 @@
         "bcryptjs": "^3.0.2",
         "bullmq": "^5.58.5",
         "concurrently": "^8.2.2",
+        "date-fns": "^4.1.0",
         "dayjs": "^1.11.18",
         "flexsearch": "^0.8.205",
         "form-data": "^4.0.4",
         "ioredis": "^5.7.0",
         "jose": "^6.1.0",
-        "jsonwebtoken": "^9.0.2",
         "mammoth": "^1.10.0",
         "minio": "^8.0.5",
-        "next": "15.5.0",
+        "next": "16.0.3",
         "pg": "^8.16.3",
         "react": "19.2.0",
         "react-dom": "19.2.0",
@@ -59,9 +63,8 @@
         "react-pdf": "^9.2.1",
         "swagger-jsdoc": "^6.2.8",
         "swagger-ui-react": "^5.29.5",
-        "swr": "^2.3.4",
-        "tsconfig-paths": "^4.2.0",
-        "zod": "^4.0.14"
+        "swr": "^2.3.6",
+        "zod": "^4.1.11"
     },
     "pnpm": {
         "overrides": {
@@ -81,13 +84,14 @@
     "devDependencies": {
         "@biomejs/biome": "2.2.6",
         "@types/archiver": "^6.0.3",
-        "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^20",
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
         "esbuild": "^0.24.1",
         "esbuild-plugin-tsconfig-paths": "^1.0.0",
+        "husky": "^9.1.7",
         "knip": "^5.64.1",
+        "lint-staged": "^16.2.6",
         "nodemon": "^3.1.4",
         "prisma": "^6.16.2",
         "typescript": "^5"

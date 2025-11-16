@@ -37,7 +37,7 @@ async function getJwtPayload(token: string): Promise<UserJWTPayload | null> {
     }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname, origin } = request.nextUrl
     const token = request.cookies.get(COOKIE_NAME)?.value
 

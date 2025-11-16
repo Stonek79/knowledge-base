@@ -1,0 +1,39 @@
+name: CI - Build, Lint & Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm & Node.js
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8 # Specify pnpm version if needed, or remove for latest
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Linter
+        run: pnpm lint
+
+      - name: Run Build
+        run: pnpm build
+
+      # - name: Run Tests
+      #   run: pnpm test

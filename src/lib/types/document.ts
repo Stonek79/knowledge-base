@@ -5,9 +5,8 @@ import type {
     Prisma,
     Role,
 } from '@prisma/client'
-import type { z } from 'zod'
-
 import type { DOCUMENT_STATUS } from '@/constants/document'
+import type { z } from '@/lib/zod'
 
 import type {
     createCategorySchema,

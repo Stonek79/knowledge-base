@@ -1,10 +1,9 @@
-import { z } from 'zod'
-
 import {
     USER_ROLES,
     USER_SORTABLE_FIELDS,
     USER_STATUSES,
 } from '@/constants/user'
+import { z } from '@/lib/zod'
 
 import { profileSchema } from './profile'
 

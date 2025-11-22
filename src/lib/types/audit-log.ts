@@ -3,8 +3,8 @@ import type {
     ActionType as PrismaActionType,
     AuditLog as PrismaAuditLogType,
 } from '@prisma/client'
-import type { z } from 'zod'
 import type { TARGET_TYPE } from '@/constants/audit-log'
+import type { z } from '@/lib/zod'
 import type {
     AuditLogPayloadSchema,
     auditLogResponseSchema,

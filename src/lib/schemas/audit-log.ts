@@ -1,10 +1,9 @@
-import { z } from 'zod'
-
 import {
     ACTION_TYPE,
     ACTION_TYPE_VALUES,
     TARGET_TYPE_VALUES,
 } from '@/constants/audit-log'
+import { z } from '@/lib/zod'
 
 // Используем встроенную схему z.json() для гарантии, что `details` - валидный JSON.
 const jsonSchema = z.json()
@@ -37,7 +36,7 @@ const UserLoginFailedDetailsSchema = z
         attemptedUsername: z.string().optional(),
         isFailUser: z.boolean().optional(),
         isFailPassword: z.boolean().optional(),
-        isInvalidToken: z.boolean().optional()
+        isInvalidToken: z.boolean().optional(),
     })
     .optional()
 

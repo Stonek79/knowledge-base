@@ -1,6 +1,5 @@
-import { z } from 'zod'
-
 import { DOCUMENT_STATUS } from '@/constants/document'
+import { z } from '@/lib/zod'
 
 import { attachmentMetadataSchema, baseAttachmentSchema } from './attachment'
 
@@ -46,7 +45,8 @@ export const documentListSchema = z.object({
     dateTo: z.string().optional(),
     sortBy: z
         .enum(['title', 'createdAt', 'updatedAt', 'viewCount', 'downloadCount'])
-        .default('createdAt').optional(),
+        .default('createdAt')
+        .optional(),
     sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
     q: z.string().optional(),
     status: z.enum(DOCUMENT_STATUS).optional(),

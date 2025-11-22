@@ -1,5 +1,3 @@
-import type { z } from 'zod'
-
 import type {
     fileInfoSchema,
     fileMetadataSchema,
@@ -9,6 +7,7 @@ import type {
     storageOperationResultSchema,
     uploadOptionsSchema,
 } from '@/lib/schemas/storage'
+import type { z } from '@/lib/zod'
 
 export type FileMetadata = z.infer<typeof fileMetadataSchema>
 export type FileUploadResult = z.infer<typeof fileUploadResultSchema>

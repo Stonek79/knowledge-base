@@ -1,8 +1,8 @@
 import type { Prisma } from '@prisma/client'
-import { z } from 'zod'
 import { auditLogRepository } from '@/lib/repositories/AuditLogRepository'
 import { AuditLogPayloadSchema } from '@/lib/schemas/audit-log'
 import type { LogPayload } from '@/lib/types/audit-log'
+import { z } from '@/lib/zod'
 
 class AuditLogService {
     /**

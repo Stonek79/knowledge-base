@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { SearchEngine } from '@/constants/document'
 import { USER_ROLES } from '@/constants/user'
@@ -13,6 +12,7 @@ import type {
     WhereDocumentInput,
 } from '@/lib/types/document'
 import type { UserResponse } from '@/lib/types/user'
+import { z } from '@/lib/zod'
 
 /**
  * DocumentQueryService инкапсулирует логику для чтения и поиска документов.

@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { jwtVerify, SignJWT } from 'jose'
 import type { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { COOKIE_NAME } from '@/constants/app'
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { JWT_EXPIRES_IN, JWT_SECRET } from '@/constants/auth'
@@ -10,6 +9,7 @@ import { prisma } from '@/lib/prisma'
 import { loginSchema } from '@/lib/schemas/auth'
 import { auditLogService } from '@/lib/services/AuditLogService'
 import type { UserResponse, UserRole } from '@/lib/types/user'
+import { z } from '@/lib/zod'
 
 // Определяем тип для payload токена
 export type UserJWTPayload = {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 
 /** Пэйлоад ошибки, возвращаемый API (совместим с клиентским парсером) */
 export type ApiErrorPayload = {

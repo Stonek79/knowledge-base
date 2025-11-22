@@ -1,7 +1,6 @@
-import { z } from 'zod'
-
 import { STORAGE_BASE_PATHS } from '@/constants/app'
 import { MIME } from '@/constants/mime'
+import { z } from '@/lib/zod'
 
 /**
  * Схема валидации метаданных файла

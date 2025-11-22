@@ -1,6 +1,5 @@
-import type { z } from 'zod'
-
 import type { systemSettingsSchema } from '@/lib/schemas/settings'
+import type { z } from '@/lib/zod'
 
 export type SystemSettings = z.infer<typeof systemSettingsSchema>
 

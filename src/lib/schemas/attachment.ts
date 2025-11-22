@@ -1,7 +1,6 @@
-import { z } from 'zod'
-
 import { ATTACHMENT_TYPE } from '@/constants/document'
 import { MIME } from '@/constants/mime'
+import { z } from '@/lib/zod'
 
 export const baseAttachmentSchema = z.object({
     id: z.string().min(1),

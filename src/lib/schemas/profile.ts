@@ -1,6 +1,5 @@
-import { z } from 'zod'
-
 import { profileVisibilityDefaults } from '@/constants/user'
+import { z } from '@/lib/zod'
 
 export const profileVisibilitySettingsSchema = z.object({
     fullName: z.boolean(),

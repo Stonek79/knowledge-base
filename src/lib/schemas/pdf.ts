@@ -1,6 +1,5 @@
-import { z } from 'zod'
-
 import { MIME } from '@/constants/mime'
+import { z } from '@/lib/zod'
 
 export const pdfCombineRequestSchema = z.object({
     mainDocumentPath: z.string(),

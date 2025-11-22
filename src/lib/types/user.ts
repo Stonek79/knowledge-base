@@ -4,8 +4,8 @@ import type {
     Role,
     User,
 } from '@prisma/client'
-import type { z } from 'zod'
 import type { USER_SORTABLE_FIELDS } from '@/constants/user'
+import type { z } from '@/lib/zod'
 import type {
     createUserSchema,
     updateUserSchema,

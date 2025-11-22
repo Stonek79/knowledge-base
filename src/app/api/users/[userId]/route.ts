@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/actions/users'
 import { ApiError, handleApiError } from '@/lib/api'
 import { prisma } from '@/lib/prisma'
 import { updateUserSchema } from '@/lib/schemas/user'
-import auditLogService from '@/lib/services/AuditLogService'
+import { auditLogService } from '@/lib/services/AuditLogService'
 import type { UpdatedDetails } from '@/lib/types/audit-log'
 import type { UpdateUserData } from '@/lib/types/user'
 
@@ -340,7 +340,7 @@ export async function DELETE(
                     tx
                 )
                 await tx.user.delete({ where: { id: userId } })
-                
+
                 return {
                     action: 'deleted',
                     message: 'Пользователь успешно удален',

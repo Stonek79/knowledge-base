@@ -16,7 +16,6 @@ export const LOGS_BASE_PATH = '/logs'
 // === Client-side Pages ===
 export const LOGIN_PAGE_PATH = `${AUTH_BASE_PATH}/login` // /auth/login
 export const REGISTER_PAGE_PATH = `${AUTH_BASE_PATH}/register` // /auth/register
-export const DOCUMENTS_PAGE_PATH = DOCUMENTS_BASE_PATH // /documents
 export const DOCUMENT_PAGE_PATH = (documentId: string) =>
     `${DOCUMENTS_BASE_PATH}/${documentId}` // /documents/documentId
 export const UPLOAD_PAGE_PATH = `${DOCUMENTS_BASE_PATH}/upload` // /documents/upload

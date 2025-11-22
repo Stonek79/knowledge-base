@@ -60,24 +60,24 @@ export class FlexSearchIndexer {
         query: string,
         filters?: SearchFilters
     ): Promise<SearchResult[]> {
-        console.log('[FlexSearchIndexer] search query:', query)
-        console.log('[FlexSearchIndexer] search filters:', filters)
-
         if (this.restorePromise) await this.restorePromise
 
-        // if (!query.trim()) return [];
+        // Оставляем только буквы и цифры, чтобы запрос соответствовал токенизации FlexSearch
+        const sanitizedQuery = query.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim()
+        const tokens = sanitizedQuery.split(/\s+/).filter(Boolean)
 
-        // ✅ Правильный вызов FlexSearch API
-        const results = await this.index.search(query, {
+        if (tokens.length === 0) return []
+
+        // Формируем запрос с оператором AND для поиска всех слов
+        const searchQuery = tokens.join(' AND ')
+
+        const results = await this.index.search(searchQuery, {
             limit: 50,
             suggest: true,
         })
 
-        console.log('[FlexSearchIndexer] search results:', results)
-
         const searchResults: SearchResult[] = []
 
-        // ✅ Обработка результатов FlexSearch
         for (const result of results) {
             const doc = this.documents.get(result.toString())
             if (!doc) continue
@@ -91,8 +91,8 @@ export class FlexSearchIndexer {
                 description: doc.description,
                 author: doc.author,
                 createdAt: doc.createdAt,
-                relevance: this.calculateRelevance(query, doc),
-                highlights: this.extractHighlights(query, doc),
+                relevance: this.calculateRelevance(sanitizedQuery, doc),
+                highlights: this.extractHighlights(sanitizedQuery, doc),
                 keywords: doc.keywords,
             })
         }
@@ -149,29 +149,32 @@ export class FlexSearchIndexer {
     }
 
     private calculateRelevance(query: string, doc: SearchDocument): number {
-        // Если запрос пустой - возвращаем базовую релевантность
-        if (!query || query.trim() === '') {
-            return 0.5 // Базовая релевантность для всех документов
-        }
+        const queryTokens = query.toLowerCase().split(/\s+/).filter(Boolean)
+        if (queryTokens.length === 0) return 0.5
 
-        const queryLower = query.toLowerCase()
         let score = 0
+        const titleLower = doc.title.toLowerCase()
+        const descriptionLower = doc.description?.toLowerCase() || ''
+        const contentLower = doc.content.toLowerCase()
+        const keywordsLower = doc.keywords?.map(k => k.toLowerCase()) || []
+        const categoriesLower = doc.categories.map(c => c.toLowerCase())
 
-        // Поиск в заголовке (высший приоритет)
-        if (doc.title.toLowerCase().includes(queryLower)) score += 3
-
-        // Поиск в ключевых словах
-        if (doc.keywords?.some(k => k.toLowerCase().includes(queryLower)))
+        // Проверяем, что все токены есть в поле, прежде чем начислять очки
+        if (queryTokens.every(token => titleLower.includes(token))) score += 3
+        if (
+            queryTokens.every(token =>
+                keywordsLower.some(k => k.includes(token))
+            )
+        )
             score += 2
-
-        // Поиск в описании
-        if (doc.description?.toLowerCase().includes(queryLower)) score += 1
-
-        // Поиск в контенте
-        if (doc.content.toLowerCase().includes(queryLower)) score += 1
-
-        // Поиск в категориях
-        if (doc.categories.some(cat => cat.toLowerCase().includes(queryLower)))
+        if (queryTokens.every(token => descriptionLower.includes(token)))
+            score += 1
+        if (queryTokens.every(token => contentLower.includes(token))) score += 1
+        if (
+            queryTokens.every(token =>
+                categoriesLower.some(c => c.includes(token))
+            )
+        )
             score += 1
 
         return Math.min(score / 7, 1.0)
@@ -179,36 +182,48 @@ export class FlexSearchIndexer {
 
     private extractHighlights(query: string, doc: SearchDocument): string[] {
         const highlights: string[] = []
-        const queryLower = query.toLowerCase()
+        const queryTokens = query.toLowerCase().split(/\s+/).filter(Boolean)
+        if (queryTokens.length === 0) return []
 
-        // Подсветка в заголовке
-        if (doc.title.toLowerCase().includes(queryLower)) {
+        // Подсветка в заголовке (если все токены есть)
+        const titleLower = doc.title.toLowerCase()
+        if (queryTokens.every(token => titleLower.includes(token))) {
             highlights.push(doc.title)
         }
 
-        // Подсветка в описании
-        if (doc.description?.toLowerCase().includes(queryLower)) {
-            highlights.push(doc.description)
+        // Подсветка в описании (если все токены есть)
+        if (doc.description) {
+            const descriptionLower = doc.description.toLowerCase()
+            if (queryTokens.every(token => descriptionLower.includes(token))) {
+                highlights.push(doc.description)
+            }
         }
 
         // Извлечение фрагментов из контента
         const contentFragments = this.extractContentFragments(
             doc.content,
-            queryLower
+            queryTokens
         )
         highlights.push(...contentFragments)
 
         return highlights.slice(0, 3) // Максимум 3 фрагмента
     }
 
-    private extractContentFragments(content: string, query: string): string[] {
+    private extractContentFragments(
+        content: string,
+        queryTokens: string[]
+    ): string[] {
+        if (queryTokens.length === 0) return []
+
         const fragments: string[] = []
         const sentences = content
             .split(/[.!?]+/)
             .filter(s => s.trim().length > 0)
 
         for (const sentence of sentences) {
-            if (sentence.toLowerCase().includes(query)) {
+            const sentenceLower = sentence.toLowerCase()
+            // Ищем предложения, где есть ВСЕ слова из запроса
+            if (queryTokens.every(token => sentenceLower.includes(token))) {
                 const fragment = sentence.trim().substring(0, 200)
                 if (fragment.length > 50) {
                     fragments.push(

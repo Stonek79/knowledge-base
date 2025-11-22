@@ -7,7 +7,7 @@ import {
     API_LOGIN_PATH,
     API_PREFIX,
     API_USERS_PATH,
-    DOCUMENTS_PAGE_PATH,
+    DOCUMENTS_BASE_PATH,
     HOME_PATH,
     LOGIN_PAGE_PATH,
 } from './constants/api'
@@ -70,7 +70,7 @@ export async function proxy(request: NextRequest) {
     if (isAuthenticated) {
         // 4.1. Редирект с гостевых маршрутов
         if (pathname === LOGIN_PAGE_PATH || pathname === HOME_PATH) {
-            return NextResponse.redirect(new URL(DOCUMENTS_PAGE_PATH, origin))
+            return NextResponse.redirect(new URL(DOCUMENTS_BASE_PATH, origin))
         }
 
         // 4.2. Проверка доступа к админским маршрутам
@@ -79,7 +79,7 @@ export async function proxy(request: NextRequest) {
             console.warn(
                 `User ${payload?.username ?? 'unknown'} with role ${userRole} tried to access admin route: ${pathname}`
             )
-            return NextResponse.redirect(new URL(DOCUMENTS_PAGE_PATH, origin))
+            return NextResponse.redirect(new URL(DOCUMENTS_BASE_PATH, origin))
         }
 
         // 4.3. Проверка доступа для GUEST (только чтение документов)
@@ -91,7 +91,7 @@ export async function proxy(request: NextRequest) {
             console.warn(
                 `Guest user ${payload?.username ?? 'unknown'} tried to access restricted route: ${pathname}`
             )
-            return NextResponse.redirect(new URL(DOCUMENTS_PAGE_PATH, origin))
+            return NextResponse.redirect(new URL(DOCUMENTS_BASE_PATH, origin))
         }
 
         return NextResponse.next()
@@ -106,7 +106,7 @@ export async function proxy(request: NextRequest) {
             return NextResponse.redirect(loginUrl)
         }
         if (userRole !== 'ADMIN') {
-            return NextResponse.redirect(new URL(DOCUMENTS_PAGE_PATH, origin))
+            return NextResponse.redirect(new URL(DOCUMENTS_BASE_PATH, origin))
         }
         return NextResponse.next()
     }

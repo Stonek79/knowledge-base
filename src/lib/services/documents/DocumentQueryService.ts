@@ -159,6 +159,8 @@ export class DocumentQueryService {
 
         // 2. Полнотекстовый поиск
         if (q?.trim()) {
+            const currentPage = page || 1
+            const currentLimit = limit || 10
             // Поиск через FlexSearch + пагинация в БД
             const searchEngine =
                 (process.env
@@ -207,8 +209,8 @@ export class DocumentQueryService {
                 return {
                     documents: [],
                     pagination: {
-                        page,
-                        limit,
+                        page: currentPage,
+                        limit: currentLimit,
                         total: 0,
                         totalPages: 0,
                         hasNextPage: false,
@@ -259,22 +261,22 @@ export class DocumentQueryService {
 
             // 4. Сохраняем порядок релевантности + применяем пагинацию
             const paginatedResults = mergedDocuments.slice(
-                (page - 1) * limit,
-                page * limit
+                (currentPage - 1) * currentLimit,
+                currentPage * currentLimit
             )
 
             const total = mergedDocuments?.length
-            const totalPages = Math.ceil(total / limit)
+            const totalPages = Math.ceil(total / currentLimit)
 
             return {
                 documents: paginatedResults,
                 pagination: {
-                    page,
-                    limit,
+                    page: currentPage,
+                    limit: currentLimit,
                     total,
                     totalPages,
-                    hasNextPage: page < totalPages,
-                    hasPrevPage: page > 1,
+                    hasNextPage: currentPage < totalPages,
+                    hasPrevPage: currentPage > 1,
                 },
             }
         } else {
@@ -314,6 +316,11 @@ export class DocumentQueryService {
             dateTo,
             status,
         } = validation.data
+
+        const currentPage = page || 1
+        const currentLimit = limit || 10
+        const currentSortBy = sortBy || 'createdAt'
+        const currentSortOrder = sortOrder || 'desc'
 
         // 1. Формирование условий доступа
         const whereConditions: WhereDocumentInput[] =
@@ -371,24 +378,24 @@ export class DocumentQueryService {
                         },
                     },
                 },
-                orderBy: { [sortBy]: sortOrder },
-                take: limit,
-                skip: (page - 1) * limit,
+                orderBy: { [currentSortBy]: currentSortOrder },
+                take: currentLimit,
+                skip: (currentPage - 1) * currentLimit,
             }),
             DocumentRepository.count({ where }),
         ])
 
         // 4. Формирование ответа
-        const totalPages = Math.ceil(total / limit)
+        const totalPages = Math.ceil(total / currentLimit)
         return {
             documents,
             pagination: {
-                page,
-                limit,
+                page: currentPage,
+                limit: currentLimit,
                 total,
                 totalPages,
-                hasNextPage: page < totalPages,
-                hasPrevPage: page > 1,
+                hasNextPage: currentPage < totalPages,
+                hasPrevPage: currentPage > 1,
             },
         }
     }

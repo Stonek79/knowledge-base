@@ -3,7 +3,6 @@ import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import NextLink from 'next/link'
 
 import { LOGIN_PAGE_PATH } from '@/constants/api'
 
@@ -35,13 +34,7 @@ export const WelcomePageContent = () => {
                     и информацию.
                 </Typography>
                 <Stack spacing={2} justifyContent='center'>
-                    <Button
-                        component={NextLink}
-                        href={LOGIN_PAGE_PATH}
-                        variant='contained'
-                        size='large'
-                        sx={{ px: 4, py: 1.5 }}
-                    >
+                    <Button href={LOGIN_PAGE_PATH} sx={{ px: 4, py: 1.5 }}>
                         Войти
                     </Button>
                     <Typography

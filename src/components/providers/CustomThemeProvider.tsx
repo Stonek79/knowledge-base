@@ -45,7 +45,6 @@ export const CustomThemeProvider = ({
         })
     }, [])
 
-    // 2. Выбираем нужную тему в зависимости от `mode`
     const theme = useMemo(
         () => (mode === 'light' ? lightTheme : darkTheme),
         [mode]

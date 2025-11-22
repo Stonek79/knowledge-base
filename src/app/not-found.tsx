@@ -2,8 +2,6 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
-import Link from 'next/link'
-
 import { HOME_PATH } from '@/constants/api'
 
 export default function NotFound() {
@@ -39,12 +37,8 @@ export default function NotFound() {
                     Возможно, она была перемещена, удалена или никогда не
                     существовала.
                 </Typography>
-                <Button
-                    component={Link}
-                    href={HOME_PATH}
-                    variant='contained'
-                    color='primary'
-                >
+
+                <Button href={HOME_PATH} color='primary'>
                     Вернуться на главную
                 </Button>
             </Box>

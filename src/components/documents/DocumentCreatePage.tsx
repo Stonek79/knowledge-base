@@ -15,11 +15,7 @@ import {
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-import {
-    ADMIN_PATH,
-    DOCUMENTS_BASE_PATH,
-    DOCUMENTS_PAGE_PATH,
-} from '@/constants/api'
+import { ADMIN_PATH, DOCUMENTS_BASE_PATH } from '@/constants/api'
 import { USER_ROLES } from '@/constants/user'
 import { useDocumentMutation } from '@/lib/hooks/documents/useDocumentMutation'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -83,9 +79,11 @@ export function DocumentCreatePage() {
             }))
 
             // 1. Staging: грузим все файлы
-            const mainFileStagedResult = await stageFile(data.mainFile)
+            const { originalName: mainFileName, ...restOfMainFile } =
+                await stageFile(data.mainFile)
             const mainFileStaged = {
-                ...mainFileStagedResult,
+                ...restOfMainFile,
+                fileName: mainFileName,
                 clientId: crypto.randomUUID(),
             }
 
@@ -94,9 +92,14 @@ export function DocumentCreatePage() {
             )
 
             const uploadPromises = newAttachments.map(async attachmentInfo => {
-                const stagedFile = await stageFile(attachmentInfo.item as File)
+                const stagedFileResult = await stageFile(
+                    attachmentInfo.item as File
+                )
+                const { originalName: attachmentFileName, ...restOfStaged } =
+                    stagedFileResult
                 return {
-                    ...stagedFile,
+                    ...restOfStaged,
+                    fileName: attachmentFileName,
                     clientId: attachmentInfo.clientId,
                 }
             })
@@ -160,7 +163,7 @@ export function DocumentCreatePage() {
      * Обработчик отмены загрузки
      */
     const handleCancel = () => {
-        router.push(DOCUMENTS_PAGE_PATH)
+        router.push(DOCUMENTS_BASE_PATH)
     }
 
     if (isAuthLoading) {

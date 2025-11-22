@@ -98,7 +98,11 @@ export function DocumentEditPage() {
                 : undefined
 
             const mainFileStaged = mainFileStagedResult
-                ? { ...mainFileStagedResult, clientId: crypto.randomUUID() }
+                ? (({ originalName, ...rest }) => ({
+                      ...rest,
+                      fileName: originalName,
+                      clientId: crypto.randomUUID(),
+                  }))(mainFileStagedResult)
                 : undefined
 
             const newAttachments = attachmentsWithClientId.filter(
@@ -107,10 +111,13 @@ export function DocumentEditPage() {
 
             const attachmentsStagedResults = await Promise.allSettled(
                 newAttachments.map(async attachment => {
-                    const stagedFile = await stageFile(attachment.item as File)
-
+                    const stagedFileResult = await stageFile(
+                        attachment.item as File
+                    )
+                    const { originalName, ...rest } = stagedFileResult
                     return {
-                        ...stagedFile,
+                        ...rest,
+                        fileName: originalName,
                         clientId: attachment?.clientId,
                     }
                 })

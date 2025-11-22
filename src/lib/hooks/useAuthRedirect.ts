@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
     ADMIN_PREFIX,
     API_PREFIX,
-    DOCUMENTS_PAGE_PATH,
+    DOCUMENTS_BASE_PATH,
     HOME_PATH,
     LOGIN_PAGE_PATH,
     REGISTER_PAGE_PATH,
@@ -47,7 +47,7 @@ export function useAuthRedirect(): UseAuthRedirectReturn {
         if (
             userRole === USER_ROLES.GUEST &&
             path.startsWith(API_PREFIX) &&
-            !path.includes(DOCUMENTS_PAGE_PATH)
+            !path.includes(DOCUMENTS_BASE_PATH)
         ) {
             return false
         }
@@ -76,11 +76,11 @@ export function useAuthRedirect(): UseAuthRedirectReturn {
         }
 
         if (userRole === USER_ROLES.GUEST) {
-            return DOCUMENTS_PAGE_PATH // Гости идут к документам
+            return DOCUMENTS_BASE_PATH // Гости идут к документам
         }
 
         // Обычные пользователи идут к документам
-        return DOCUMENTS_PAGE_PATH
+        return DOCUMENTS_BASE_PATH
     }
 
     // Функция для выполнения редиректа

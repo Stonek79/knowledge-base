@@ -20,7 +20,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-import { DOCUMENT_EDIT_PAGE_PATH, DOCUMENTS_PAGE_PATH } from '@/constants/api'
+import { DOCUMENT_EDIT_PAGE_PATH, DOCUMENTS_BASE_PATH } from '@/constants/api'
 import { USER_ROLES } from '@/constants/user'
 import { useDocumentDelete } from '@/lib/hooks/documents/useDocumentDelete'
 import { useDocuments } from '@/lib/hooks/documents/useDocuments'
@@ -67,7 +67,7 @@ export function FilteredList({ categoryId }: { categoryId: string }) {
     const handleDocumentAction = async (action: string) => {
         if (!selectedDocument) return
         if (action === 'view') {
-            router.push(`${DOCUMENTS_PAGE_PATH}/${selectedDocument.id}`)
+            router.push(`${DOCUMENTS_BASE_PATH}/${selectedDocument.id}`)
         }
 
         if (action === 'delete') {

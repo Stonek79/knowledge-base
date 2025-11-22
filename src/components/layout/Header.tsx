@@ -25,7 +25,6 @@ import { useTheme } from '@/components/providers/CustomThemeProvider'
 import {
     ADMIN_PATH,
     DOCUMENTS_BASE_PATH,
-    DOCUMENTS_PAGE_PATH,
     HOME_PATH,
     LOGIN_PAGE_PATH,
     PROFILE_BASE_PATH,
@@ -81,7 +80,7 @@ export function Header({ onSidebarToggle, showSidebar = false }: HeaderProps) {
     }
 
     const navigateToDocuments = () => {
-        router.push(DOCUMENTS_PAGE_PATH)
+        router.push(DOCUMENTS_BASE_PATH)
     }
 
     const navigateToAdmin = () => {

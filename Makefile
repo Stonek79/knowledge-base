@@ -31,8 +31,12 @@ dev-logs:
 # PROD
 # ======================
 
+# Проверка типов TypeScript
+check-types:
+	pnpm tsc --noEmit
+
 # Сборка прод-образа для linux/amd64
-prod-build:
+prod-build: check-types
 	docker buildx build \
 		--platform linux/amd64 \
 		--build-arg NODE_ENV=production \
@@ -41,7 +45,7 @@ prod-build:
 		.
 
 # Полная пересборка без кэша (только когда реально нужно)
-prod-build-clean:
+prod-build-clean: check-types
 	docker buildx build \
 		--no-cache \
 		--platform linux/amd64 \
@@ -51,7 +55,7 @@ prod-build-clean:
 		.
 
 # Локальная сборка для тестирования (без push)
-prod-build-local:
+prod-build-local: check-types
 	docker buildx build \
 		--platform linux/amd64 \
 		--build-arg NODE_ENV=production \

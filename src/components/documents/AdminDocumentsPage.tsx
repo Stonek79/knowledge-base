@@ -240,7 +240,7 @@ export function AdminDocumentsPage() {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 2,
-                    width: 'min-content',
+                    width: '100%',
                     overflow: 'auto',
                 }}
             >

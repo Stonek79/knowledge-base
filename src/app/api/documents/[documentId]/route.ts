@@ -3,9 +3,8 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { USER_ROLES } from '@/constants/user'
 import { getCurrentUser } from '@/lib/actions/users'
 import { handleApiError } from '@/lib/api/apiError'
+import { documentQueryService, documentService } from '@/lib/container'
 import { updateDocumentSchema } from '@/lib/schemas/document'
-import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService'
-import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService'
 import { UserService } from '@/lib/services/UserService'
 
 /**
@@ -45,7 +44,7 @@ export async function GET(
             )
         }
 
-        const document = await DocumentQueryService.getDocumentById(
+        const document = await documentQueryService.getDocumentById(
             documentId,
             user
         )
@@ -121,13 +120,13 @@ export async function PUT(
             authorId = author.id
         }
 
-        const updatedDocument = await DocumentCommandService.updateDocument(
+        const updatedDocument = await documentService.updateDocument(
             documentId,
             validation.data,
             user,
             authorId
         )
-        
+
         return NextResponse.json({
             message: 'Документ успешно обновлен',
             document: updatedDocument,
@@ -192,13 +191,13 @@ export async function DELETE(
                     { status: 403 }
                 )
             }
-            await DocumentCommandService.hardDeleteDocument(documentId, user)
+            await documentService.hardDeleteDocument(documentId, user)
             return NextResponse.json({
                 message: 'Документ безвозвратно удален',
             })
         } else {
             // Мягкое удаление доступно авторизованным пользователям (с проверкой прав внутри сервиса)
-            await DocumentCommandService.softDeleteDocument(documentId, user)
+            await documentService.softDeleteDocument(documentId, user)
             return NextResponse.json({
                 message: 'Документ успешно удален',
             })

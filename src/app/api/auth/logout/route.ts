@@ -3,9 +3,9 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { HOME_PATH } from '@/constants/api'
 import { COOKIE_NAME, COOKIE_SESSION_ID_NAME } from '@/constants/app'
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
-import { handleApiError } from '@/lib/api'
+import { handleApiError } from '@/lib/api/apiError'
 import { AuthService } from '@/lib/auth/AuthService'
-import { auditLogService } from '@/lib/services/AuditLogService'
+import { auditLogService } from '@/lib/container'
 
 /**
  * @swagger

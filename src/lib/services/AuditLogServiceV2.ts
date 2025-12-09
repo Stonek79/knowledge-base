@@ -1,14 +1,14 @@
-import type { Prisma } from '@prisma/client'
-import { auditLogRepository } from '@/lib/repositories/AuditLogRepository'
+import type { AuditLogRepositoryV2 } from '@/lib/repositories/AuditLogRepositoryV2'
 import { AuditLogPayloadSchema } from '@/lib/schemas/audit-log'
-import type { LogPayload } from '@/lib/types/audit-log'
+import type { AuditLogResponse, LogPayload } from '@/lib/types/audit-log'
+import type { Prisma } from '@/lib/types/prisma'
 import { z } from '@/lib/zod'
 
-class AuditLogService {
+export class AuditLogServiceV2 {
+    constructor(private repo: AuditLogRepositoryV2) {}
+
     /**
      * Записывает действие пользователя в журнал аудита.
-     * @param payload - Объект с данными для лога.
-     * @param tx - Транзакция, в которой нужно создать запись.
      */
     async log(
         payload: LogPayload,
@@ -17,8 +17,6 @@ class AuditLogService {
         const { userId, action, details, targetId, targetType } = payload
 
         try {
-            // 1. Валидируем пейлоад целиком.
-            // Zod автоматически проверит, что `details` соответствуют `action`.
             const validationResult = AuditLogPayloadSchema.safeParse({
                 action,
                 details,
@@ -31,14 +29,12 @@ class AuditLogService {
                     payload,
                     error: z.flattenError(validationResult.error),
                 })
-                // Не продолжаем, если пейлоад невалиден.
                 return
             }
 
             const validatedData = validationResult.data
 
-            // 2. Сохраняем лог в БД.
-            await auditLogRepository.create(
+            await this.repo.create(
                 {
                     user: { connect: { id: userId } },
                     action: validatedData.action,
@@ -55,6 +51,28 @@ class AuditLogService {
             })
         }
     }
-}
 
-export const auditLogService = new AuditLogService()
+    /**
+     * Получает список логов с пагинацией и фильтрацией.
+     */
+    async getLogs(params: {
+        page: number
+        limit: number
+        userIds?: string[]
+        actions?: string[]
+        startDate?: Date
+        endDate?: Date
+        sortBy: string
+        sortOrder: 'asc' | 'desc'
+    }): Promise<{ logs: AuditLogResponse[]; total: number }> {
+        return this.repo.findManyWithCount(params)
+    }
+
+    /**
+     * Удаляет старые логи.
+     */
+    async pruneOldLogs(cutoffDate: Date): Promise<number> {
+        const { count } = await this.repo.deleteOlderThan(cutoffDate)
+        return count
+    }
+}

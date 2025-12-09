@@ -7,7 +7,7 @@ export const NAVIGATION = {
         SETTINGS: 'Настройки',
         CATEGORIES: 'Категории',
         LOGS: 'Логи',
-        DOCS: 'API документация'
+        DOCS: 'API документация',
     },
 
     // Пути
@@ -18,7 +18,7 @@ export const NAVIGATION = {
         SETTINGS: '/admin/settings',
         CATEGORIES: '/admin/categories',
         LOGS: '/admin/logs',
-        DOCS: '/admin/api-docs'
+        DOCS: '/admin/api-docs',
     },
 
     // Иконки (для Sidebar)
@@ -29,6 +29,6 @@ export const NAVIGATION = {
         SETTINGS: 'SettingsIcon',
         CATEGORIES: 'CategoriesIcon',
         LOGS: 'LogsIcon',
-        DOCS: 'ApiDocsIcon'
+        DOCS: 'ApiDocsIcon',
     },
 } as const

@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 
 import { USER_ROLES, USER_STATUSES } from '@/constants/user'
-import { ApiError } from '@/lib/api'
+import { ApiError } from '@/lib/api/errors'
 import { UserRepository } from '@/lib/repositories/userRepository'
 import type { ProfileUpdate } from '@/lib/types/profile'
 import type { BaseUser } from '@/lib/types/user'

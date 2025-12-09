@@ -1,10 +1,9 @@
 import { STORAGE_BASE_PATHS } from '@/constants/app'
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES } from '@/constants/user'
-import { ApiError } from '@/lib/api/apiError'
+import { ApiError } from '@/lib/api/errors'
+import { auditLogService, documentRepository } from '@/lib/container'
 import { indexingQueue } from '@/lib/queues/indexing'
-import { DocumentRepository } from '@/lib/repositories/documentRepository'
-import { auditLogService } from '@/lib/services/AuditLogService'
 import type { UpdatedDetails } from '@/lib/types/audit-log'
 import type { ComposeChangeSet } from '@/lib/types/compose'
 import type { SupportedMime } from '@/lib/types/mime'
@@ -14,6 +13,7 @@ import { isSupportedMime } from '@/utils/mime'
 import { getFileStorageService } from '../FileStorageService'
 import { pdfCombiner } from '../PDFCombiner'
 
+// TODO: подумать над декомпозицией
 /**
  * DocumentComposeService будет инкапсулировать сложную логику
  * по "сборке" или композиции документов из разных частей.
@@ -49,8 +49,8 @@ export class DocumentComposeService {
 
             const mainMime: SupportedMime = data.replaceMain.mimeType
 
-            const result = await DocumentRepository.interactiveTransaction(
-                async tx => {
+            const result = await documentRepository.interactiveTransaction(
+                async (_txRepo, txClient) => {
                     // 1) продвинуть основной
                     if (!data.replaceMain)
                         throw new ApiError(
@@ -68,7 +68,7 @@ export class DocumentComposeService {
                     promoted.push(main.key)
 
                     // 2) создать документ
-                    const doc = await tx.document.create({
+                    const doc = await txClient.document.create({
                         data: {
                             title:
                                 data.metadata?.title ??
@@ -120,7 +120,7 @@ export class DocumentComposeService {
                         doc.isConfidential &&
                         data.metadata?.confidentialAccessUserIds?.length
                     ) {
-                        await tx.confidentialDocumentAccess.createMany({
+                        await txClient.confidentialDocumentAccess.createMany({
                             data: data.metadata.confidentialAccessUserIds.map(
                                 userId => ({
                                     documentId: doc.id,
@@ -154,16 +154,17 @@ export class DocumentComposeService {
 
                             promoted.push(promotedAtt.key)
 
-                            const newAttachment = await tx.attachment.create({
-                                data: {
-                                    documentId: doc.id,
-                                    fileName: att.fileName,
-                                    fileSize: promotedAtt.size,
-                                    mimeType: attMime,
-                                    filePath: promotedAtt.key,
-                                    order: -1,
-                                },
-                            })
+                            const newAttachment =
+                                await txClient.attachment.create({
+                                    data: {
+                                        documentId: doc.id,
+                                        fileName: att.fileName,
+                                        fileSize: promotedAtt.size,
+                                        mimeType: attMime,
+                                        filePath: promotedAtt.key,
+                                        order: -1,
+                                    },
+                                })
 
                             clientIdToAttachmentId[att.clientId] =
                                 newAttachment.id
@@ -181,7 +182,7 @@ export class DocumentComposeService {
                                 attachmentId ?? clientIdToAttachmentId[clientId]
 
                             if (finalId) {
-                                await tx.attachment.update({
+                                await txClient.attachment.update({
                                     where: { id: finalId },
                                     data: { order },
                                 })
@@ -195,7 +196,7 @@ export class DocumentComposeService {
                     }
 
                     // 4) сборка PDF
-                    const attachments = await tx.attachment.findMany({
+                    const attachments = await txClient.attachment.findMany({
                         where: { documentId: doc.id },
                         orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
                     })
@@ -226,7 +227,7 @@ export class DocumentComposeService {
                     }
 
                     // запись основной PDF
-                    const conv = await tx.convertedDocument.create({
+                    const conv = await txClient.convertedDocument.create({
                         data: {
                             documentId: doc.id,
                             conversionType: 'PDF',
@@ -236,7 +237,7 @@ export class DocumentComposeService {
                         },
                     })
 
-                    await tx.document.update({
+                    await txClient.document.update({
                         where: { id: doc.id },
                         data: { mainPdfId: conv.id },
                     })
@@ -271,7 +272,7 @@ export class DocumentComposeService {
                                 authorName: doc.author.username,
                             },
                         },
-                        tx
+                        txClient
                     )
 
                     return doc
@@ -325,9 +326,9 @@ export class DocumentComposeService {
         const cleanupOnSuccess: string[] = [] // старые ключи, которые надо удалить после успешного коммита
 
         try {
-            const result = await DocumentRepository.interactiveTransaction(
-                async tx => {
-                    const existing = await tx.document.findUnique({
+            const result = await documentRepository.interactiveTransaction(
+                async (_txRepo, txClient) => {
+                    const existing = await txClient.document.findUnique({
                         where: { id: documentId },
                         include: {
                             categories: true,
@@ -357,7 +358,7 @@ export class DocumentComposeService {
                                 .map(s => s.trim())
                                 .filter(Boolean) ?? undefined
 
-                        await tx.document.update({
+                        await txClient.document.update({
                             where: { id: documentId },
                             data: {
                                 title: data.metadata.title,
@@ -387,22 +388,28 @@ export class DocumentComposeService {
                             data.metadata.isConfidential &&
                             data.metadata.confidentialAccessUserIds
                         ) {
-                            await tx.confidentialDocumentAccess.deleteMany({
-                                where: { documentId: documentId },
-                            })
-                            await tx.confidentialDocumentAccess.createMany({
-                                data: data.metadata.confidentialAccessUserIds.map(
-                                    userId => ({
-                                        documentId: documentId,
-                                        userId: userId,
-                                    })
-                                ),
-                            })
+                            await txClient.confidentialDocumentAccess.deleteMany(
+                                {
+                                    where: { documentId: documentId },
+                                }
+                            )
+                            await txClient.confidentialDocumentAccess.createMany(
+                                {
+                                    data: data.metadata.confidentialAccessUserIds.map(
+                                        userId => ({
+                                            documentId: documentId,
+                                            userId: userId,
+                                        })
+                                    ),
+                                }
+                            )
                         } else if (data.metadata.isConfidential === false) {
                             // Если документ перестал быть конфиденциальным, чистим список доступа
-                            await tx.confidentialDocumentAccess.deleteMany({
-                                where: { documentId: documentId },
-                            })
+                            await txClient.confidentialDocumentAccess.deleteMany(
+                                {
+                                    where: { documentId: documentId },
+                                }
+                            )
                         }
                     }
 
@@ -426,7 +433,7 @@ export class DocumentComposeService {
                         promoted.push(promotedMain.key)
 
                         // обновить поля документа (оригинал)
-                        await tx.document.update({
+                        await txClient.document.update({
                             where: { id: documentId },
                             data: {
                                 filePath: promotedMain.key,
@@ -459,16 +466,17 @@ export class DocumentComposeService {
                                 )
                             promoted.push(promotedAtt.key)
 
-                            const newAttachment = await tx.attachment.create({
-                                data: {
-                                    documentId,
-                                    fileName: att.fileName,
-                                    fileSize: promotedAtt.size,
-                                    mimeType: attMime,
-                                    filePath: promotedAtt.key,
-                                    order: -1,
-                                },
-                            })
+                            const newAttachment =
+                                await txClient.attachment.create({
+                                    data: {
+                                        documentId,
+                                        fileName: att.fileName,
+                                        fileSize: promotedAtt.size,
+                                        mimeType: attMime,
+                                        filePath: promotedAtt.key,
+                                        order: -1,
+                                    },
+                                })
 
                             clientIdToAttachmentId[att.clientId] =
                                 newAttachment.id
@@ -481,7 +489,7 @@ export class DocumentComposeService {
                             '[DEBUG] Attachment Deletion: Received IDs to delete:',
                             data.deleteAttachmentIds
                         )
-                        const toDelete = await tx.attachment.findMany({
+                        const toDelete = await txClient.attachment.findMany({
                             where: {
                                 id: { in: data.deleteAttachmentIds },
                                 documentId,
@@ -495,7 +503,7 @@ export class DocumentComposeService {
                         for (const a of toDelete) {
                             if (a.filePath) cleanupOnSuccess.push(a.filePath)
                         }
-                        await tx.attachment.deleteMany({
+                        await txClient.attachment.deleteMany({
                             where: {
                                 id: { in: data.deleteAttachmentIds },
                                 documentId,
@@ -511,7 +519,7 @@ export class DocumentComposeService {
 
                         if (existingIdsFromClient.length > 0) {
                             const foundAttachments =
-                                await tx.attachment.findMany({
+                                await txClient.attachment.findMany({
                                     where: {
                                         id: { in: existingIdsFromClient },
                                         documentId: documentId,
@@ -538,7 +546,7 @@ export class DocumentComposeService {
                                 attachmentId ?? clientIdToAttachmentId[clientId]
 
                             if (finalId) {
-                                await tx.attachment.update({
+                                await txClient.attachment.update({
                                     where: { id: finalId },
                                     data: { order },
                                 })
@@ -552,7 +560,7 @@ export class DocumentComposeService {
                     }
 
                     // 6) собрать список приложений и пересобрать PDF
-                    const doc = await tx.document.findUnique({
+                    const doc = await txClient.document.findUnique({
                         where: { id: documentId },
                         select: {
                             id: true,
@@ -581,7 +589,7 @@ export class DocumentComposeService {
                         )
                     }
 
-                    const attachments = await tx.attachment.findMany({
+                    const attachments = await txClient.attachment.findMany({
                         where: { documentId },
                         orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
                     })
@@ -613,7 +621,7 @@ export class DocumentComposeService {
                     }
 
                     // записать новый mainPdf и снять старый
-                    const conv = await tx.convertedDocument.create({
+                    const conv = await txClient.convertedDocument.create({
                         data: {
                             documentId: doc.id,
                             conversionType: 'PDF',
@@ -622,13 +630,13 @@ export class DocumentComposeService {
                             originalFile: doc.filePath,
                         },
                     })
-                    await tx.document.update({
+                    await txClient.document.update({
                         where: { id: doc.id },
                         data: { mainPdfId: conv.id },
                     })
                     // Используем `existing` для получения информации о старом PDF
                     if (existing.mainPdf?.id) {
-                        await tx.convertedDocument.delete({
+                        await txClient.convertedDocument.delete({
                             where: { id: existing.mainPdf.id },
                         })
                     }
@@ -791,7 +799,7 @@ export class DocumentComposeService {
                                     changes,
                                 },
                             },
-                            tx
+                            txClient
                         )
                     }
 

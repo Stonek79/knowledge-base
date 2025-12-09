@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { USER_ROLES } from '@/constants/user'
 import { getCurrentUser } from '@/lib/actions/users'
 import { handleApiError } from '@/lib/api/apiError'
-import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService'
+import { documentService } from '@/lib/container'
 
 export async function POST(
     request: NextRequest,
@@ -19,7 +19,7 @@ export async function POST(
             return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
-        await DocumentCommandService.restoreDocument(documentId)
+        await documentService.restoreDocument(documentId)
 
         return NextResponse.json({
             message: 'Документ успешно восстановлен',

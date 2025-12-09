@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { API_PROFILE_CHANGE_PASSWORD_PATH } from '@/constants/api'
-import { ApiError } from '@/lib/api'
+import { ApiError } from '@/lib/api/errors'
 
 import type { ChangePasswordFormData } from '../types/profile'
 

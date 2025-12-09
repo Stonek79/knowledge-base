@@ -4,10 +4,10 @@ import type { NextRequest, NextResponse } from 'next/server'
 import { COOKIE_NAME } from '@/constants/app'
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { JWT_EXPIRES_IN, JWT_SECRET } from '@/constants/auth'
-import { ApiError } from '@/lib/api'
+import { ApiError } from '@/lib/api/errors'
 import { prisma } from '@/lib/prisma'
 import { loginSchema } from '@/lib/schemas/auth'
-import { auditLogService } from '@/lib/services/AuditLogService'
+import type { AuditLogServiceV2 } from '@/lib/services/AuditLogServiceV2'
 import type { UserResponse, UserRole } from '@/lib/types/user'
 import { z } from '@/lib/zod'
 
@@ -79,7 +79,10 @@ export class AuthService {
      * @param credentials - Учетные данные (имя пользователя и пароль).
      * @returns - Объект пользователя и JWT.
      */
-    public static async login(credentials: unknown): Promise<{
+    public static async login(
+        credentials: unknown,
+        auditLogService?: AuditLogServiceV2
+    ): Promise<{
         user: UserResponse
         token: string
     }> {
@@ -97,11 +100,13 @@ export class AuthService {
 
         if (!user) {
             // Логируем неудачную попытку входа
-            await auditLogService.log({
-                details: { attemptedUsername: username, isFailUser: true },
-                action: ACTION_TYPE.USER_LOGIN_FAILED,
-                targetType: TARGET_TYPE.SYSTEM,
-            })
+            if (auditLogService) {
+                await auditLogService.log({
+                    details: { attemptedUsername: username, isFailUser: true },
+                    action: ACTION_TYPE.USER_LOGIN_FAILED,
+                    targetType: TARGET_TYPE.SYSTEM,
+                })
+            }
             throw new ApiError('Пользователь не найден', 404)
         }
 
@@ -119,11 +124,16 @@ export class AuthService {
         const isPasswordValid = await bcrypt.compare(password, user.password)
         if (!isPasswordValid) {
             // Логируем неудачную попытку входа
-            await auditLogService.log({
-                userId: user.id,
-                details: { attemptedUsername: username, isFailPassword: true },
-                action: ACTION_TYPE.USER_LOGIN_FAILED,
-            })
+            if (auditLogService) {
+                await auditLogService.log({
+                    userId: user.id,
+                    details: {
+                        attemptedUsername: username,
+                        isFailPassword: true,
+                    },
+                    action: ACTION_TYPE.USER_LOGIN_FAILED,
+                })
+            }
             throw new ApiError('Неверный пароль', 401)
         }
 
@@ -138,11 +148,13 @@ export class AuthService {
         const token = await AuthService.signToken(tokenPayload)
 
         // Логируем успешный вход
-        await auditLogService.log({
-            userId: user.id,
-            action: ACTION_TYPE.USER_LOGIN,
-            details: { attemptedUsername: username },
-        })
+        if (auditLogService) {
+            await auditLogService.log({
+                userId: user.id,
+                action: ACTION_TYPE.USER_LOGIN,
+                details: { attemptedUsername: username },
+            })
+        }
 
         return { user: tokenPayload, token }
     }

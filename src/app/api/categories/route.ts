@@ -3,9 +3,9 @@ import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES } from '@/constants/user'
 import { getCurrentUser } from '@/lib/actions/users'
 import { handleApiError } from '@/lib/api/apiError'
+import { auditLogService } from '@/lib/container'
 import { prisma } from '@/lib/prisma'
 import { createCategorySchema } from '@/lib/schemas/document'
-import { auditLogService } from '@/lib/services/AuditLogService'
 
 /**
  * @swagger

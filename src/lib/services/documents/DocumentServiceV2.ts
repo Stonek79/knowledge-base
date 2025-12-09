@@ -1,41 +1,43 @@
 import { unlink } from 'node:fs/promises'
 import { isAbsolute } from 'node:path'
 
-import { GOTENBERG_URL } from '@/constants/app'
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { USER_ROLES } from '@/constants/user'
-import { DocumentProcessor } from '@/core/documents/DocumentProcessor'
-import { GotenbergAdapter } from '@/core/documents/GotenbergAdapter'
-import { ApiError } from '@/lib/api'
+import type { DocumentProcessor } from '@/core/documents/DocumentProcessor'
+import { ApiError } from '@/lib/api/errors'
 import { indexingQueue } from '@/lib/queues/indexing'
-import { DocumentRepository } from '@/lib/repositories/documentRepository'
-import { auditLogService } from '@/lib/services/AuditLogService'
-import { getFileStorageService } from '@/lib/services/FileStorageService'
-import { settingsService } from '@/lib/services/SettingsService'
+import type { DocumentRepositoryV2 } from '@/lib/repositories/DocumentRepositoryV2'
+import type { AuditLogServiceV2 } from '@/lib/services/AuditLogServiceV2'
+import type { FileStorageService } from '@/lib/services/FileStorageService'
+import type { SettingsService } from '@/lib/services/SettingsService'
 import type { UpdatedDetails } from '@/lib/types/audit-log'
 import type {
     CreateDocumentServiceData,
     UpdateDocumentData,
 } from '@/lib/types/document'
 import type { SupportedMime } from '@/lib/types/mime'
+import type { Prisma } from '@/lib/types/prisma'
 import type { UserResponse } from '@/lib/types/user'
 import { FileUtils } from '@/utils/files'
 import { isSupportedMime, mimeMapper } from '@/utils/mime'
 
 /**
- * DocumentCommandService инкапсулирует логику для изменения (создания, обновления, удаления) документов.
+ * DocumentServiceV2 инкапсулирует логику для изменения документов.
+ * Использует DI.
  */
-export class DocumentCommandService {
+export class DocumentServiceV2 {
+    constructor(
+        private docRepo: DocumentRepositoryV2,
+        private auditService: AuditLogServiceV2,
+        private storageService: FileStorageService,
+        private settingsService: SettingsService,
+        private processor: DocumentProcessor
+    ) {}
+
     /**
      * Создает новый документ на основе загруженных данных.
-     * @param formData - Данные формы, содержащие файл и метаданные.
-     * @param user - Пользователь, выполняющий действие.
-     * @returns - Созданный объект документа.
      */
-    public static async createDocument(
-        data: CreateDocumentServiceData,
-        user: UserResponse
-    ) {
+    async createDocument(data: CreateDocumentServiceData, user: UserResponse) {
         let createdFileKey: string | null = null
         let createdPdfKey: string | null = null
 
@@ -65,8 +67,8 @@ export class DocumentCommandService {
             }
 
             const [maxFileSize, allowedMimeTypes] = await Promise.all([
-                settingsService.getMaxFileSize(),
-                settingsService.getAllowedMimeTypes(),
+                this.settingsService.getMaxFileSize(),
+                this.settingsService.getAllowedMimeTypes(),
             ])
 
             if (!file || !(file instanceof File)) {
@@ -100,7 +102,7 @@ export class DocumentCommandService {
             }
 
             const hash = await FileUtils.generateFileHash(buffer)
-            const existingDocument = await DocumentRepository.findUnique({
+            const existingDocument = await this.docRepo.findUnique({
                 where: { hash },
             })
             if (existingDocument) {
@@ -110,10 +112,7 @@ export class DocumentCommandService {
                 )
             }
 
-            const gotenbergUrl = process.env.GOTENBERG_URL || GOTENBERG_URL
-            const adapter = new GotenbergAdapter(gotenbergUrl)
-            const processor = new DocumentProcessor(adapter)
-            const processed = await processor.processUpload(
+            const processed = await this.processor.processUpload(
                 buffer,
                 mime,
                 file.name,
@@ -127,9 +126,9 @@ export class DocumentCommandService {
             createdFileKey = processed.storage?.originalKey ?? null
             createdPdfKey = processed.storage?.pdfKey ?? null
 
-            const newDocument = await DocumentRepository.interactiveTransaction(
-                async tx => {
-                    const doc = await tx.document.create({
+            const newDocument = await this.docRepo.interactiveTransaction(
+                async (txRepo, txClient) => {
+                    const doc = await txRepo.create({
                         data: {
                             title,
                             description: description || '',
@@ -163,9 +162,9 @@ export class DocumentCommandService {
                         },
                     })
 
-                    await auditLogService.log(
+                    await this.auditService.log(
                         {
-                            userId: user.id, // ID создателя (actor)
+                            userId: user.id,
                             action: ACTION_TYPE.DOCUMENT_CREATED,
                             targetId: doc.id,
                             targetType: TARGET_TYPE.DOCUMENT,
@@ -182,24 +181,24 @@ export class DocumentCommandService {
                                 authorName: doc.author.username,
                             },
                         },
-                        tx
+                        txClient
                     )
 
                     if (processed.storage?.pdfKey) {
-                        const conv = await tx.convertedDocument.create({
+                        const conv = await txRepo.createConvertedDocument({
                             data: {
                                 documentId: doc.id,
                                 conversionType: 'PDF',
                                 filePath: processed.storage.pdfKey,
                                 fileSize: (
-                                    await getFileStorageService().getFileInfo(
+                                    await this.storageService.getFileInfo(
                                         processed.storage.pdfKey
                                     )
                                 ).size,
                                 originalFile: filePath,
                             },
                         })
-                        await tx.document.update({
+                        await txRepo.update({
                             where: { id: doc.id },
                             data: { mainPdfId: conv.id },
                         })
@@ -215,34 +214,28 @@ export class DocumentCommandService {
 
             return newDocument
         } catch (error) {
-            // Rollback: удаляем загруженные файлы в случае ошибки
             if (createdPdfKey) {
-                void getFileStorageService().deleteDocument(createdPdfKey)
+                void this.storageService.deleteDocument(createdPdfKey)
             }
             if (createdFileKey) {
-                void getFileStorageService().deleteDocument(createdFileKey)
+                void this.storageService.deleteDocument(createdFileKey)
             }
-            throw error // Пробрасываем ошибку дальше для обработки в API роуте
+            throw error
         }
     }
 
     /**
      * Обновляет метаданные документа.
-     * @param id - ID документа.
-     * @param data - Данные для обновления.
-     * @param user - Текущий пользователь.
-     * @returns - Обновленный документ.
      */
-    public static async updateDocument(
+    async updateDocument(
         id: string,
         data: UpdateDocumentData,
         user: UserResponse,
         authorId: string | undefined
     ) {
-        // Выполняем обновление и логирование в одной транзакции
-        const updatedDocument = await DocumentRepository.interactiveTransaction(
-            async tx => {
-                const documentBeforeUpdate = await tx.document.findUnique({
+        const updatedDocument = await this.docRepo.interactiveTransaction(
+            async (txRepo, txClient) => {
+                const documentBeforeUpdate = await txRepo.findUnique({
                     where: { id },
                     select: {
                         title: true,
@@ -273,7 +266,7 @@ export class DocumentCommandService {
                     )
                 }
 
-                const doc = await tx.document.update({
+                const doc = await txRepo.update({
                     where: { id },
                     data: {
                         title: data.title,
@@ -300,9 +293,6 @@ export class DocumentCommandService {
                     },
                 })
 
-                console.log('[TRANSACTION DOC UPDATE]', doc)
-
-                // --- Логирование изменений ---
                 const changes: UpdatedDetails[] = []
 
                 if (data.title && data.title !== documentBeforeUpdate.title) {
@@ -330,7 +320,6 @@ export class DocumentCommandService {
                     })
                 }
 
-                // Сравнение категорий
                 const oldCategoryIds = documentBeforeUpdate?.categories
                     .map(c => c.categoryId)
                     .sort()
@@ -347,7 +336,7 @@ export class DocumentCommandService {
                 }
 
                 if (changes.length > 0) {
-                    await auditLogService.log(
+                    await this.auditService.log(
                         {
                             userId: user.id,
                             action: ACTION_TYPE.DOCUMENT_UPDATED,
@@ -359,7 +348,7 @@ export class DocumentCommandService {
                                 documentName: doc.title,
                             },
                         },
-                        tx
+                        txClient
                     )
                 }
 
@@ -375,16 +364,11 @@ export class DocumentCommandService {
     }
 
     /**
-     * "Мягко" удаляет документ, устанавливая флаг deletedAt.
-     * Файлы при этом не удаляются. Документ исключается из поискового индекса.
-     * @param id - ID документа.
-     * @param user - Текущий пользователь.
+     * "Мягко" удаляет документ.
      */
-    public static async softDeleteDocument(id: string, user: UserResponse) {
-        // Сначала мы должны найти документ, чтобы проверить права доступа.
-        // Наш Prisma-клиент расширен, поэтому findUnique не вернет уже "удаленные" документы.
-        await DocumentRepository.interactiveTransaction(async tx => {
-            const document = await tx.document.findUnique({
+    async softDeleteDocument(id: string, user: UserResponse) {
+        await this.docRepo.interactiveTransaction(async (txRepo, txClient) => {
+            const document = await txRepo.findUnique({
                 where: { id },
                 select: {
                     title: true,
@@ -408,8 +392,7 @@ export class DocumentCommandService {
                 )
             }
 
-            // Выполняем "мягкое" удаление через update
-            await auditLogService.log(
+            await this.auditService.log(
                 {
                     userId: user.id,
                     action: ACTION_TYPE.DOCUMENT_DELETED_SOFT,
@@ -420,10 +403,10 @@ export class DocumentCommandService {
                         documentName: document.title,
                     },
                 },
-                tx
+                txClient
             )
 
-            await tx.document.update({
+            await txRepo.update({
                 where: { id },
                 data: {
                     deletedAt: new Date(),
@@ -433,19 +416,16 @@ export class DocumentCommandService {
             })
         })
 
-        // Удаляем документ из поискового индекса
         await indexingQueue.add('remove-from-index', { documentId: id })
     }
 
     /**
-     * **Безвозвратно** удаляет документ и все связанные с ним данные и файлы.
-     * @param id - ID документа.
-     * @param user - Текущий пользователь (должен быть ADMIN или создатель документа).
+     * **Безвозвратно** удаляет документ.
      */
-    public static async hardDeleteDocument(id: string, user: UserResponse) {
+    async hardDeleteDocument(id: string, user: UserResponse) {
         const fileKeys: string[] = []
-        await DocumentRepository.interactiveTransaction(async tx => {
-            const snapshot = await tx.document.findUnique({
+        await this.docRepo.interactiveTransaction(async (txRepo, txClient) => {
+            const snapshot = await txRepo.findUnique({
                 where: { id },
                 include: {
                     author: {
@@ -472,7 +452,7 @@ export class DocumentCommandService {
                 )
             }
 
-            await auditLogService.log(
+            await this.auditService.log(
                 {
                     userId: user.id,
                     action: ACTION_TYPE.DOCUMENT_DELETED_HARD,
@@ -483,10 +463,15 @@ export class DocumentCommandService {
                         documentName: snapshot.title,
                     },
                 },
-                tx
+                txClient
             )
 
-            const converted = await tx.convertedDocument.findMany({
+            // TODO: В V2 репозитории нет методов deleteMany для связанных таблиц.
+            // Надо бы их добавить или использовать prisma напрямую через txClient.
+            // Для простоты используем txClient.
+            const db = txClient as Prisma.TransactionClient
+
+            const converted = await db.convertedDocument.findMany({
                 where: { id: snapshot.id },
                 select: { filePath: true },
             })
@@ -501,16 +486,16 @@ export class DocumentCommandService {
             for (const c of snapshot.convertedVersions ?? [])
                 fileKeys.push(c.filePath)
 
-            await tx.convertedDocument.deleteMany({
+            await db.convertedDocument.deleteMany({
                 where: { id: snapshot.id },
             })
-            await tx.documentCategory.deleteMany({
+            await db.documentCategory.deleteMany({
                 where: { documentId: snapshot.id },
             })
-            await tx.attachment.deleteMany({
+            await db.attachment.deleteMany({
                 where: { documentId: snapshot.id },
             })
-            await tx.document.delete({ where: { id: snapshot.id } })
+            await db.document.delete({ where: { id: snapshot.id } })
         })
 
         for (const key of fileKeys) {
@@ -518,7 +503,7 @@ export class DocumentCommandService {
                 if (isAbsolute(key)) {
                     await unlink(key)
                 } else {
-                    await getFileStorageService().deleteDocument(key)
+                    await this.storageService.deleteDocument(key)
                 }
             } catch (e) {
                 console.error(`Не удалось удалить файл ${key}`, e)
@@ -530,13 +515,11 @@ export class DocumentCommandService {
 
     /**
      * Восстанавливает "мягко" удаленный документ.
-     * @param documentId - ID документа для восстановления.
      */
-    public static async restoreDocument(documentId: string) {
-        // Проверяем, что документ существует и действительно удален
-        const existingDocument = await DocumentRepository.findUnique({
+    async restoreDocument(documentId: string) {
+        const existingDocument = await this.docRepo.findUnique({
             where: { id: documentId, deletedAt: { not: null } },
-            select: { id: true }, // выбираем только id для эффективности
+            select: { id: true },
         })
 
         if (!existingDocument) {
@@ -546,7 +529,7 @@ export class DocumentCommandService {
             )
         }
 
-        const restoredDocument = await DocumentRepository.update({
+        const restoredDocument = await this.docRepo.update({
             where: { id: documentId },
             data: {
                 deletedAt: null,
@@ -554,7 +537,6 @@ export class DocumentCommandService {
             },
         })
 
-        // Ставим в очередь на переиндексацию, чтобы он снова появился в поиске
         await indexingQueue.add('index-document', { documentId })
 
         return restoredDocument

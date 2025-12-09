@@ -24,12 +24,8 @@ import {
 import { formatDistanceToNow } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import Link from 'next/link'
-
-import {
-    ACTION_TYPE,
-    AUDIT_LOG_ACTION_LABELS,
-} from '@/constants/audit-log'
 import { ADMIN_LOGS_PATH } from '@/constants/api'
+import { ACTION_TYPE, AUDIT_LOG_ACTION_LABELS } from '@/constants/audit-log'
 import { useAuditLogs } from '@/lib/hooks/useAuditLogs'
 import { AuditLogPayloadSchema } from '@/lib/schemas/audit-log'
 import type { AuditLogResponse } from '@/lib/types/audit-log'

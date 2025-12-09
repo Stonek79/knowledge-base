@@ -2,9 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 import { getCurrentUser } from '@/lib/actions/users'
 import { handleApiError } from '@/lib/api/apiError'
+import { documentQueryService, documentService } from '@/lib/container'
 import { documentListSchema, uploadFormSchema } from '@/lib/schemas/document'
-import { DocumentCommandService } from '@/lib/services/documents/DocumentCommandService'
-import { DocumentQueryService } from '@/lib/services/documents/DocumentQueryService'
 import { UserService } from '@/lib/services/UserService'
 
 /**
@@ -81,7 +80,7 @@ export async function GET(request: NextRequest) {
             return handleApiError(validation.error)
         }
 
-        const result = await DocumentQueryService.searchDocuments(
+        const result = await documentQueryService.searchDocuments(
             validation?.data,
             user
         )
@@ -160,7 +159,7 @@ export async function POST(request: NextRequest) {
             authorId: authorId, // Автор - тот, кого нашли или создали
         }
 
-        const document = await DocumentCommandService.createDocument(
+        const document = await documentService.createDocument(
             documentData,
             user
         )

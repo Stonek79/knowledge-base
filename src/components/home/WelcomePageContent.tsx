@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import { LOGIN_PAGE_PATH } from '@/constants/api'
+import { CurrentDateTime } from './CurrentDateTime'
 
 export const WelcomePageContent = () => {
     return (
@@ -13,7 +14,6 @@ export const WelcomePageContent = () => {
                 sx={{
                     paddingTop: { xs: 4, sm: 8 },
                     paddingBottom: { xs: 4, sm: 8 },
-                    minHeight: 'calc(100vh - 120px)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -29,6 +29,7 @@ export const WelcomePageContent = () => {
                 >
                     Добро пожаловать в нашу базу заключений!
                 </Typography>
+                <CurrentDateTime />
                 <Typography variant='h5' color='text.secondary' sx={{ mb: 4 }}>
                     Здесь вы можете попробоавть найти необходимые вам документы
                     и информацию.

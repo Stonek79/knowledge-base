@@ -3,10 +3,11 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { COOKIE_NAME, COOKIE_SESSION_ID_NAME } from '@/constants/app'
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { JWT_SECRET } from '@/constants/auth'
-import { ApiError, handleApiError } from '@/lib/api'
+import { handleApiError } from '@/lib/api/apiError'
+import { ApiError } from '@/lib/api/errors'
 import { AuthService } from '@/lib/auth/AuthService'
+import { auditLogService } from '@/lib/container'
 import { prisma } from '@/lib/prisma'
-import { auditLogService } from '@/lib/services/AuditLogService'
 
 /**
  * @swagger
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
                     isInvalidToken: true,
                 },
             })
-            
+
             return errResponse
         }
 

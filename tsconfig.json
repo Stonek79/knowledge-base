@@ -1,53 +1,43 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "outDir": "./dist",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "incremental": true,
-    "baseUrl": ".",
-    "strict": true,
-    "noImplicitAny": false,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+    "compilerOptions": {
+        "target": "ESNext",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "allowJs": true,
+        "outDir": "./dist",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "incremental": true,
+        "baseUrl": ".",
+        "strict": true,
+        "noImplicitAny": false,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "react-jsx",
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "noEmit": true
     },
-    "noEmit": true
-  },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "prisma/seed.js",
-    "scripts/db-init.js",
-    ".next/dev/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "dist"
-  ]
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts",
+        "prisma/seed.js",
+        "scripts/db-init.js",
+        ".next/dev/types/**/*.ts"
+    ],
+    "exclude": ["node_modules", ".next", "dist"]
 }

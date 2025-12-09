@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
 import { getCurrentUser } from '@/lib/actions/users'
-import { handleApiError } from '@/lib/api'
+import { handleApiError } from '@/lib/api/apiError'
 import { profileUpdateApiScheme } from '@/lib/schemas/profile'
 import { UserService } from '@/lib/services/UserService'
 

@@ -1,19 +1,17 @@
-import type { ActionType, Prisma, PrismaClient } from '@prisma/client'
-import { prisma } from '@/lib/prisma'
+import type { ActionType } from '@prisma/client'
 import { auditLogResponseSchema } from '@/lib/schemas/audit-log'
 import type { AuditLogResponse, TargetType } from '@/lib/types/audit-log'
+import type { Prisma, PrismaClient } from '@/lib/types/prisma'
 
-export class AuditLogRepository {
-    private prisma: PrismaClient
-
-    constructor() {
-        this.prisma = prisma
-    }
+/**
+ * AuditLogRepositoryV2 инкапсулирует доступ к журналу аудита.
+ * Использует внедрение зависимостей (DI).
+ */
+export class AuditLogRepositoryV2 {
+    constructor(private prisma: PrismaClient) {}
 
     /**
      * Создает новую запись в журнале аудита.
-     * @param data - Данные для создания записи.
-     * @param tx - Транзакция, в которой нужно создать запись.
      */
     async create(
         data: Prisma.AuditLogCreateInput,
@@ -25,8 +23,6 @@ export class AuditLogRepository {
 
     /**
      * Находит множество записей в журнале аудита.
-     * @param params - Параметры для поиска.
-     * @returns Массив найденных записей.
      */
     async findMany(params: {
         skip?: number
@@ -55,8 +51,6 @@ export class AuditLogRepository {
 
     /**
      * Находит множество записей в журнале с подсчетом общего количества.
-     * @param params - Параметры для поиска, фильтрации и пагинации.
-     * @returns Объект с массивом логов и общим количеством.
      */
     async findManyWithCount(params: {
         page: number
@@ -121,8 +115,6 @@ export class AuditLogRepository {
 
     /**
      * Подсчитывает количество записей в журнале аудита.
-     * @param where - Условия для подсчета.
-     * @returns Количество записей.
      */
     async count(where?: Prisma.AuditLogWhereInput): Promise<number> {
         return this.prisma.auditLog.count({ where })
@@ -130,8 +122,6 @@ export class AuditLogRepository {
 
     /**
      * Удаляет записи журнала аудита старше указанной даты.
-     * @param cutoffDate - Дата, до которой записи будут удалены.
-     * @returns Количество удаленных записей.
      */
     async deleteOlderThan(cutoffDate: Date): Promise<{ count: number }> {
         return this.prisma.auditLog.deleteMany({
@@ -145,8 +135,6 @@ export class AuditLogRepository {
 
     /**
      * Валидирует и преобразует "сырые" данные логов из Prisma в типизированный ответ API.
-     * @param rawLogs - Массив логов, полученных из Prisma.
-     * @returns Массив логов, соответствующий схеме `AuditLogResponse`.
      */
     private validateAndTransformLogs(
         rawLogs: Prisma.AuditLogGetPayload<{
@@ -186,5 +174,3 @@ export class AuditLogRepository {
         })
     }
 }
-
-export const auditLogRepository = new AuditLogRepository()

@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { COOKIE_SESSION_ID_NAME } from '@/constants/app'
-import { handleApiError } from '@/lib/api'
+import { handleApiError } from '@/lib/api/apiError'
 import { AuthService } from '@/lib/auth/AuthService'
+import { auditLogService } from '@/lib/container'
 
 /**
  * @swagger
@@ -30,12 +31,12 @@ import { AuthService } from '@/lib/auth/AuthService'
  *       401:
  *         description: Invalid credentials
  */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
 
         // 1. Вся сложная логика теперь в сервисе
-        const { user, token } = await AuthService.login(body)
+        const { user, token } = await AuthService.login(body, auditLogService)
 
         // 2. Создаем успешный ответ
         const response = NextResponse.json(

@@ -1,6 +1,6 @@
 import { subDays } from 'date-fns'
 
-import { auditLogRepository } from '@/lib/repositories/AuditLogRepository'
+import { auditLogService } from '@/lib/container'
 import { settingsService } from '@/lib/services/SettingsService'
 
 export class CleanupService {
@@ -8,17 +8,17 @@ export class CleanupService {
         const retentionDays = await settingsService.getAuditLogRetentionDays()
 
         if (retentionDays <= 0) {
-            console.log(
-                'Audit log pruning is disabled (retentionDays <= 0).'
-            )
+            console.log('Audit log pruning is disabled (retentionDays <= 0).')
             return 0
         }
 
         const cutoffDate = subDays(new Date(), retentionDays)
 
-        const { count } = await auditLogRepository.deleteOlderThan(cutoffDate)
+        const count = await auditLogService.pruneOldLogs(cutoffDate)
 
-        console.log(`Pruned ${count} audit logs older than ${cutoffDate.toISOString()}.`)
+        console.log(
+            `Pruned ${count} audit logs older than ${cutoffDate.toISOString()}.`
+        )
 
         return count
     }

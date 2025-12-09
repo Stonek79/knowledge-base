@@ -45,7 +45,7 @@ const CACHE_TTL_MS = 60_000
  * console.log(allowedMimeTypes);
  *
  */
-class SettingsService {
+export class SettingsService {
     private cache: Cached<AppSettings> = { value: null, loadedAt: 0 }
 
     private isExpired(): boolean {

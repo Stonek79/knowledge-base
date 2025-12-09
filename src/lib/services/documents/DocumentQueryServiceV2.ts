@@ -1,11 +1,11 @@
 import { ACTION_TYPE, TARGET_TYPE } from '@/constants/audit-log'
 import { SearchEngine } from '@/constants/document'
 import { USER_ROLES } from '@/constants/user'
-import { ApiError } from '@/lib/api'
-import { DocumentRepository } from '@/lib/repositories/documentRepository'
+import { ApiError } from '@/lib/api/errors'
+import type { DocumentRepositoryV2 } from '@/lib/repositories/DocumentRepositoryV2'
 import { documentListSchema } from '@/lib/schemas/document'
 import { SearchFactory } from '@/lib/search/factory'
-import { auditLogService } from '@/lib/services/AuditLogService'
+import type { AuditLogServiceV2 } from '@/lib/services/AuditLogServiceV2'
 import type {
     DocumentFilters,
     DocumentWithAuthor,
@@ -15,18 +15,20 @@ import type { UserResponse } from '@/lib/types/user'
 import { z } from '@/lib/zod'
 
 /**
- * DocumentQueryService инкапсулирует логику для чтения и поиска документов.
+ * DocumentQueryServiceV2 инкапсулирует логику для чтения и поиска документов.
+ * Использует DI.
  */
-export class DocumentQueryService {
+export class DocumentQueryServiceV2 {
+    constructor(
+        private docRepo: DocumentRepositoryV2,
+        private auditService: AuditLogServiceV2
+    ) {}
+
     /**
      * Получает один документ по ID, проверяя права доступа.
-     * Увеличивает счетчик просмотров.
-     * @param id - ID документа.
-     * @param user - Текущий пользователь.
-     * @returns - Найденный документ или null.
      */
-    public static async getDocumentById(id: string, user: UserResponse) {
-        const document = await DocumentRepository.findUnique({
+    async getDocumentById(id: string, user: UserResponse) {
+        const document = await this.docRepo.findUnique({
             where: { id },
             include: {
                 author: {
@@ -73,7 +75,7 @@ export class DocumentQueryService {
         if (document.isConfidential) {
             const isAuthor = user.id === document.authorId
             const isAdmin = user.role === USER_ROLES.ADMIN
-            const hasAccess = await DocumentRepository.hasConfidentialAccess(
+            const hasAccess = await this.docRepo.hasConfidentialAccess(
                 user.id,
                 document.id
             )
@@ -92,27 +94,29 @@ export class DocumentQueryService {
 
         // Увеличение счетчика просмотров (кроме админов)
         if (user.role !== USER_ROLES.ADMIN) {
-            await DocumentRepository.interactiveTransaction(async tx => {
-                await tx.document.update({
-                    where: { id },
-                    data: { viewCount: { increment: 1 } },
-                })
+            await this.docRepo.interactiveTransaction(
+                async (txRepo, txClient) => {
+                    await txRepo.update({
+                        where: { id },
+                        data: { viewCount: { increment: 1 } },
+                    })
 
-                // Логирование просмотра документа
-                await auditLogService.log(
-                    {
-                        userId: user.id,
-                        action: ACTION_TYPE.DOCUMENT_VIEWED,
-                        targetId: document.id,
-                        targetType: TARGET_TYPE.DOCUMENT,
-                        details: {
-                            documentId: document.id,
-                            documentName: document.title,
+                    // Логирование просмотра документа
+                    await this.auditService.log(
+                        {
+                            userId: user.id,
+                            action: ACTION_TYPE.DOCUMENT_VIEWED,
+                            targetId: document.id,
+                            targetType: TARGET_TYPE.DOCUMENT,
+                            details: {
+                                documentId: document.id,
+                                documentName: document.title,
+                            },
                         },
-                    },
-                    tx
-                )
-            })
+                        txClient
+                    )
+                }
+            )
         }
 
         return document
@@ -120,14 +124,8 @@ export class DocumentQueryService {
 
     /**
      * Выполняет гибридный поиск или фильтрацию документов.
-     * @param params - Параметры фильтрации, пагинации и поисковый запрос.
-     * @param user - Текущий аутентифицированный пользователь.
-     * @returns - Список найденных документов и метаданные пагинации.
      */
-    public static async searchDocuments(
-        params: DocumentFilters,
-        user: UserResponse
-    ) {
+    async searchDocuments(params: DocumentFilters, user: UserResponse) {
         const {
             q,
             page,
@@ -140,7 +138,7 @@ export class DocumentQueryService {
         } = await params
 
         // 1. Условия доступа и базовые фильтры
-        const whereConditions = DocumentQueryService.buildAccessConditions(user)
+        const whereConditions = this.buildAccessConditions(user)
         if (authorId) {
             whereConditions.push({ authorId })
         }
@@ -170,7 +168,7 @@ export class DocumentQueryService {
 
             // Проверяем и переиндексируем если нужно
             if (indexer.isEmpty()) {
-                const allDocuments = (await DocumentRepository.findMany({
+                const allDocuments = (await this.docRepo.findMany({
                     include: {
                         author: {
                             select: {
@@ -223,7 +221,7 @@ export class DocumentQueryService {
             const documentIds = searchResults.map(result => result.id)
 
             // Пагинируем найденные документы в БД
-            const documents = await DocumentRepository.findMany({
+            const documents = await this.docRepo.findMany({
                 where: {
                     ...baseWhere,
                     id: { in: documentIds },
@@ -280,21 +278,15 @@ export class DocumentQueryService {
                 },
             }
         } else {
-            const result = DocumentQueryService.getDocuments(params, user)
+            const result = this.getDocuments(params, user)
             return result
         }
     }
 
     /**
      * Получает отфильтрованный и пагинированный список документов.
-     * @param params - Параметры фильтрации и пагинации.
-     * @param user - Текущий аутентифицированный пользователь.
-     * @returns - Список документов и метаданные пагинации.
      */
-    public static async getDocuments(
-        params: DocumentFilters,
-        user: UserResponse
-    ) {
+    async getDocuments(params: DocumentFilters, user: UserResponse) {
         const data = await params
         const validation = documentListSchema.safeParse(data)
         if (!validation.success) {
@@ -324,7 +316,7 @@ export class DocumentQueryService {
 
         // 1. Формирование условий доступа
         const whereConditions: WhereDocumentInput[] =
-            DocumentQueryService.buildAccessConditions(user)
+            this.buildAccessConditions(user)
 
         // 2. Добавление фильтров из запроса
         if (authorId) {
@@ -364,7 +356,7 @@ export class DocumentQueryService {
 
         // 3. Получение данных из репозитория
         const [documents, total] = await Promise.all([
-            DocumentRepository.findMany({
+            this.docRepo.findMany({
                 where,
                 include: {
                     author: {
@@ -382,7 +374,7 @@ export class DocumentQueryService {
                 take: currentLimit,
                 skip: (currentPage - 1) * currentLimit,
             }),
-            DocumentRepository.count({ where }),
+            this.docRepo.count({ where }),
         ])
 
         // 4. Формирование ответа
@@ -402,12 +394,8 @@ export class DocumentQueryService {
 
     /**
      * Вспомогательный метод для построения условий доступа к документам.
-     * @param user - Текущий пользователь.
-     * @returns - Массив условий для Prisma.
      */
-    private static buildAccessConditions(
-        user: UserResponse
-    ): WhereDocumentInput[] {
+    private buildAccessConditions(user: UserResponse): WhereDocumentInput[] {
         const conditions: WhereDocumentInput[] = [{ isSecret: false }]
 
         if (user.role === USER_ROLES.GUEST) {

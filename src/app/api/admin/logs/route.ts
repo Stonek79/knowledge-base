@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
 import { handleApiError } from '@/lib/api/apiError'
-import { auditLogRepository } from '@/lib/repositories/AuditLogRepository'
+import { auditLogService } from '@/lib/container'
 import { auditLogsListParamsSchema } from '@/lib/schemas/audit-log'
 
 /**
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
         } = validationResult.data
 
         // Fetch logs and total count from repository
-        const { logs, total } = await auditLogRepository.findManyWithCount({
+        const { logs, total } = await auditLogService.getLogs({
             page,
             limit,
             userIds,

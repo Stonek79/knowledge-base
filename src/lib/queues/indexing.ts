@@ -36,6 +36,10 @@ function createRedisConnection(): Redis {
             ping: async () => 'PONG',
             quit: async () => 'OK',
             status: 'ready',
+            defineCommand: () => {},
+            info: async () => 'redis_version:6.0.0', // Прикидываемся свежим Redis
+            exec: async () => null,
+            pipeline: () => mockRedis, // Возвращаем сам мок для чейнинга
         } as unknown as Redis
 
         return mockRedis

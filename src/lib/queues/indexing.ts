@@ -19,13 +19,23 @@ function createRedisConnection(): Redis {
         )
 
         const mockRedis = {
-            options: { keyPrefix: '' }, // 👈 ВАЖНО! BullMQ читает это свойство
+            options: { keyPrefix: '' },
+            // EventEmitter methods
             on: () => mockRedis,
+            once: () => mockRedis,
+            emit: () => false,
+            off: () => mockRedis,
+            removeListener: () => mockRedis,
+            setMaxListeners: () => mockRedis,
+            getMaxListeners: () => 0,
+            listenerCount: () => 0,
+            // Redis methods
             connect: async () => 'OK',
             disconnect: async () => {},
             duplicate: () => mockRedis,
             ping: async () => 'PONG',
             quit: async () => 'OK',
+            status: 'ready',
         } as unknown as Redis
 
         return mockRedis

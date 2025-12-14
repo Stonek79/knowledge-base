@@ -17,7 +17,7 @@ jobs:
       - name: Setup pnpm & Node.js
         uses: pnpm/action-setup@v3
         with:
-          version: 8 # Specify pnpm version if needed, or remove for latest
+          version: 10 # Specify pnpm version if needed, or remove for latest
           run_install: false
 
       - name: Setup Node.js

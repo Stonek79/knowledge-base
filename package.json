@@ -26,6 +26,7 @@
         "test:ci": "jest --ci --coverage",
         "test:e2e": "playwright test",
         "test:e2e:ui": "playwright test --ui",
+        "postinstall": "prisma generate",
         "prepare": "husky"
     },
     "prisma": {

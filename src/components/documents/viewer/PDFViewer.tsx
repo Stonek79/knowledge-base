@@ -15,7 +15,6 @@ import { useCallback, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 
 // Настройка worker для PDF.js
-// Настройка worker для PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
 
 interface PDFDocumentViewerProps {
